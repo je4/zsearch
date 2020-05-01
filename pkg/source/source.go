@@ -3,16 +3,18 @@ package source
 import (
 	"bytes"
 	"compress/gzip"
+	"encoding/base64"
 	"github.com/goph/emperror"
 	"io"
 )
 
 func GUnzip(data string) (string, error) {
 	var src, dest bytes.Buffer
-	if _, err := src.WriteString(data); err != nil {
+
+	bytedata, err := base64.StdEncoding.DecodeString(data)
+	if _, err := src.Write(bytedata); err != nil {
 		return "", emperror.Wrap(err, "cannot write data into buffer")
 	}
-
 	zr, err := gzip.NewReader(&src)
 	if err != nil {
 		return "", emperror.Wrap(err, "cannot create gzip reader")
@@ -24,5 +26,5 @@ func GUnzip(data string) (string, error) {
 }
 
 type Source interface {
-	Init( data string ) error
+	Init(data string) error
 }
