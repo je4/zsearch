@@ -54,13 +54,15 @@ type Source interface {
 	GetTags() []string
 	GetMedia() map[string]MediaList
 	GetNotes() []string
+	GetAbstract() string
 }
 
 type SourceData struct {
-	Source  string               `json:"source"`
-	Title   string               `json:"title"`
-	Persons []Person             `json:"persons"`
-	Tags    []string             `json:"tags"`
-	Media   map[string]MediaList `json:"media"`
-	Notes   []string             `json:"notes"`
+	Source   string               `json:"source"`
+	Title    string               `json:"title"`
+	Persons  []Person             `json:"persons"`
+	Tags     []string             `json:"tags"`
+	Media    map[string]MediaList `json:"media"`
+	Notes    []string             `json:"notes"`
+	Abstract string               `json:"abstract"`
 }

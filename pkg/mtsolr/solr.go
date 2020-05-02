@@ -63,7 +63,7 @@ func (mts *MTSolr) LoadEntity(id string) (*Document, error) {
 		return nil, errors.New(fmt.Sprintf("source of id %s is not a string", id))
 	}
 	var content source.Source
-	switch(srcstr) {
+	switch srcstr {
 	case "zotero":
 		content, err = source.NewZotero(metadata)
 	default:
@@ -73,12 +73,13 @@ func (mts *MTSolr) LoadEntity(id string) (*Document, error) {
 		return nil, emperror.Wrapf(err, "cannot load source data")
 	}
 	sourceData := &source.SourceData{
-		Source:  content.Name(),
-		Title:   content.GetTitle(),
-		Persons: content.GetNames(),
-		Tags:    content.GetTags(),
-		Media:   content.GetMedia(),
-		Notes:   content.GetNotes(),
+		Source:   content.Name(),
+		Title:    content.GetTitle(),
+		Persons:  content.GetNames(),
+		Tags:     content.GetTags(),
+		Media:    content.GetMedia(),
+		Notes:    content.GetNotes(),
+		Abstract: content.GetAbstract(),
 	}
 
 	acl := map[string][]string{}

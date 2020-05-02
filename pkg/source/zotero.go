@@ -31,6 +31,10 @@ func (zot *Zotero) GetTitle() string {
 	return zot.zdata.Data.Title
 }
 
+func (zot *Zotero) GetAbstract() string {
+	return zot.zdata.Data.AbstractNote
+}
+
 func (zot *Zotero) GetNames() []Person {
 	var persons []Person
 	for _, c := range zot.zdata.Data.ItemDataBase.Creators {
