@@ -1,0 +1,169 @@
+package service
+
+import (
+"errors"
+"fmt"
+"github.com/dgrijalva/jwt-go"
+"github.com/goph/emperror"
+"github.com/op/go-logging"
+"net/http"
+"os"
+"strings"
+"time"
+)
+
+var _logformat = logging.MustStringFormatter(
+	`%{time:2006-01-02T15:04:05.000} %{module}::%{shortfunc} [%{shortfile}] > %{level:.5s} - %{message}`,
+)
+
+var bearerPrefix = "Bearer "
+
+func FileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
+}
+
+func CheckRequestJWT(req *http.Request, secret string, alg []string, subject string) error {
+	var token []string
+	var ok bool
+
+	// first check Bearer token
+	reqToken := req.Header.Get("Authorization")
+	n := len(bearerPrefix)
+	if len(reqToken) > n && reqToken[:n] == bearerPrefix {
+		token = []string{reqToken[n:]}
+	}
+	// no bearer --> check token parameter
+	if len(token) < 1 {
+		query := req.URL.Query()
+		token, ok = query["token"]
+		// sometimes auth is used instead of token...
+		if !ok {
+			token, _ = query["auth"]
+		}
+		// no bearer, no token, no auth...
+		if len(token) < 1 {
+			return errors.New(fmt.Sprintf("Access denied: no jwt token found"))
+		}
+	}
+	if err := CheckJWT(token[0], secret, alg, subject); err != nil {
+		return emperror.Wrapf(err, "Access denied: token check failed")
+	}
+	return nil
+}
+
+func CheckJWT(tokenstring string, secret string, alg []string, subject string) error {
+	subject = strings.TrimRight(strings.ToLower(subject), "/")
+	token, err := jwt.Parse(tokenstring, func(token *jwt.Token) (interface{}, error) {
+		talg := token.Method.Alg()
+		algOK := false
+		for _, a := range alg {
+			if talg == a {
+				algOK = true
+				break
+			}
+		}
+		if !algOK {
+			return false, fmt.Errorf("Unexpected signing method (allowed are %v): %v", alg, token.Header["alg"])
+		}
+
+		return []byte(secret), nil
+	})
+	if err != nil {
+		return fmt.Errorf("Invalid token %s: %s", tokenstring, err.Error())
+	}
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		if !ok {
+			return fmt.Errorf("Cannot get claims from token [sub:%s]", subject)
+		}
+		if strings.ToLower(claims["sub"].(string)) == subject {
+			return nil
+		} else {
+			return fmt.Errorf("Invalid subject [%s]. Should be [%s]", claims["sub"].(string), subject)
+		}
+	} else {
+		return fmt.Errorf("Token not valid[sub:%s]", subject)
+	}
+}
+
+func CreateLogger(module string, logfile string, loglevel string) (log *logging.Logger, lf *os.File) {
+	log = logging.MustGetLogger(module)
+	var err error
+	if logfile != "" {
+		lf, err = os.OpenFile(logfile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Errorf("Cannot open logfile %v: %v", logfile, err)
+		}
+		//defer lf.CloseInternal()
+
+	} else {
+		lf = os.Stderr
+	}
+	backend := logging.NewLogBackend(lf, "", 0)
+	backendLeveled := logging.AddModuleLevel(backend)
+	backendLeveled.SetLevel(logging.GetLevel(loglevel), "")
+
+	logging.SetFormatter(_logformat)
+	logging.SetBackend(backendLeveled)
+
+	return
+}
+
+func NewJWT(secret string, subject string, alg string, valid int64, domain string, issuer string) (tokenString string, err error) {
+	var signingMethod jwt.SigningMethod
+	switch strings.ToLower(alg) {
+	case "hs256":
+		signingMethod = jwt.SigningMethodHS256
+	case "hs384":
+		signingMethod = jwt.SigningMethodHS384
+	case "hs512":
+		signingMethod = jwt.SigningMethodHS512
+	case "es256":
+		signingMethod = jwt.SigningMethodES256
+	case "es384":
+		signingMethod = jwt.SigningMethodES384
+	case "es512":
+		signingMethod = jwt.SigningMethodES512
+	case "ps256":
+		signingMethod = jwt.SigningMethodPS256
+	case "ps384":
+		signingMethod = jwt.SigningMethodPS384
+	case "ps512":
+		signingMethod = jwt.SigningMethodPS512
+	default:
+		return "", emperror.Wrapf(err, "invalid signing method %s", alg)
+	}
+	exp := time.Now().Unix() + valid
+	claims := jwt.MapClaims{
+		"sub": strings.ToLower(subject),
+		"exp": exp,
+	}
+	// keep jwt short, no empty fields
+	if domain != "" {
+		claims["aud"] = domain
+	}
+	if issuer != "" {
+		claims["iss"] = issuer
+	}
+
+	token := jwt.NewWithClaims(signingMethod, claims)
+	//	log.Println("NewJWT( ", secret, ", ", subject, ", ", exp)
+	tokenString, err = token.SignedString([]byte(secret))
+	return tokenString, err
+}
+
+func SingleJoiningSlash(a, b string) string {
+	aslash := strings.HasSuffix(a, "/")
+	bslash := strings.HasPrefix(b, "/")
+	switch {
+	case aslash && bslash:
+		return a + b[1:]
+	case !aslash && !bslash:
+		return a + "/" + b
+	}
+	return a + b
+}
+

@@ -25,6 +25,42 @@ func GUnzip(data string) (string, error) {
 	return dest.String(), nil
 }
 
+type Person struct {
+	Name string `json:"name"`
+	Role string `json:"role"`
+}
+
+type Media struct {
+	Name     string `json:"name"`
+	Mimetype string `json:"mimetype"`
+	Type     string `json:"type"`
+	Uri      string `json:"uri"`
+	Width    int64  `json:"width"`
+	Height   int64  `json:"height"`
+	Duration int64  `json:"duration"`
+}
+
+type MediaList []Media
+
+func (ml MediaList) Len() int           { return len(ml) }
+func (ml MediaList) Swap(i, j int)      { ml[i], ml[j] = ml[j], ml[i] }
+func (ml MediaList) Less(i, j int) bool { return ml[i].Name < ml[j].Name }
+
 type Source interface {
 	Init(data string) error
+	Name() string
+	GetTitle() string
+	GetNames() []Person
+	GetTags() []string
+	GetMedia() map[string]MediaList
+	GetNotes() []string
+}
+
+type SourceData struct {
+	Source  string               `json:"source"`
+	Title   string               `json:"title"`
+	Persons []Person             `json:"persons"`
+	Tags    []string             `json:"tags"`
+	Media   map[string]MediaList `json:"media"`
+	Notes   []string             `json:"notes"`
 }

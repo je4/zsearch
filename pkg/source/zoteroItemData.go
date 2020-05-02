@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"time"
 )
 
 // Relations are empty array or string map
@@ -22,7 +23,9 @@ func (rl *RelationList) UnmarshalJSON(data []byte) error {
 			(*rl)[key], _ = val.(string)
 		}
 	case []interface{}:
-
+		if len(d) > 0 {
+			return errors.New(fmt.Sprintf("invalid object list for type RelationList - %s", string(data)))
+		}
 	}
 	return nil
 }
@@ -106,6 +109,35 @@ type ZoteroLibrary struct {
 	Links interface{} `json:"links"`
 }
 
+type ZoteroGroupMeta struct {
+	Created      time.Time `json:"created"`
+	LastModified time.Time `json:"lastModified"`
+	NumItems     int64     `json:"numItems"`
+}
+
+type ZoteroGroupData struct {
+	Id             int64   `json:"id"`
+	Version        int64   `json:"version"`
+	Name           string  `json:"name"`
+	Owner          int64   `json:"owner"`
+	Type           string  `json:"type"`
+	Description    string  `json:"description"`
+	Url            string  `json:"url"`
+	HasImage       int64   `json:"hasImage"`
+	LibraryEditing string  `json:"libraryEditing"`
+	LibraryReading string  `json:"libraryReading"`
+	FileEditing    string  `json:"fileEditing"`
+	Admins         []int64 `json:"admins"`
+}
+
+type ZoteroGroup struct {
+	Id      int64           `json:"id"`
+	Version int64           `json:"version"`
+	Links   interface{}     `json:"links,omitempty"`
+	Meta    ZoteroGroupMeta `json:"meta"`
+	Data    ZoteroGroupData `json:"data"`
+}
+
 type ZoteroData struct {
 	Key         string             `json:"key"`
 	Version     int                `json:"version"`
@@ -113,7 +145,7 @@ type ZoteroData struct {
 	Links       interface{}        `json:"links"`
 	Meta        interface{}        `json:"meta"`
 	Data        ItemGeneric        `json:"data"`
-	Group       interface{}        `json:"group"`
+	Group       ZoteroGroup        `json:"group"`
 	Children    []ZoteroData       `json:"children,omitempty"`
 	Collections []ZoteroCollection `json:"collections,omitempty"`
 }
@@ -128,12 +160,30 @@ type ItemDataBase struct {
 	DateAdded    string           `json:"dateAdded,omitempty"`
 	DateModified string           `json:"dateModified,omitempty"`
 	Creators     []ItemDataPerson `json:"creators"`
+	Media        ItemMedia        `json:"media,omitempty"`
 }
 
 type ItemDataPerson struct {
 	CreatorType string `json:"creatorType"`
 	FirstName   string `json:"firstName"`
 	LastName    string `json:"lastName"`
+}
+
+type ItemMedia struct {
+	Metadata ItemMediaMeta `json:"metadata,omitempty"`
+}
+
+type ItemMediaMeta struct {
+	Mimetype string      `json:"mimetype"`
+	Type     string      `json:"type"`
+	Ext      string      `json:"ext,omitempty"`
+	Sha256   string      `json:"sha256,omitempty"`
+	Duration float64     `json:"duration,omitempty"`
+	Width    float64     `json:"width,omitempty"`
+	Height   float64     `json:"height,omitempty"`
+	Video    interface{} `json:"video,omitempty"`
+	Audio    interface{} `json:audio,omitempty`
+	Image    interface{} `json:image,omitempty`
 }
 
 type ItemGeneric struct {

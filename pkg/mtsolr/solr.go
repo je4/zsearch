@@ -27,7 +27,7 @@ func NewMTSolr(url, core string) (*MTSolr, error) {
 	return mts, nil
 }
 
-func (mts *MTSolr) LoadEntity(id string) (source.Source, error) {
+func (mts *MTSolr) LoadEntity(id string) (*Document, error) {
 	query := solr.NewQuery()
 	query.Q(fmt.Sprintf("id:%s", escapeSolrString(id)))
 	s := mts.si.Search(query)
@@ -62,10 +62,67 @@ func (mts *MTSolr) LoadEntity(id string) (source.Source, error) {
 	if !ok {
 		return nil, errors.New(fmt.Sprintf("source of id %s is not a string", id))
 	}
+	var content source.Source
 	switch(srcstr) {
 	case "zotero":
-		return source.NewZotero(metadata)
+		content, err = source.NewZotero(metadata)
 	default:
-		return nil, errors.New(fmt.Sprintf("invalid source %s", srcstr))
+		err = errors.New(fmt.Sprintf("invalid source %s", srcstr))
 	}
+	if err != nil {
+		return nil, emperror.Wrapf(err, "cannot load source data")
+	}
+	sourceData := &source.SourceData{
+		Source:  content.Name(),
+		Title:   content.GetTitle(),
+		Persons: content.GetNames(),
+		Tags:    content.GetTags(),
+		Media:   content.GetMedia(),
+		Notes:   content.GetNotes(),
+	}
+
+	acl := map[string][]string{}
+	acl["meta"] = []string{}
+	a := doc.Get("acl_meta")
+	alist, ok := a.([]interface{})
+	if ok {
+		for _, al := range alist {
+			s, ok := al.(string)
+			if ok {
+				acl["meta"] = append(acl["meta"], s)
+			}
+		}
+	}
+
+	acl["content"] = []string{}
+	a = doc.Get("acl_content")
+	alist, ok = a.([]interface{})
+	if ok {
+		for _, al := range alist {
+			s, ok := al.(string)
+			if ok {
+				acl["content"] = append(acl["content"], s)
+			}
+		}
+	}
+
+	acl["preview"] = []string{}
+	a = doc.Get("acl_preview")
+	alist, ok = a.([]interface{})
+	if ok {
+		for _, al := range alist {
+			s, ok := al.(string)
+			if ok {
+				acl["preview"] = append(acl["preview"], s)
+			}
+		}
+	}
+
+	result := &Document{
+		Source: sourceData,
+		ACL:    acl,
+		Id:     id,
+	}
+
+	return result, nil
 }
