@@ -8,7 +8,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/op/go-logging"
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/mtsolr"
-	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/source"
 	"html/template"
 	"io"
 	"net"
@@ -29,15 +28,17 @@ type Server struct {
 	detailTemplate *template.Template
 	errorTemplate  *template.Template
 	mediaserver    string
+	mediaserverkey string
 	log            *logging.Logger
 	accesslog      io.Writer
 }
 
 func NewServer(mts *mtsolr.MTSolr,
-	detailTemplate,
+	detailTemplate []string,
 	errorTemplate,
 	addr,
-	mediaserver string,
+	mediaserver,
+	mediaserverkey string,
 	log *logging.Logger,
 	accesslog io.Writer,
 	staticPrefix,
@@ -52,29 +53,62 @@ func NewServer(mts *mtsolr.MTSolr,
 		//log.Panicf("cannot split address %s: %v", addr, err)
 		return nil, emperror.Wrapf(err, "cannot split address %s", addr)
 	}
-	detailTpl, err := template.ParseFiles(detailTemplate)
-	if err != nil {
-		return nil, emperror.Wrapf(err, "cannot parse detail template %s", detailTemplate)
-	}
-	errorTpl, err := template.ParseFiles(errorTemplate)
-	if err != nil {
-		return nil, emperror.Wrapf(err, "cannot parse error template %s", errorTemplate)
-	}
 
-	return &Server{
+	srv := &Server{
 		mts:            mts,
 		host:           host,
 		port:           port,
-		detailTemplate: detailTpl,
-		errorTemplate:  errorTpl,
 		mediaserver:    mediaserver,
+		mediaserverkey: mediaserverkey,
 		log:            log,
 		accesslog:      accesslog,
 		staticPrefix:   staticPrefix,
 		staticDir:      staticDir,
 		privatePrefix:  privatePrefix,
 		publicPrefix:   publicPrefix,
-	}, nil
+	}
+	if err := srv.Init(detailTemplate, errorTemplate); err != nil {
+		return nil, emperror.Wrapf(err, "cannot initialize server")
+	}
+	return srv, nil
+}
+
+func (s *Server) Init(detailTemplate []string, errorTemplate string) (err error) {
+	mediaMatch := regexp.MustCompile(`^mediaserver:([^/]+)/([^/]+)$`)
+	s.detailTemplate, err = template.New("details.amp.gohtml").
+	Funcs(template.FuncMap{
+		"medialink": func(uri, action, param string) string {
+			matches := mediaMatch.FindStringSubmatch(uri)
+			// if not matching, just return the uri
+			if matches == nil {
+				return uri
+			}
+			collection := matches[1]
+			signature := matches[2]
+			jwt, err := NewJWT(
+				s.mediaserverkey,
+				fmt.Sprintf("mediaserver:%s/%s/%s/%s", collection, signature, action, param),
+				"HS256",
+				3600,
+				"mediaserver",
+				"mediathek")
+			if err != nil {
+				return fmt.Sprintf("ERROR: %v", err)
+			}
+			url := fmt.Sprintf("%s/%s/%s/%s/%s?token=%s", s.mediaserver, collection, signature, action, param, jwt)
+			return url
+		},
+	}).ParseFiles(detailTemplate...)
+		//ParseFiles(detailTemplate)
+	 	//s.detailTemplate, err = template.ParseFiles(detailTemplate)
+	if err != nil {
+		return emperror.Wrapf(err, "cannot parse detail template %s", detailTemplate)
+	}
+	s.errorTemplate, err = template.ParseFiles(errorTemplate)
+	if err != nil {
+		return emperror.Wrapf(err, "cannot parse error template %s", errorTemplate)
+	}
+	return nil
 }
 
 func (s *Server) DoPanicf(writer http.ResponseWriter, status int, message string, a ...interface{}) (err error) {
@@ -120,19 +154,10 @@ func (s *Server) mainHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	media := map[string]source.MediaList{}
-	for t, ml := range doc.Source.Media {
-		if _, ok := media[t]; !ok {
-			media[t] = source.MediaList{}
-		}
-		for _, m := range ml {
-			m.Uri = strings.Replace(m.Uri, "mediaserver:", s.mediaserver, -1)
-			media[t] = append(media[t], m)
-		}
+	err = s.detailTemplate.Execute(w, doc)
+	if err != nil {
+		s.DoPanicf(w, http.StatusInternalServerError, "cannot parse template: %+v", err)
 	}
-	doc.Source.Media = media
-
-	s.detailTemplate.Execute(w, doc)
 	//	w.Write([]byte(fmt.Sprintf("%s/%s", access, signature)))
 }
 

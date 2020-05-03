@@ -1,0 +1,103 @@
+<!-- Media area -->
+{{$len := 0}}
+{{$expanded := true}}
+<amp-accordion
+        expand-single-section>
+    {{if .Source.Media.video}}
+        {{$len = len .Source.Media.video}}
+        <section{{if $expanded}} expanded{{end}} [data-expand]="mediasection==1">
+            {{$expanded = false}}
+            <h4 class="hidden">Video ({{$len}})</h4>
+            <div>
+                {{range $key, $video := .Source.Media.video}}
+                    {{$src := printf "%s$$web" $video.Uri}}
+                    {{$poster := printf "%s$$timeshot$$3" $video.Uri}}
+                    <amp-video
+                            src="{{medialink $src "master" ""}}"
+                            poster="{{medialink $poster "master" ""}}"
+                            artwork=""
+                            width="1280"
+                            height="720"
+                            layout="responsive"
+                            controls
+                            rotate-to-fullscreen>
+                    </amp-video>
+                {{end}}
+            </div>
+        </section>
+    {{end}}
+
+    {{if .Source.Media.image}}
+        {{$len = len .Source.Media.image}}
+        <section{{if $expanded}} expanded{{end}} [data-expand]="mediasection==3">
+            {{$expanded = false}}
+            <h4 class="hidden">Image ({{$len}})</h4>
+            <div>
+                <amp-carousel lightbox
+                              width="1280"
+                              height="720"
+                              layout="responsive"
+                              type="slides">
+                    {{range $key, $image := .Source.Media.image}}
+                        <amp-img
+                                src="{{medialink $image.Uri "resize" "size1280x720"}}"
+                                width="1280"
+                                height="720"
+                                layout="responsive"
+                                tabindex="{{$key}}"
+                                noloading="">
+                            <div placeholder="" class="commerce-loader"></div>
+                        </amp-img>
+                    {{end}}
+                </amp-carousel>
+            </div>
+        </section>
+    {{end}}
+
+    {{if .Source.Media.pdf}}
+        {{$len = len .Source.Media.pdf}}
+        {{range $key, $pdf := .Source.Media.pdf}}
+            <section{{if $expanded}} expanded{{end}} [data-expand]="mediasection==3">
+                {{$expanded = false}}
+                <h4 class="hidden">PDF</h4>
+                <div>
+                    <amp-google-document-embed
+                            src="{{medialink $pdf.Uri "master" ""}}"
+                            width="1280"
+                            height="1000"
+                            layout="responsive">
+                    </amp-google-document-embed>
+                </div>
+            </section>
+        {{end}}
+    {{end}}
+</amp-accordion>
+<p>
+    <amp-selector class="media-selector"
+                  layout="container">
+        {{if .Source.Media.video}}
+        <i class="material-icons-outlined md-48"
+           option="1"
+           on="tap:AMP.setState({mediasection: 1})">videocam</i>
+        {{end}}
+
+        {{if .Source.Media.audio}}
+        <i class="material-icons-outlined md-48"
+           option="4"
+           on="tap:AMP.setState({mediasection: 2})">audiotrack</i>
+        {{end}}
+
+        {{if .Source.Media.image}}
+        <i class="material-icons-outlined md-48"
+           option="2"
+           on="tap:AMP.setState({mediasection: 3})">panorama</i>
+        {{end}}
+
+        {{if .Source.Media.pdf}}
+        <i class="material-icons-outlined md-48"
+           option="3"
+           on="tap:AMP.setState({mediasection: 4})">chrome_reader_mode</i>
+        {{end}}
+
+    </amp-selector>
+</p>

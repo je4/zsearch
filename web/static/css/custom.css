@@ -1,0 +1,16 @@
+/* see more button for cropped text should be smaller */
+.ampstart-btn-seemore {
+    background-color: #fff;
+    color: #222;
+    padding: .2rem .5rem;
+}
+
+/* accordion headline centered */
+section>h4 {
+    text-align: center;
+}
+
+/* no blue border around accorion header */
+.i-amphtml-accordion-header:active  {
+    border: 1px solid #dfdfdf;
+}

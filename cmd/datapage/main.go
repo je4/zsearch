@@ -46,6 +46,7 @@ func main() {
 		config.Template.Error,
 		config.Addr,
 		config.Template.Mediaserver,
+		config.Template.MediaserverKey,
 		log,
 		accesslog,
 		config.StaticPrefix,

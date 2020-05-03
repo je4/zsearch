@@ -3170,7 +3170,7 @@ amp-selector [option][selected] {
 }
 
 .amp-carousel-button-next,.amp-carousel-button-prev {
-  display: none
+/*  display: none*/
 }
 
 @media (min-width:52.06rem) {

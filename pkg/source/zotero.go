@@ -84,7 +84,7 @@ func (zot *Zotero) GetNotes() []string {
 func (zot *Zotero) GetMedia() map[string]MediaList {
 	var medias = make(map[string]MediaList)
 	var types []string
-	for _, child := range zot.GetChildren("attachment", "linked_url") {
+	for _, child := range zot.GetChildren("attachment", "") {
 		meta := child.Data.Media.Metadata
 		t := meta.Type
 		// empty type == no media

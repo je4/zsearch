@@ -11,9 +11,10 @@ type Google struct {
 }
 
 type Template struct {
-	Mediaserver string `toml:"mediaserver"`
-	Detail      string `toml:"detail"`
-	Error       string `toml:"error"`
+	Mediaserver    string   `toml:"mediaserver"`
+	MediaserverKey string   `toml:"mediaserverkey"`
+	Detail         []string `toml:"detail"`
+	Error          string   `toml:"error"`
 }
 
 type Solr struct {
@@ -44,6 +45,6 @@ func LoadConfig(filepath string) Config {
 		log.Fatalln("Error on loading config: ", err)
 	}
 	// make sure, that medaiserver url ends with an /
-	conf.Template.Mediaserver = strings.TrimRight(conf.Template.Mediaserver, "/") + "/"
+	conf.Template.Mediaserver = strings.TrimRight(conf.Template.Mediaserver, "/")
 	return conf
 }

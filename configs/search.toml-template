@@ -11,6 +11,7 @@ privateprefix = "/private"
 
 [template]
     mediaserver = "https://ba14ns21403-sec1.fhnw.ch/mediasrv"
+    mediaserverkey = "xxx"
     detail = "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/details.amp.gohtml"
     error = "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/error.gohtml"
 
