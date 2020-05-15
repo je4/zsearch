@@ -4,16 +4,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/goph/emperror"
+	"regexp"
 	"sort"
 	"strings"
 )
 
 type Zotero struct {
-	zdata ZoteroData
+	zdata    ZoteroData
+	collMeta map[string]string
 }
 
 func NewZotero(data string) (*Zotero, error) {
-	zot := &Zotero{zdata: ZoteroData{}}
+	zot := &Zotero{zdata: ZoteroData{}, collMeta: map[string]string{}}
 	return zot, zot.Init(data)
 }
 
@@ -22,10 +24,23 @@ func (zot *Zotero) Init(data string) error {
 	if err != nil {
 		return emperror.Wrapf(err, "cannot unmarshal json\n%s", data)
 	}
+	r := regexp.MustCompile("([^<>]+):([^<>]+)")
+	matches := r.FindAllStringSubmatch(zot.zdata.Group.Data.Description, -1)
+	for _, match := range matches {
+		zot.collMeta[strings.TrimSpace(strings.ToLower(match[1]))] = strings.TrimSpace(match[2])
+	}
 	return nil
 }
 
-func (zot *Zotero) Name() string { return "zotero"}
+func (zot *Zotero) Name() string { return "zotero" }
+
+func (zot *Zotero) GetCollectionTitle() string {
+	t, ok := zot.collMeta["title"]
+	if !ok {
+		return ""
+	}
+	return t
+}
 
 func (zot *Zotero) GetTitle() string {
 	return zot.zdata.Data.Title
@@ -38,10 +53,13 @@ func (zot *Zotero) GetAbstract() string {
 func (zot *Zotero) GetNames() []Person {
 	var persons []Person
 	for _, c := range zot.zdata.Data.ItemDataBase.Creators {
-		persons = append(persons, Person{
-			Name: strings.Trim(fmt.Sprintf("%s, %s", c.LastName, c.FirstName), " ,"),
-			Role: c.CreatorType,
-		})
+		name := strings.Trim(fmt.Sprintf("%s, %s", c.LastName, c.FirstName), " ,")
+		if name != "" {
+			persons = append(persons, Person{
+				Name: name,
+				Role: c.CreatorType,
+			})
+		}
 	}
 	return persons
 }

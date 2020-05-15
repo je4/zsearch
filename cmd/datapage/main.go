@@ -12,6 +12,38 @@ import (
 	"time"
 )
 
+/*
+Mehrere PDFs
+http://localhost:82/public/zotero-2206003.8JA5VIU9
+
+
+Mehrere Videos
+
+Viele Unterschiedliche Medien
+
+Sehr viele Bilder
+http://localhost:82/public/zotero-2206003.J6NR8ADD
+http://localhost:82/public/zotero-2206003.BKPE95CU
+http://localhost:82/public/zotero-2206003.PAASB4HF
+http://localhost:82/public/zotero-2206003.CVCVRS7J
+http://localhost:82/public/zotero-2206003.QWM6R7TT
+http://localhost:82/public/zotero-2206003.SSEV6K83
+
+
+Gedrehte Bilder
+http://localhost:82/public/zotero-2206003.NJHHX5MB
+
+
+Fehlerhafte Darstellung
+http://localhost:82/public/zotero-2206003.5JH9WCM9
+http://localhost:82/public/zotero-2206003.FG8UDJZG
+
+
+Mehrere Audio
+http://localhost:82/public/zotero-2180340.TPS2WVNX
+
+ */
+
 func main() {
 
 	cfgfile := flag.String("cfg", "./search.toml", "location of config file")

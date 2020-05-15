@@ -13,6 +13,7 @@ import (
 	"net"
 	"net/http"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -77,8 +78,13 @@ func (s *Server) Init(detailTemplate []string, errorTemplate string) (err error)
 	mediaMatch := regexp.MustCompile(`^mediaserver:([^/]+)/([^/]+)$`)
 	s.detailTemplate, err = template.New("details.amp.gohtml").
 	Funcs(template.FuncMap{
+		"add": func(value, increment int) int {
+			return value+increment
+		},
 		"medialink": func(uri, action, param string) string {
 			matches := mediaMatch.FindStringSubmatch(uri)
+			params := strings.Split(param, "/")
+			sort.Strings(params)
 			// if not matching, just return the uri
 			if matches == nil {
 				return uri
@@ -87,7 +93,7 @@ func (s *Server) Init(detailTemplate []string, errorTemplate string) (err error)
 			signature := matches[2]
 			jwt, err := NewJWT(
 				s.mediaserverkey,
-				fmt.Sprintf("mediaserver:%s/%s/%s/%s", collection, signature, action, param),
+				strings.TrimRight(fmt.Sprintf("mediaserver:%s/%s/%s/%s", collection, signature, action, strings.Join(params, "/")), "/"),
 				"HS256",
 				3600,
 				"mediaserver",

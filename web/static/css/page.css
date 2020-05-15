@@ -2925,7 +2925,7 @@ body {
   line-height: normal;
   letter-spacing: normal;
   font-family: Open Sans Condensed,sans-serif;
-  text-transform: uppercase;
+/*  text-transform: uppercase;*/
   font-weight: 700;
   color: #000
 }
@@ -3265,7 +3265,7 @@ amp-selector [option][selected] {
 }
 
 .ampstart-navbar-trigger:focus {
-  outline: 5px auto -webkit-focus-ring-color
+  outline: 0
 }
 
 @media (min-width:52.06rem) {

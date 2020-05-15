@@ -32,7 +32,7 @@ func (mts *MTSolr) LoadEntity(id string) (*Document, error) {
 	query.Q(fmt.Sprintf("id:%s", escapeSolrString(id)))
 	s := mts.si.Search(query)
 	r, _ := s.Result(nil)
-	if r.Results.NumFound == 0 {
+	if r == nil || r.Results.NumFound == 0 {
 		return nil, errors.New(fmt.Sprintf("id %s not found", id))
 	}
 	if r.Results.NumFound > 1 {
