@@ -15,28 +15,45 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 )
 
+type Status struct {
+	Doc       *mtsolr.Document
+	User      *User
+	MetaOK    bool
+	ContentOK bool
+	Self      string
+	LoggedIn  bool
+}
+
 type Server struct {
-	mts            *mtsolr.MTSolr
-	srv            *http.Server
-	host           string
-	port           string
-	staticDir      string
-	publicPrefix   string
-	privatePrefix  string
-	staticPrefix   string
-	detailTemplate *template.Template
-	errorTemplate  *template.Template
-	mediaserver    string
-	mediaserverkey string
-	log            *logging.Logger
-	accesslog      io.Writer
+	mts               *mtsolr.MTSolr
+	srv               *http.Server
+	host              string
+	port              string
+	staticDir         string
+	publicPrefix      string
+	privatePrefix     string
+	staticPrefix      string
+	jwtKey            string
+	jwtAlg            []string
+	loginUrl          string
+	loginIssuer       string
+	detailTemplate    *template.Template
+	errorTemplate     *template.Template
+	forbiddenTemplate *template.Template
+	mediaserver       string
+	mediaserverkey    string
+	log               *logging.Logger
+	accesslog         io.Writer
+	userCache         *UserCache
 }
 
 func NewServer(mts *mtsolr.MTSolr,
-	detailTemplate []string,
+	detailTemplate,
 	errorTemplate,
+	forbiddenTemplate []string,
 	addr,
 	mediaserver,
 	mediaserverkey string,
@@ -44,6 +61,10 @@ func NewServer(mts *mtsolr.MTSolr,
 	accesslog io.Writer,
 	staticPrefix,
 	staticDir,
+	jwtKey string,
+	jwtAlg []string,
+	loginUrl,
+	loginIssuer string,
 	privatePrefix,
 	publicPrefix string) (*Server, error) {
 	staticPrefix = "/" + strings.Trim(staticPrefix, "/") + "/"
@@ -65,54 +86,64 @@ func NewServer(mts *mtsolr.MTSolr,
 		accesslog:      accesslog,
 		staticPrefix:   staticPrefix,
 		staticDir:      staticDir,
+		jwtKey:         jwtKey,
+		jwtAlg:         jwtAlg,
+		loginUrl:       loginUrl,
+		loginIssuer:    loginIssuer,
 		privatePrefix:  privatePrefix,
 		publicPrefix:   publicPrefix,
+		userCache:      NewUserCache(),
 	}
-	if err := srv.Init(detailTemplate, errorTemplate); err != nil {
+	if err := srv.Init(detailTemplate, errorTemplate, forbiddenTemplate); err != nil {
 		return nil, emperror.Wrapf(err, "cannot initialize server")
 	}
 	return srv, nil
 }
 
-func (s *Server) Init(detailTemplate []string, errorTemplate string) (err error) {
+func (s *Server) Init(detailTemplate, errorTemplate, forbiddenTemplate []string) (err error) {
 	mediaMatch := regexp.MustCompile(`^mediaserver:([^/]+)/([^/]+)$`)
 	s.detailTemplate, err = template.New("details.amp.gohtml").
-	Funcs(template.FuncMap{
-		"add": func(value, increment int) int {
-			return value+increment
-		},
-		"medialink": func(uri, action, param string) string {
-			matches := mediaMatch.FindStringSubmatch(uri)
-			params := strings.Split(param, "/")
-			sort.Strings(params)
-			// if not matching, just return the uri
-			if matches == nil {
-				return uri
-			}
-			collection := matches[1]
-			signature := matches[2]
-			jwt, err := NewJWT(
-				s.mediaserverkey,
-				strings.TrimRight(fmt.Sprintf("mediaserver:%s/%s/%s/%s", collection, signature, action, strings.Join(params, "/")), "/"),
-				"HS256",
-				3600,
-				"mediaserver",
-				"mediathek")
-			if err != nil {
-				return fmt.Sprintf("ERROR: %v", err)
-			}
-			url := fmt.Sprintf("%s/%s/%s/%s/%s?token=%s", s.mediaserver, collection, signature, action, param, jwt)
-			return url
-		},
-	}).ParseFiles(detailTemplate...)
-		//ParseFiles(detailTemplate)
-	 	//s.detailTemplate, err = template.ParseFiles(detailTemplate)
+		Funcs(template.FuncMap{
+			// incrementing a value
+			"add": func(value, increment int) int {
+				return value + increment
+			},
+			"medialink": func(uri, action, param string) string {
+				matches := mediaMatch.FindStringSubmatch(uri)
+				params := strings.Split(param, "/")
+				sort.Strings(params)
+				// if not matching, just return the uri
+				if matches == nil {
+					return uri
+				}
+				collection := matches[1]
+				signature := matches[2]
+				jwt, err := NewJWT(
+					s.mediaserverkey,
+					strings.TrimRight(fmt.Sprintf("mediaserver:%s/%s/%s/%s", collection, signature, action, strings.Join(params, "/")), "/"),
+					"HS256",
+					3600,
+					"mediaserver",
+					"mediathek")
+				if err != nil {
+					return fmt.Sprintf("ERROR: %v", err)
+				}
+				url := fmt.Sprintf("%s/%s/%s/%s/%s?token=%s", s.mediaserver, collection, signature, action, param, jwt)
+				return url
+			},
+		}).ParseFiles(detailTemplate...)
+	//ParseFiles(detailTemplate)
+	//s.detailTemplate, err = template.ParseFiles(detailTemplate)
 	if err != nil {
-		return emperror.Wrapf(err, "cannot parse detail template %s", detailTemplate)
+		return emperror.Wrapf(err, "cannot parse detail template %v", detailTemplate)
 	}
-	s.errorTemplate, err = template.ParseFiles(errorTemplate)
+	s.errorTemplate, err = template.New("error.gohtml").ParseFiles(errorTemplate...)
 	if err != nil {
-		return emperror.Wrapf(err, "cannot parse error template %s", errorTemplate)
+		return emperror.Wrapf(err, "cannot parse error template %v", errorTemplate)
+	}
+	s.forbiddenTemplate, err = template.New("forbidden.amp.gohtml").ParseFiles(forbiddenTemplate...)
+	if err != nil {
+		return emperror.Wrapf(err, "cannot parse forbidden template %v", forbiddenTemplate)
 	}
 	return nil
 }
@@ -154,15 +185,122 @@ func (s *Server) mainHandler(w http.ResponseWriter, req *http.Request) {
 		s.DoPanicf(w, http.StatusBadRequest, "no signature in url: %s", req.URL.Path)
 		return
 	}
-	doc, err := s.mts.LoadEntity(signature)
+
+	status := Status{
+		Doc:       nil,
+		User:      nil,
+		ContentOK: false,
+		MetaOK:    false,
+		Self:      req.RequestURI,
+		LoggedIn:  false,
+	}
+	var err error
+	status.Doc, err = s.mts.LoadEntity(signature)
 	if err != nil {
 		s.DoPanicf(w, http.StatusNotFound, "error loading signature %s: %v", signature, err)
 		return
 	}
 
-	err = s.detailTemplate.Execute(w, doc)
+	jwt, ok := req.URL.Query()["token"]
+	if ok {
+		// jwt in parameter?
+		if len(jwt) == 0 {
+			s.DoPanicf(w, http.StatusForbidden, "invalid token %v", jwt)
+			return
+		}
+		tokenstring := jwt[0]
+
+		// jwt valid?
+		claims, err := CheckJWTValid(tokenstring, s.jwtKey, s.jwtAlg)
+		if err != nil {
+			s.DoPanicf(w, http.StatusForbidden, "invalid token %v", err)
+			return
+		}
+
+		// check whether token is from login service
+		issuer, ok := claims["iss"]
+		if !ok {
+			s.DoPanicf(w, http.StatusForbidden, "no iss in key %v", tokenstring)
+			return
+		}
+		issuerstr, ok := issuer.(string)
+		if !ok {
+			s.DoPanicf(w, http.StatusForbidden, "iss not a string in key %v", tokenstring)
+			return
+		}
+
+		if issuerstr == s.loginIssuer {
+			u, err := GetClaimUser(claims)
+			if err != nil {
+				s.DoPanicf(w, http.StatusForbidden, "cannot extract userdata from key %v", tokenstring)
+				return
+			}
+			status.User = u
+			status.LoggedIn = true
+		} else {
+			// sub given?
+			sub, err := GetClaim(claims, "sub")
+			if err != nil {
+				s.DoPanicf(w, http.StatusForbidden, "no sub in key %v: %v", tokenstring, err)
+				return
+			}
+			// sub correct?
+			if strings.ToLower(sub) != strings.ToLower(signature) {
+				s.DoPanicf(w, http.StatusForbidden, "invalid sub %s (should be %s) in key %v", sub, signature, tokenstring)
+				return
+			}
+			// user given?
+			user, err := GetClaim(claims, "user")
+			if err != nil {
+				s.DoPanicf(w, http.StatusForbidden, "no user in key %v: %v", tokenstring, err)
+				return
+			}
+			// user is string?
+
+			status.User, err = s.userCache.GetUser(user)
+			if err != nil {
+				s.DoPanicf(w, http.StatusForbidden, "user not a string in key %v", tokenstring)
+				return
+			}
+			status.LoggedIn = true
+		}
+	} else {
+		status.User = &User{
+			Id:        "0",
+			Groups:    []string{"global/guest"},
+			Email:     "",
+			FirstName: "",
+			LastName:  "Guest",
+			HomeOrg:   "",
+			Exp:       time.Now().Add(time.Hour * 24),
+		}
+	}
+	for acl, groups := range status.Doc.ACL {
+		for _, group := range groups {
+			for _, ugroup := range status.User.Groups {
+				if group == ugroup {
+					switch acl {
+					case "meta":
+						status.MetaOK = true
+					case "content":
+						status.ContentOK = true
+					}
+				}
+			}
+		}
+	}
+
+	if !status.MetaOK {
+		w.WriteHeader(http.StatusForbidden)
+		// if there's no error Template, there's no help...
+		err = s.forbiddenTemplate.Execute(w, status)
+		return
+	}
+
+	err = s.detailTemplate.Execute(w, status)
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot parse template: %+v", err)
+		return
 	}
 	//	w.Write([]byte(fmt.Sprintf("%s/%s", access, signature)))
 }

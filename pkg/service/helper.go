@@ -1,15 +1,15 @@
 package service
 
 import (
-"errors"
-"fmt"
-"github.com/dgrijalva/jwt-go"
-"github.com/goph/emperror"
-"github.com/op/go-logging"
-"net/http"
-"os"
-"strings"
-"time"
+	"errors"
+	"fmt"
+	"github.com/dgrijalva/jwt-go"
+	"github.com/goph/emperror"
+	"github.com/op/go-logging"
+	"net/http"
+	"os"
+	"strings"
+	"time"
 )
 
 var _logformat = logging.MustStringFormatter(
@@ -24,6 +24,52 @@ func FileExists(filename string) bool {
 		return false
 	}
 	return !info.IsDir()
+}
+
+func GetClaim(claim map[string]interface{}, name string) (string, error) {
+	val, ok := claim[name]
+	if !ok {
+		return "", fmt.Errorf("no claim %s found", name)
+	}
+	valstr, ok := val.(string)
+	if !ok {
+		return "", fmt.Errorf("claim %s not a string", name)
+	}
+	return valstr, nil
+}
+
+func GetClaimUser( claims map[string]interface{}) (*User, error) {
+	id, err := GetClaim(claims, "userId")
+	if err != nil {
+		return nil, emperror.Wrapf(err, "no userid in key")
+	}
+	groupstr, err := GetClaim(claims, "groups")
+	if err != nil {
+		groupstr = "global/guest"
+	}
+	groups := strings.Split(groupstr, ";")
+	firstName, _ := GetClaim(claims, "firstName")
+	lastName, _ := GetClaim(claims, "lastName")
+	homeOrg, _ := GetClaim(claims, "homeOrg")
+	email, _ := GetClaim(claims, "email")
+	expval, ok := claims["exp"]
+	if !ok {
+		return nil, emperror.Wrapf(err, "no exp in key")
+	}
+	exp, ok := expval.(int)
+	if !ok {
+		return nil, emperror.Wrapf(err, "exp not an integer")
+	}
+	u := &User{
+		Id:        id,
+		Groups:    groups,
+		Email:     email,
+		FirstName: firstName,
+		LastName:  lastName,
+		HomeOrg:   homeOrg,
+		Exp:       time.Unix(int64(exp), 0),
+	}
+	return u, nil
 }
 
 func CheckRequestJWT(req *http.Request, secret string, alg []string, subject string) error {
@@ -55,8 +101,7 @@ func CheckRequestJWT(req *http.Request, secret string, alg []string, subject str
 	return nil
 }
 
-func CheckJWT(tokenstring string, secret string, alg []string, subject string) error {
-	subject = strings.TrimRight(strings.ToLower(subject), "/")
+func CheckJWTValid(tokenstring string, secret string, alg []string) (map[string]interface{}, error) {
 	token, err := jwt.Parse(tokenstring, func(token *jwt.Token) (interface{}, error) {
 		talg := token.Method.Alg()
 		algOK := false
@@ -73,20 +118,35 @@ func CheckJWT(tokenstring string, secret string, alg []string, subject string) e
 		return []byte(secret), nil
 	})
 	if err != nil {
-		return fmt.Errorf("Invalid token %s: %s", tokenstring, err.Error())
+		return map[string]interface{}{}, fmt.Errorf("Invalid token %s: %v", tokenstring, err)
 	}
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		if !ok {
-			return fmt.Errorf("Cannot get claims from token [sub:%s]", subject)
+			return map[string]interface{}{}, fmt.Errorf("Cannot get claims from token %s", tokenstring)
 		}
-		if strings.ToLower(claims["sub"].(string)) == subject {
-			return nil
-		} else {
-			return fmt.Errorf("Invalid subject [%s]. Should be [%s]", claims["sub"].(string), subject)
-		}
-	} else {
-		return fmt.Errorf("Token not valid[sub:%s]", subject)
+		return claims, nil
 	}
+	return map[string]interface{}{}, fmt.Errorf("Token %s not valid", tokenstring)
+}
+
+func CheckJWT(tokenstring string, secret string, alg []string, subject string) error {
+	subject = strings.TrimRight(strings.ToLower(subject), "/")
+	claims, err := CheckJWTValid(tokenstring, secret, alg)
+	if err != nil {
+		return emperror.Wrap(err, "invalid token")
+	}
+	sub, ok := claims["sub"]
+	if !ok {
+		return fmt.Errorf("no sub claim in %s", tokenstring)
+	}
+	substr, ok := sub.(string)
+	if !ok {
+		return fmt.Errorf("sub claim %v not a string in %s", sub, tokenstring)
+	}
+	if strings.ToLower(substr) != subject {
+		return fmt.Errorf("Invalid subject [%s]. Should be [%s] in %s", substr, subject, tokenstring)
+	}
+	return nil
 }
 
 func CreateLogger(module string, logfile string, loglevel string) (log *logging.Logger, lf *os.File) {
@@ -166,4 +226,3 @@ func SingleJoiningSlash(a, b string) string {
 	}
 	return a + b
 }
-

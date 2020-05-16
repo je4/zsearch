@@ -14,7 +14,8 @@ type Template struct {
 	Mediaserver    string   `toml:"mediaserver"`
 	MediaserverKey string   `toml:"mediaserverkey"`
 	Detail         []string `toml:"detail"`
-	Error          string   `toml:"error"`
+	Error          []string `toml:"error"`
+	Forbidden      []string `toml:"forbidden"`
 }
 
 type Solr struct {
@@ -33,6 +34,10 @@ type Config struct {
 	StaticPrefix  string   `toml:"staticprefix"`
 	PublicPrefix  string   `toml:"publicprefix"`
 	PrivatePrefix string   `toml:"privateprefix"`
+	JWTKey        string   `toml:"jwtkey"`
+	JWTAlg        []string `toml:"jwtalg"`
+	LoginUrl      string   `toml:"loginurl"`
+	LoginIssuer   string   `toml:"loginissuer"`
 	Google        Google   `toml:"google"`
 	Template      Template `toml:"template"`
 	Solr          Solr     `toml:"solr"`

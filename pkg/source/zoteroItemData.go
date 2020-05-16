@@ -186,6 +186,18 @@ type ItemMediaMeta struct {
 	Image    interface{} `json:image,omitempty`
 }
 
+func (imm *ItemMediaMeta) UnmarshalJSON(data []byte) error {
+	type ItemMediaMeta2 ItemMediaMeta
+	i := ItemMediaMeta2{}
+	if err := json.Unmarshal(data, &i); err != nil {
+		return nil
+	}
+	*imm = ItemMediaMeta(i)
+
+	return nil
+}
+
+
 type ItemGeneric struct {
 	ItemDataBase
 	NumPages             string  `json:"numPages,omitempty"`             // # of Pages

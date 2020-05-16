@@ -76,6 +76,7 @@ func main() {
 		mts,
 		config.Template.Detail,
 		config.Template.Error,
+		config.Template.Forbidden,
 		config.Addr,
 		config.Template.Mediaserver,
 		config.Template.MediaserverKey,
@@ -83,6 +84,10 @@ func main() {
 		accesslog,
 		config.StaticPrefix,
 		config.StaticDir,
+		config.JWTKey,
+		config.JWTAlg,
+		config.LoginUrl,
+		config.LoginIssuer,
 		config.PrivatePrefix,
 		config.PublicPrefix,
 	)
