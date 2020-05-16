@@ -104,7 +104,7 @@
         <div class="mr2">
         </div>
         {{if not .LoggedIn}}
-        <a href="cart.amp.html" class="text-decoration-none mr2 ampstart-headerbar-fixed-link ">
+        <a href="{{.LoginUrl}}?callback={{print .Self "?token=_JWT_"}}" class="text-decoration-none mr2 ampstart-headerbar-fixed-link ">
 
             <div class="ampstart-headerbar-icon-wrapper relative">
                 <svg

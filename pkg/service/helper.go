@@ -56,9 +56,9 @@ func GetClaimUser( claims map[string]interface{}) (*User, error) {
 	if !ok {
 		return nil, emperror.Wrapf(err, "no exp in key")
 	}
-	exp, ok := expval.(int)
+	exp, ok := expval.(float64)
 	if !ok {
-		return nil, emperror.Wrapf(err, "exp not an integer")
+		return nil, emperror.Wrapf(err, "exp not an ")
 	}
 	u := &User{
 		Id:        id,

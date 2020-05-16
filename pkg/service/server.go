@@ -25,6 +25,7 @@ type Status struct {
 	ContentOK bool
 	Self      string
 	LoggedIn  bool
+	LoginUrl   string
 }
 
 type Server struct {
@@ -186,13 +187,20 @@ func (s *Server) mainHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	var proto string
+	if req.TLS != nil {
+		proto = "https"
+	} else {
+		proto = "http"
+	}
 	status := Status{
 		Doc:       nil,
 		User:      nil,
 		ContentOK: false,
 		MetaOK:    false,
-		Self:      req.RequestURI,
+		Self:      fmt.Sprintf("%s://%s/%s", proto, req.Host, req.URL.String()),
 		LoggedIn:  false,
+		LoginUrl:  s.loginUrl,
 	}
 	var err error
 	status.Doc, err = s.mts.LoadEntity(signature)
