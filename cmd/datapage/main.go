@@ -72,8 +72,14 @@ func main() {
 		log.Panic(err)
 	}
 
+	uc, err := service.NewUserCache(config.IdleTimeout.Duration, 20)
+	if err != nil {
+		log.Panic(err)
+	}
+
 	srv, err := service.NewServer(
 		mts,
+		uc,
 		config.Template.Detail,
 		config.Template.Error,
 		config.Template.Forbidden,
@@ -88,6 +94,8 @@ func main() {
 		config.JWTAlg,
 		config.LoginUrl,
 		config.LoginIssuer,
+		config.AccessGroup.Guest,
+		config.AccessGroup.Admin,
 		config.PrivatePrefix,
 		config.PublicPrefix,
 	)

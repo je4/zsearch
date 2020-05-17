@@ -15,12 +15,13 @@ limitations under the License.
 -->
 
 <!doctype html>
-<html ⚡="" lang="en">
+<html {{if and .MetaPublic .ContentPublic}}⚡="" {{end}}lang="en">
 
 <head>
     <meta charset="utf-8">
     <title>Mediathek - {{.Doc.Source.Title}}</title>
-    <link rel="canonical" href="{{.Self}}">
+    {{if and .MetaPublic .ContentPublic}}<link rel="canonical" href="{{.Self}}">{{end}}
+    {{if not .MetaPublic}}<meta name="robots" content="noindex">{{end}}
     <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
     <meta name="amp-google-client-id-api" content="googleanalytics">
 
@@ -66,6 +67,16 @@ limitations under the License.
         .nobreak {
             white-space: nowrap;
         }
+
+        .box-center {
+            margin: 0;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            -ms-transform: translate(-50%, -50%);
+            transform: translate(-50%, -50%);
+        }
+
 
         .ampstart-btn-seemore {
             background-color: #fff;

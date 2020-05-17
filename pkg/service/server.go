@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/goph/emperror"
 	"github.com/gorilla/handlers"
@@ -15,22 +16,23 @@ import (
 	"regexp"
 	"sort"
 	"strings"
-	"time"
 )
 
 type Status struct {
-	Doc       *mtsolr.Document
-	User      *User
-	MetaOK    bool
-	ContentOK bool
-	Self      string
-	LoggedIn  bool
-	LoginUrl   string
+	Doc           *mtsolr.Document
+	User          *User
+	MetaPublic    bool
+	ContentPublic bool
+	MetaOK        bool
+	ContentOK     bool
+	Self          string
+	LoginUrl      string
 }
 
 type Server struct {
 	mts               *mtsolr.MTSolr
 	srv               *http.Server
+	userCache         *UserCache
 	host              string
 	port              string
 	staticDir         string
@@ -41,6 +43,8 @@ type Server struct {
 	jwtAlg            []string
 	loginUrl          string
 	loginIssuer       string
+	guestGroup        string
+	adminGroup        string
 	detailTemplate    *template.Template
 	errorTemplate     *template.Template
 	forbiddenTemplate *template.Template
@@ -48,10 +52,11 @@ type Server struct {
 	mediaserverkey    string
 	log               *logging.Logger
 	accesslog         io.Writer
-	userCache         *UserCache
 }
 
-func NewServer(mts *mtsolr.MTSolr,
+func NewServer(
+	mts *mtsolr.MTSolr,
+	uc *UserCache,
 	detailTemplate,
 	errorTemplate,
 	forbiddenTemplate []string,
@@ -66,6 +71,8 @@ func NewServer(mts *mtsolr.MTSolr,
 	jwtAlg []string,
 	loginUrl,
 	loginIssuer string,
+	guestGroup string,
+	adminGroup string,
 	privatePrefix,
 	publicPrefix string) (*Server, error) {
 	staticPrefix = "/" + strings.Trim(staticPrefix, "/") + "/"
@@ -79,6 +86,7 @@ func NewServer(mts *mtsolr.MTSolr,
 
 	srv := &Server{
 		mts:            mts,
+		userCache:      uc,
 		host:           host,
 		port:           port,
 		mediaserver:    mediaserver,
@@ -91,9 +99,10 @@ func NewServer(mts *mtsolr.MTSolr,
 		jwtAlg:         jwtAlg,
 		loginUrl:       loginUrl,
 		loginIssuer:    loginIssuer,
+		guestGroup:     guestGroup,
+		adminGroup:     adminGroup,
 		privatePrefix:  privatePrefix,
 		publicPrefix:   publicPrefix,
-		userCache:      NewUserCache(),
 	}
 	if err := srv.Init(detailTemplate, errorTemplate, forbiddenTemplate); err != nil {
 		return nil, emperror.Wrapf(err, "cannot initialize server")
@@ -109,7 +118,14 @@ func (s *Server) Init(detailTemplate, errorTemplate, forbiddenTemplate []string)
 			"add": func(value, increment int) int {
 				return value + increment
 			},
-			"medialink": func(uri, action, param string) string {
+			"mediachild": func(uri, child string) string {
+				matches := mediaMatch.FindStringSubmatch(uri)
+				if matches == nil {
+					return uri
+				}
+				return uri + child
+			},
+			"medialink": func(uri, action, param string, token bool) string {
 				matches := mediaMatch.FindStringSubmatch(uri)
 				params := strings.Split(param, "/")
 				sort.Strings(params)
@@ -119,17 +135,20 @@ func (s *Server) Init(detailTemplate, errorTemplate, forbiddenTemplate []string)
 				}
 				collection := matches[1]
 				signature := matches[2]
-				jwt, err := NewJWT(
-					s.mediaserverkey,
-					strings.TrimRight(fmt.Sprintf("mediaserver:%s/%s/%s/%s", collection, signature, action, strings.Join(params, "/")), "/"),
-					"HS256",
-					3600,
-					"mediaserver",
-					"mediathek")
-				if err != nil {
-					return fmt.Sprintf("ERROR: %v", err)
+				url := fmt.Sprintf("%s/%s/%s/%s/%s", s.mediaserver, collection, signature, action, param)
+				if token {
+					jwt, err := NewJWT(
+						s.mediaserverkey,
+						strings.TrimRight(fmt.Sprintf("mediaserver:%s/%s/%s/%s", collection, signature, action, strings.Join(params, "/")), "/"),
+						"HS256",
+						3600,
+						"mediaserver",
+						"mediathek")
+					if err != nil {
+						return fmt.Sprintf("ERROR: %v", err)
+					}
+					url = fmt.Sprintf("%s?token=%s", url, jwt )
 				}
-				url := fmt.Sprintf("%s/%s/%s/%s/%s?token=%s", s.mediaserver, collection, signature, action, param, jwt)
 				return url
 			},
 		}).ParseFiles(detailTemplate...)
@@ -173,6 +192,105 @@ func (s *Server) DoPanic(writer http.ResponseWriter, status int, message string)
 	return
 }
 
+func (s *Server) userFromToken(tokenstring, signature string) (*User, error) {
+
+	// jwt valid?
+	claims, err := CheckJWTValid(tokenstring, s.jwtKey, s.jwtAlg)
+	if err != nil {
+		return nil, emperror.Wrapf(err, "invalid token %v", tokenstring)
+	}
+
+	// check whether token is from login service
+	issuer, ok := claims["iss"]
+	if !ok {
+		return nil, emperror.Wrapf(err, "no iss in token %v", tokenstring)
+	}
+	issuerstr, ok := issuer.(string)
+	if !ok {
+		return nil, emperror.Wrapf(err, "iss not a string in token %v", tokenstring)
+	}
+
+	// token from login
+	var user *User
+	if issuerstr == s.loginIssuer {
+		user, err = GetClaimUser(claims)
+		if err != nil {
+			return nil, emperror.Wrapf(err, "cannot extract userdata from token %v", tokenstring)
+		}
+		user.LoggedIn = true
+		user.LoggedOut = false
+	} else {
+		// sub given?
+		sub, err := GetClaim(claims, "sub")
+		if err != nil {
+			return nil, emperror.Wrapf(err, "no sub in token %v", tokenstring)
+		}
+		// sub correct?
+		if strings.ToLower(sub) != strings.ToLower(signature) {
+			return nil, emperror.Wrapf(err, "invalid sub %s (should be %s) in token %v", sub, signature, tokenstring)
+		}
+		// user given?
+		userstr, err := GetClaim(claims, "user")
+		if err != nil {
+			return nil, emperror.Wrapf(err, "no user in token %v", tokenstring)
+		}
+		// user is string?
+
+		user, err = s.userCache.GetUser(userstr)
+		// user not found --> log out and become a guest
+		if err != nil {
+			user = NewGuestUser()
+			user.LoggedOut = true
+			user.LoggedIn = false
+		} else {
+			user.LoggedOut = false
+			user.LoggedIn = true
+		}
+	}
+	return user, nil
+}
+
+func (s *Server) userHandler(w http.ResponseWriter, req *http.Request) {
+	// remove prefix and use whole rest of url as signature
+	vars := mux.Vars(req)
+	_, ok := vars["access"]
+	if !ok {
+		s.DoPanicf(w, http.StatusBadRequest, "no accesstype in url: %s", req.URL.Path)
+		return
+	}
+	signature, ok := vars["signature"]
+	if !ok {
+		s.DoPanicf(w, http.StatusBadRequest, "no signature in url: %s", req.URL.Path)
+		return
+	}
+
+	var user *User
+	var err error
+	jwt, ok := req.URL.Query()["token"]
+	if ok {
+		// jwt in parameter?
+		if len(jwt) == 0 {
+			s.DoPanicf(w, http.StatusForbidden, "invalid token %v", jwt)
+			return
+		}
+		tokenstring := jwt[0]
+		user, err = s.userFromToken(tokenstring, signature)
+		if err != nil {
+			s.DoPanicf(w, http.StatusForbidden, "%v", err)
+			return
+		}
+	}
+
+
+	js, err := json.Marshal(user)
+	if err != nil {
+		s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal user: %v", user)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(js)
+}
+
 func (s *Server) mainHandler(w http.ResponseWriter, req *http.Request) {
 	// remove prefix and use whole rest of url as signature
 	vars := mux.Vars(req)
@@ -198,8 +316,7 @@ func (s *Server) mainHandler(w http.ResponseWriter, req *http.Request) {
 		User:      nil,
 		ContentOK: false,
 		MetaOK:    false,
-		Self:      fmt.Sprintf("%s://%s/%s", proto, req.Host, req.URL.String()),
-		LoggedIn:  false,
+		Self:      fmt.Sprintf("%s://%s/%s", proto, req.Host, strings.TrimLeft(req.URL.Path, "/")),
 		LoginUrl:  s.loginUrl,
 	}
 	var err error
@@ -217,71 +334,14 @@ func (s *Server) mainHandler(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		tokenstring := jwt[0]
-
-		// jwt valid?
-		claims, err := CheckJWTValid(tokenstring, s.jwtKey, s.jwtAlg)
+		user, err := s.userFromToken(tokenstring, signature)
 		if err != nil {
-			s.DoPanicf(w, http.StatusForbidden, "invalid token %v", err)
+			s.DoPanicf(w, http.StatusForbidden, "%v", err)
 			return
 		}
-
-		// check whether token is from login service
-		issuer, ok := claims["iss"]
-		if !ok {
-			s.DoPanicf(w, http.StatusForbidden, "no iss in key %v", tokenstring)
-			return
-		}
-		issuerstr, ok := issuer.(string)
-		if !ok {
-			s.DoPanicf(w, http.StatusForbidden, "iss not a string in key %v", tokenstring)
-			return
-		}
-
-		if issuerstr == s.loginIssuer {
-			u, err := GetClaimUser(claims)
-			if err != nil {
-				s.DoPanicf(w, http.StatusForbidden, "cannot extract userdata from key %v", tokenstring)
-				return
-			}
-			status.User = u
-			status.LoggedIn = true
-		} else {
-			// sub given?
-			sub, err := GetClaim(claims, "sub")
-			if err != nil {
-				s.DoPanicf(w, http.StatusForbidden, "no sub in key %v: %v", tokenstring, err)
-				return
-			}
-			// sub correct?
-			if strings.ToLower(sub) != strings.ToLower(signature) {
-				s.DoPanicf(w, http.StatusForbidden, "invalid sub %s (should be %s) in key %v", sub, signature, tokenstring)
-				return
-			}
-			// user given?
-			user, err := GetClaim(claims, "user")
-			if err != nil {
-				s.DoPanicf(w, http.StatusForbidden, "no user in key %v: %v", tokenstring, err)
-				return
-			}
-			// user is string?
-
-			status.User, err = s.userCache.GetUser(user)
-			if err != nil {
-				s.DoPanicf(w, http.StatusForbidden, "user not a string in key %v", tokenstring)
-				return
-			}
-			status.LoggedIn = true
-		}
+		status.User = user
 	} else {
-		status.User = &User{
-			Id:        "0",
-			Groups:    []string{"global/guest"},
-			Email:     "",
-			FirstName: "",
-			LastName:  "Guest",
-			HomeOrg:   "",
-			Exp:       time.Now().Add(time.Hour * 24),
-		}
+		status.User = NewGuestUser()
 	}
 	for acl, groups := range status.Doc.ACL {
 		for _, group := range groups {
@@ -295,6 +355,21 @@ func (s *Server) mainHandler(w http.ResponseWriter, req *http.Request) {
 					}
 				}
 			}
+			if group == s.guestGroup {
+				switch acl {
+				case "meta":
+					status.MetaPublic = true
+				case "content":
+					status.ContentPublic = true
+				}
+			}
+		}
+	}
+
+	for _, ugroup := range status.User.Groups {
+		if s.adminGroup == ugroup {
+			status.MetaOK = true
+			status.ContentOK = true
 		}
 	}
 
@@ -315,6 +390,21 @@ func (s *Server) mainHandler(w http.ResponseWriter, req *http.Request) {
 
 func (s *Server) ListenAndServe(cert, key string) error {
 	router := mux.NewRouter()
+
+	userRegexp := regexp.MustCompile(fmt.Sprintf("^/(%s|%s)/(.+)/user$",
+		strings.Trim(s.publicPrefix, "/"),
+		strings.Trim(s.privatePrefix, "/")))
+	router.
+		MatcherFunc(func(r *http.Request, rm *mux.RouteMatch) bool {
+			matches := userRegexp.FindSubmatch([]byte(r.URL.Path))
+			if len(matches) == 0 {
+				return false
+			}
+			rm.Vars = map[string]string{}
+			rm.Vars["access"] = string(matches[1])
+			rm.Vars["signature"] = string(matches[2])
+			return true
+		}).HandlerFunc(s.userHandler)
 
 	// https://data.mediathek.hgk.fhnw.ch/[access]/[signature]
 	mainRegexp := regexp.MustCompile(fmt.Sprintf("^/(%s|%s)/(.+)$",

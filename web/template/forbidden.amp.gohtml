@@ -116,7 +116,7 @@ limitations under the License.
             </div>
             <div class="col-12 self-start pb4">
                 <div class="h4 md-h4">
-                    User: {{.User.FirstName}} {{.User.LastName}}<br />
+                    User: {{.User.FirstName}} {{.User.LastName}} (#{{.User.Id}})<br />
                     Groups: {{range $key,$group := .User.Groups}}
                         {{if $key}}, {{end}}{{$group}}
                     {{end}}

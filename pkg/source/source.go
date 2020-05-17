@@ -50,6 +50,7 @@ type Source interface {
 	Init(data string) error
 	Name() string
 	GetTitle() string
+	GetCollectionTitle() string
 	GetNames() []Person
 	GetTags() []string
 	GetMedia() map[string]MediaList
@@ -58,11 +59,13 @@ type Source interface {
 }
 
 type SourceData struct {
-	Source   string               `json:"source"`
-	Title    string               `json:"title"`
-	Persons  []Person             `json:"persons"`
-	Tags     []string             `json:"tags"`
-	Media    map[string]MediaList `json:"media"`
-	Notes    []string             `json:"notes"`
-	Abstract string               `json:"abstract"`
+	Source          string               `json:"source"`
+	Title           string               `json:"title"`
+	CollectionTitle string               `json:"collectiontitle"`
+	Persons         []Person             `json:"persons"`
+	Tags            []string             `json:"tags"`
+	Media           map[string]MediaList `json:"media"`
+	Notes           []string             `json:"notes"`
+	Abstract        string               `json:"abstract"`
+	HasMedia        bool                 `json:"hasmedia"`
 }

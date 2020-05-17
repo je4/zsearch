@@ -1,5 +1,17 @@
 <!-- Media area -->
-
+{{if not .ContentOK}}
+    {{if .Doc.Source.HasMedia}}
+    <div class="ampstart-card" style="min-height: 300px;position:relative;">
+        <div class="box-center">
+            <h4 class="h3">insufficient rights for media display</h4>
+            {{if not .User.LoggedIn}}
+                <div><a class="ampstart-btn ampstart-btn-secondary caps" href="{{.LoginUrl}}?callback={{print .Self "?token=_JWT_"}}">Login</a></div>
+            {{end}}
+        </div>
+    </div>
+    {{end}}
+{{else}}
+    {{$contentPublic := .ContentPublic}}
 {{$len := 0}}
 {{$expanded := true}}
 <amp-accordion
@@ -15,19 +27,19 @@
                     {
                         "videos": [
                         {{range $key, $video := .Doc.Source.Media.video}}
-                        {{$web := printf "%s$$web" $video.Uri}}
-                        {{if $key}},{{end}}"{{medialink $web "master" ""}}"
+                        {{$web := mediachild $video.Uri "$$web"}}
+                        {{if $key}},{{end}}"{{medialink $web "master" "" (not $contentPublic)}}"
                         {{end}}
                         ],
                         "iframes": [
                         {{range $key, $video := .Doc.Source.Media.video}}
-                        {{if $key}},{{end}}"{{medialink $video.Uri "iframe" ""}}"
+                        {{if $key}},{{end}}"{{medialink $video.Uri "iframe" "" (not $contentPublic)}}"
                         {{end}}
                         ],
                         "posters": [
                         {{range $key, $video := .Doc.Source.Media.video}}
                             {{$poster := printf "%s$$timeshot$$3" $video.Uri}}
-                            {{if $key}},{{end}}"{{medialink $poster "master" ""}}"
+                            {{if $key}},{{end}}"{{medialink $poster "master" "" (not $contentPublic)}}"
                         {{end}}
                         ],
                         "selectedVideo": 0
@@ -35,12 +47,12 @@
                     </script>
                 </amp-state>
                 {{$video := index .Doc.Source.Media.video 0}}
-                {{$src := printf "%s$$web" $video.Uri}}
+                {{$src := mediachild $video.Uri "$$web"}}
                 {{$poster := printf "%s$$timeshot$$3" $video.Uri}}
                 <amp-video
-                        src="{{medialink $src "master" ""}}"
+                        src="{{medialink $src "master" "" (not $contentPublic)}}"
                         [src]="video.videos[video.selectedVideo]"
-                        poster="{{medialink $poster "master" ""}}"
+                        poster="{{medialink $poster "master" "" (not $contentPublic)}}"
                         [poster]="video.posters[video.selectedVideo]"
                         artwork=""
                         width="1280"
@@ -50,7 +62,7 @@
                         rotate-to-fullscreen>
                 </amp-video><br />
                 <a class="text-decoration-none"
-                        href="{{medialink $video.Uri "iframe" ""}}"
+                        href="{{medialink $video.Uri "iframe" "" (not $contentPublic)}}"
                         [href]="video.iframes[video.selectedVideo]"
                         target="_blank"
                 ><h3 class="h6">Open in new window</h3></a>
@@ -80,13 +92,13 @@
                     {
                         "audios": [
                         {{range $key, $audio := .Doc.Source.Media.audio}}
-                        {{if $key}},{{end}}"{{medialink $audio.Uri "master" ""}}"
+                        {{if $key}},{{end}}"{{medialink $audio.Uri "master" "" (not $contentPublic)}}"
                         {{end}}
                         ],
                         "posters": [
                         {{range $key, $audio := .Doc.Source.Media.audio}}
                         {{$poster := printf "%s$$poster" $audio.Uri}}
-                        {{if $key}},{{end}}"{{medialink $poster "resize" "size1280x150/stretch"}}"
+                        {{if $key}},{{end}}"{{medialink $poster "resize" "size1280x150/stretch" (not $contentPublic)}}"
                         {{end}}
                         ],
                         "selectedAudio": 0
@@ -97,13 +109,13 @@
                 {{$src := printf "%s$$web$$1" $audio.Uri}}
                 {{$poster := printf "%s$$poster" $audio.Uri}}
                 <amp-img async
-                         src="{{medialink $poster "resize" "size1280x150/stretch"}}"
+                         src="{{medialink $poster "resize" "size1280x150/stretch" (not $contentPublic)}}"
                          [src]="audio.posters[audio.selectedAudio]"
                          width="1280px"
                          height="150px">
                 </amp-img>
                 <amp-audio
-                        src="{{medialink $src "master" ""}}"
+                        src="{{medialink $src "master" "" (not $contentPublic)}}"
                         [src]="audio.audios[audio.selectedAudio]"
                         width="1280"
                         height="100"
@@ -137,7 +149,7 @@
                         width="250"
                         height="250"
                         layout="nodisplay"
-                        src="{{medialink $image.Uri "resize" "size250x250/crop"}}">
+                        src="{{medialink $image.Uri "resize" "size250x250/crop" (not $contentPublic)}}">
                 </amp-img>
                 {{end}}
                 <amp-carousel lightbox
@@ -174,7 +186,7 @@
                     {
                         "pdfs": [
                         {{range $key, $pdf := .Doc.Source.Media.pdf}}
-                            {{if $key}},{{end}}"{{medialink $pdf.Uri "master" ""}}"
+                            {{if $key}},{{end}}"{{medialink $pdf.Uri "master" "" (not $contentPublic)}}"
                         {{end}}
                         ],
                         "selectedPdf": 0
@@ -184,7 +196,7 @@
                 <div>
                     <amp-google-document-embed
                             {{$pdf := index .Doc.Source.Media.pdf 0}}
-                            src="{{medialink $pdf.Uri "master" ""}}"
+                            src="{{medialink $pdf.Uri "master" "" (not $contentPublic)}}"
                             [src]="pdf.pdfs[pdf.selectedPdf]"
                             width="1280"
                             height="1000"
@@ -294,6 +306,7 @@
     {{end}}
 
 </amp-selector>
+{{end}}
 <!-- END Media Type Selector -->
 
 

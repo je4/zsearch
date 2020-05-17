@@ -73,14 +73,16 @@ func (mts *MTSolr) LoadEntity(id string) (*Document, error) {
 		return nil, emperror.Wrapf(err, "cannot load source data")
 	}
 	sourceData := &source.SourceData{
-		Source:   content.Name(),
-		Title:    content.GetTitle(),
-		Persons:  content.GetNames(),
-		Tags:     content.GetTags(),
-		Media:    content.GetMedia(),
-		Notes:    content.GetNotes(),
-		Abstract: content.GetAbstract(),
+		Source:          content.Name(),
+		Title:           content.GetTitle(),
+		CollectionTitle: content.GetCollectionTitle(),
+		Persons:         content.GetNames(),
+		Tags:            content.GetTags(),
+		Media:           content.GetMedia(),
+		Notes:           content.GetNotes(),
+		Abstract:        content.GetAbstract(),
 	}
+	sourceData.HasMedia = len(sourceData.Media) > 0
 
 	acl := map[string][]string{}
 	acl["meta"] = []string{}

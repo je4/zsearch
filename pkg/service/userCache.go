@@ -16,14 +16,33 @@ type User struct {
 	LastName  string
 	HomeOrg   string
 	Exp       time.Time
+	LoggedIn  bool
+	LoggedOut bool
 }
 
 type UserCache struct {
 	cache gcache.Cache
 }
 
-func NewUserCache() *UserCache {
-	return &UserCache{cache: gcache.New(20).ARC().Build()}
+func NewGuestUser() *User {
+	return &User{
+		Id:        "0",
+		Groups:    []string{"global/guest"},
+		Email:     "",
+		FirstName: "",
+		LastName:  "Guest",
+		HomeOrg:   "",
+		Exp:       time.Now().Add(time.Hour * 24),
+		LoggedIn:  false,
+		LoggedOut: false,
+	}
+}
+
+func NewUserCache(idleTimeout time.Duration, initialSize int) (*UserCache, error) {
+	uc := &UserCache{
+		cache: gcache.New(initialSize).ARC().Expiration(idleTimeout).Build(),
+	}
+	return uc, nil
 }
 
 func (uc *UserCache) GetUser(id string) (*User, error) {

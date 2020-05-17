@@ -107,7 +107,12 @@ func (zot *Zotero) GetMedia() map[string]MediaList {
 		t := meta.Type
 		// empty type == no media
 		if t == "" {
-			continue
+			if strings.HasSuffix(child.Data.Url, ".mp4") {
+				t = "video"
+				meta.Mimetype = "video/mp4"
+			} else {
+				continue
+			}
 		}
 		// if type not in list create it
 		if _, ok := medias[t]; !ok {
