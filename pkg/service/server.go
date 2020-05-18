@@ -274,13 +274,17 @@ func (s *Server) userHandler(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		tokenstring := jwt[0]
-		user, err = s.userFromToken(tokenstring, signature)
-		if err != nil {
-			s.DoPanicf(w, http.StatusForbidden, "%v", err)
-			return
+		if tokenstring != "" {
+			user, err = s.userFromToken(tokenstring, signature)
+			if err != nil {
+				s.DoPanicf(w, http.StatusForbidden, "%v", err)
+				return
+			}
 		}
 	}
-
+	if user == nil {
+		user = NewGuestUser()
+	}
 
 	js, err := json.Marshal(user)
 	if err != nil {
@@ -334,13 +338,16 @@ func (s *Server) mainHandler(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		tokenstring := jwt[0]
-		user, err := s.userFromToken(tokenstring, signature)
-		if err != nil {
-			s.DoPanicf(w, http.StatusForbidden, "%v", err)
-			return
+		if tokenstring != "" {
+			user, err := s.userFromToken(tokenstring, signature)
+			if err != nil {
+				s.DoPanicf(w, http.StatusForbidden, "%v", err)
+				return
+			}
+			status.User = user
 		}
-		status.User = user
-	} else {
+	}
+	if status.User == nil {
 		status.User = NewGuestUser()
 	}
 	for acl, groups := range status.Doc.ACL {

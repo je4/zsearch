@@ -103,8 +103,10 @@
     <div class="ampstart-headerbar-fixed center m0 p0 flex justify-center nowrap absolute top-0 right-0 pt2 pr3">
         <div class="mr2">
         </div>
-        {{if not .User.LoggedIn}}
-        <a href="{{.LoginUrl}}?callback={{print .Self "?token=_JWT_"}}" class="text-decoration-none mr2 ampstart-headerbar-fixed-link ">
+        <!-- amp-state src="{{.Self}}/user?token=QUERY_PARAM(token,)" id="user"></amp-state -->
+        <div amp-access="NOT LoggedIn" amp-access-hide>
+        <!-- a on="tap:amp-access.login-sign-in" class="text-decoration-none mr2 ampstart-headerbar-fixed-link " -->
+        <a href="{{.LoginUrl}}?callback={{.Self}}?token=_JWT_" class="text-decoration-none mr2 ampstart-headerbar-fixed-link ">
             <div class="ampstart-headerbar-icon-wrapper relative">
                 <svg
                         xmlns:dc="http://purl.org/dc/elements/1.1/"
@@ -149,7 +151,8 @@
                 </svg>
             </div>
         </a>
-        {{else}}
+        </div>
+        <div amp-access="LoggedIn" amp-access-hide>
             <a href="{{.Self}}" class="text-decoration-none mr2 ampstart-headerbar-fixed-link ">
 
                 <div class="ampstart-headerbar-icon-wrapper relative">
@@ -196,6 +199,6 @@
                     </svg>
                 </div>
             </a>
-        {{end}}
+        </div>
     </div>
 </header>

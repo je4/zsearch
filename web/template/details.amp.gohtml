@@ -47,7 +47,19 @@ limitations under the License.
     <script async custom-element="amp-audio" src="https://cdn.ampproject.org/v0/amp-audio-0.1.js"></script>
     <script async custom-element="amp-image-lightbox" src="https://cdn.ampproject.org/v0/amp-image-lightbox-0.1.js"></script>
     <script async custom-element="amp-google-document-embed" src="https://cdn.ampproject.org/v0/amp-google-document-embed-0.1.js"></script>
+    <script async custom-element="amp-access" src="https://cdn.ampproject.org/v0/amp-access-0.1.js"></script>
     <!-- END custom elements -->
+
+    <script id="amp-access" type="application/json">
+        {
+            "authorization":"SOURCE_URL/user?token=QUERY_PARAM(token,)",
+            "login": {
+                "sign-in": "{{.LoginUrl}}?callback=SOURCE_URL?token=_JWT_"
+            },
+            "noPingback": true
+        }
+    </script>
+
 
     <link href="https://fonts.googleapis.com/css?family=Open+Sans+Condensed:300,700|Material+Icons+Outlined" rel="stylesheet">
     <!-- <link href="https://fonts.googleapis.com/css?family=Material+Icons|Material+Icons+Outlined|Material+Icons+Two+Tone|Material+Icons+Round|Material+Icons+Sharp" rel="stylesheet"> -->
