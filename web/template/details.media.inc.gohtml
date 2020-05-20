@@ -59,7 +59,8 @@
                         height="720"
                         layout="responsive"
                         controls
-                        rotate-to-fullscreen>
+                        rotate-to-fullscreen
+                        dock>
                 </amp-video><br />
                 <a class="text-decoration-none"
                         href="{{medialink $video.Uri "iframe" "" (not $contentPublic)}}"
@@ -160,7 +161,7 @@
                     {{range $key, $image := .Doc.Source.Media.image}}
                         <!-- Image -->
                         <amp-img
-                                src="{{medialink $image.Uri "resize" "size1280x720"}}"
+                                src="{{medialink $image.Uri "resize" "size1280x720" (not $contentPublic)}}"
                                 width="1280"
                                 height="720"
                                 layout="responsive"

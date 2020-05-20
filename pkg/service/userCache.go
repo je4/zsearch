@@ -9,23 +9,52 @@ import (
 )
 
 type User struct {
-	Id        string
-	Groups    []string
-	Email     string
-	FirstName string
-	LastName  string
-	HomeOrg   string
-	Exp       time.Time
-	LoggedIn  bool
-	LoggedOut bool
+	Server    *Server   `json:"-"`
+	Id        string    `json:"id"`
+	Groups    []string  `json:"groups"`
+	Email     string    `json:"email"`
+	FirstName string    `json:"firstName"`
+	LastName  string    `json:"lastName"`
+	HomeOrg   string    `json:"homeOrg"`
+	Exp       time.Time `json:"exp"`
+	LoggedIn  bool      `json:"loggedIn"`
+	LoggedOut bool      `json:"loggedOut"`
+}
+
+func (u User) LinkSignature(signature string) string {
+	/*
+	proto := "http"
+	if u.Server.srv.TLSConfig.Certificates != nil {
+		proto = "https"
+	}
+	urlstr := fmt.Sprintf("%s://%s/%s/%s", proto, u.Server.srv.Addr, u.Server.publicPrefix, signature)
+	 */
+	urlstr := signature
+	if u.LoggedIn {
+		jwt, err := NewJWT(
+			u.Server.jwtKey,
+			fmt.Sprintf("detail:%s", signature ),
+			"HS256",
+			3600,
+			"catalogue",
+			"mediathek",
+			fmt.Sprintf("%v", u.Id))
+		if err != nil {
+			return fmt.Sprintf("ERROR: %v", err)
+		}
+		urlstr += fmt.Sprintf("?token=%s", jwt)
+
+	}
+	return urlstr
 }
 
 type UserCache struct {
 	cache gcache.Cache
 }
 
-func NewGuestUser() *User {
+func NewGuestUser(s *Server) *User {
 	return &User{
+		Server:    s,
 		Id:        "0",
 		Groups:    []string{"global/guest"},
 		Email:     "",
@@ -57,6 +86,6 @@ func (uc *UserCache) GetUser(id string) (*User, error) {
 	return user, nil
 }
 
-func (uc *UserCache) SetUser(user *User) error {
-	return uc.cache.Set(user.Id, user)
+func (uc *UserCache) SetUser(user *User, index string) error {
+	return uc.cache.Set(index, user)
 }

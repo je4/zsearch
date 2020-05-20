@@ -103,56 +103,53 @@
     <div class="ampstart-headerbar-fixed center m0 p0 flex justify-center nowrap absolute top-0 right-0 pt2 pr3">
         <div class="mr2">
         </div>
-        <!-- amp-state src="{{.Self}}/user?token=QUERY_PARAM(token,)" id="user"></amp-state -->
-        <div amp-access="NOT LoggedIn" amp-access-hide>
-        <!-- a on="tap:amp-access.login-sign-in" class="text-decoration-none mr2 ampstart-headerbar-fixed-link " -->
-        <a href="{{.LoginUrl}}?callback={{.Self}}?token=_JWT_" class="text-decoration-none mr2 ampstart-headerbar-fixed-link ">
-            <div class="ampstart-headerbar-icon-wrapper relative">
-                <svg
-                        xmlns:dc="http://purl.org/dc/elements/1.1/"
-                        xmlns:cc="http://creativecommons.org/ns#"
-                        xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-                        xmlns:svg="http://www.w3.org/2000/svg"
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="black"
-                        width="48px"
-                        height="48px"
-                        version="1.1"
-                        id="svg6">
-                    <defs
-                            id="defs10">
-                        <clipPath
-                                clipPathUnits="userSpaceOnUse"
-                                id="clipPath863">
-                            <g
-                                    id="use865">
-                                <path
-                                        d="m 14.5,14 h 0.913451 v 6.5 h -13 v -17 h 13 V 10 H 14.5 V 4.5 h -11 v 15 h 11 V 14"
-                                        id="path893"
-                                        style="fill:#000000;fill-opacity:1" />
-                            </g>
-                        </clipPath>
-                    </defs>
-                    <path
-                            d="M 24,0 H 0 v 24 h 24 z"
-                            id="path2"
-                            style="fill:none" />
-                    <path
-                            style="stroke-width:1"
-                            d="M 11.413451,11.5 H 2.9134511 v 1 h 8.4999999 v 4 l 4,-4.5 -4,-4.5 z"
-                            id="path4-5" />
-                    <g
-                            id="layer1" />
-                    <path
-                            id="path882"
-                            d="M 7.2526277,10 V 3.5 H 20.252628 v 17 H 7.2526277 V 14 h 0.913451 v 5.5 H 19.166079 V 4.5 H 8.1660787 V 10 Z"
-                            style="fill:#020000;fill-opacity:1;stroke:none;stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
-                </svg>
-            </div>
-        </a>
-        </div>
-        <div amp-access="LoggedIn" amp-access-hide>
+        {{if not .User.LoggedIn}}
+            <a href="{{.LoginUrl}}?callback={{.Self}}?token=_JWT_" class="text-decoration-none mr2 ampstart-headerbar-fixed-link ">
+                <div class="ampstart-headerbar-icon-wrapper relative">
+                    <svg
+                            xmlns:dc="http://purl.org/dc/elements/1.1/"
+                            xmlns:cc="http://creativecommons.org/ns#"
+                            xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+                            xmlns:svg="http://www.w3.org/2000/svg"
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="black"
+                            width="48px"
+                            height="48px"
+                            version="1.1"
+                            id="svg6">
+                        <defs
+                                id="defs10">
+                            <clipPath
+                                    clipPathUnits="userSpaceOnUse"
+                                    id="clipPath863">
+                                <g
+                                        id="use865">
+                                    <path
+                                            d="m 14.5,14 h 0.913451 v 6.5 h -13 v -17 h 13 V 10 H 14.5 V 4.5 h -11 v 15 h 11 V 14"
+                                            id="path893"
+                                            style="fill:#000000;fill-opacity:1" />
+                                </g>
+                            </clipPath>
+                        </defs>
+                        <path
+                                d="M 24,0 H 0 v 24 h 24 z"
+                                id="path2"
+                                style="fill:none" />
+                        <path
+                                style="stroke-width:1"
+                                d="M 11.413451,11.5 H 2.9134511 v 1 h 8.4999999 v 4 l 4,-4.5 -4,-4.5 z"
+                                id="path4-5" />
+                        <g
+                                id="layer1" />
+                        <path
+                                id="path882"
+                                d="M 7.2526277,10 V 3.5 H 20.252628 v 17 H 7.2526277 V 14 h 0.913451 v 5.5 H 19.166079 V 4.5 H 8.1660787 V 10 Z"
+                                style="fill:#020000;fill-opacity:1;stroke:none;stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
+                    </svg>
+                </div>
+            </a>
+        {{else}}
             <a href="{{.Self}}" class="text-decoration-none mr2 ampstart-headerbar-fixed-link ">
 
                 <div class="ampstart-headerbar-icon-wrapper relative">
@@ -199,6 +196,6 @@
                     </svg>
                 </div>
             </a>
-        </div>
+        {{end}}
     </div>
 </header>

@@ -4,18 +4,24 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/goph/emperror"
+	"html/template"
 	"regexp"
 	"sort"
 	"strings"
 )
 
 type Zotero struct {
+	mts      *MTSolr
 	zdata    ZoteroData
 	collMeta map[string]string
 }
 
-func NewZotero(data string) (*Zotero, error) {
-	zot := &Zotero{zdata: ZoteroData{}, collMeta: map[string]string{}}
+func NewZotero(data string, mts *MTSolr) (*Zotero, error) {
+	zot := &Zotero{
+		zdata: ZoteroData{},
+		collMeta: map[string]string{},
+		mts: mts,
+	}
 	return zot, zot.Init(data)
 }
 
@@ -44,6 +50,14 @@ func (zot *Zotero) GetCollectionTitle() string {
 
 func (zot *Zotero) GetTitle() string {
 	return zot.zdata.Data.Title
+}
+
+func (zot *Zotero) GetPlace() string {
+	return zot.zdata.Data.Place
+}
+
+func (zot *Zotero) GetDate() string {
+	return zot.zdata.Data.Date
 }
 
 func (zot *Zotero) GetAbstract() string {
@@ -87,16 +101,48 @@ func (zot *Zotero) GetChildren(itemType, linkMode string) []ZoteroData {
 	return children
 }
 
-func (zot *Zotero) GetNotes() []string {
-	var notes []string
+func (zot *Zotero) GetNotes() []Note {
+	var notes []Note
 	for _, child := range zot.GetChildren("note", "") {
 		note := strings.Trim(child.Data.Note, " ")
 		if note == "" {
 			continue
 		}
-		notes = append(notes, note)
+
+		title := strings.TrimSpace(child.Data.Title)
+		if title == "" {
+			title = "Note"
+		}
+		notes = append(notes, Note{
+			Title: title,
+			Note:  template.HTML(note),
+		})
 	}
 	return notes
+}
+
+var zoterolinkregexp = regexp.MustCompile("^https?://zotero.org/groups/([^/]+)/items/([^/]+)$")
+
+func (zot *Zotero) GetReferences() []Reference {
+	var references []Reference
+	for key, values := range zot.zdata.Data.ItemDataBase.Relations {
+		for _, value := range values {
+			if matches := zoterolinkregexp.FindStringSubmatch(value); matches != nil {
+				signature := fmt.Sprintf("zotero-%s.%s", matches[1], matches[2])
+				entry, err := zot.mts.LoadData(signature)
+				// todo: implement error handling for unknown resources
+				if err != nil {
+					continue
+				}
+				references = append(references, Reference{
+					Type:      key,
+					Title:     entry.content.GetTitle(),
+					Signature: signature,
+				})
+			}
+		}
+	}
+	return references
 }
 
 func (zot *Zotero) GetMedia() map[string]MediaList {

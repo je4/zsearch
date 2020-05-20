@@ -38,40 +38,6 @@ func GetClaim(claim map[string]interface{}, name string) (string, error) {
 	return valstr, nil
 }
 
-func GetClaimUser( claims map[string]interface{}) (*User, error) {
-	id, err := GetClaim(claims, "userId")
-	if err != nil {
-		return nil, emperror.Wrapf(err, "no userid in key")
-	}
-	groupstr, err := GetClaim(claims, "groups")
-	if err != nil {
-		groupstr = "global/guest"
-	}
-	groups := strings.Split(groupstr, ";")
-	firstName, _ := GetClaim(claims, "firstName")
-	lastName, _ := GetClaim(claims, "lastName")
-	homeOrg, _ := GetClaim(claims, "homeOrg")
-	email, _ := GetClaim(claims, "email")
-	expval, ok := claims["exp"]
-	if !ok {
-		return nil, emperror.Wrapf(err, "no exp in key")
-	}
-	exp, ok := expval.(float64)
-	if !ok {
-		return nil, emperror.Wrapf(err, "exp not an ")
-	}
-	u := &User{
-		Id:        id,
-		Groups:    groups,
-		Email:     email,
-		FirstName: firstName,
-		LastName:  lastName,
-		HomeOrg:   homeOrg,
-		Exp:       time.Unix(int64(exp), 0),
-	}
-	return u, nil
-}
-
 func CheckRequestJWT(req *http.Request, secret string, alg []string, subject string) error {
 	var token []string
 	var ok bool
@@ -112,13 +78,13 @@ func CheckJWTValid(tokenstring string, secret string, alg []string) (map[string]
 			}
 		}
 		if !algOK {
-			return false, fmt.Errorf("Unexpected signing method (allowed are %v): %v", alg, token.Header["alg"])
+			return false, fmt.Errorf("unexpected signing method (allowed are %v): %v", alg, token.Header["alg"])
 		}
 
 		return []byte(secret), nil
 	})
 	if err != nil {
-		return map[string]interface{}{}, fmt.Errorf("Invalid token %s: %v", tokenstring, err)
+		return map[string]interface{}{}, fmt.Errorf("invalid token: %v", err)
 	}
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		if !ok {
@@ -172,7 +138,7 @@ func CreateLogger(module string, logfile string, loglevel string) (log *logging.
 	return
 }
 
-func NewJWT(secret string, subject string, alg string, valid int64, domain string, issuer string) (tokenString string, err error) {
+func NewJWT(secret string, subject string, alg string, valid int64, domain string, issuer string, user string) (tokenString string, err error) {
 	var signingMethod jwt.SigningMethod
 	switch strings.ToLower(alg) {
 	case "hs256":
@@ -207,6 +173,9 @@ func NewJWT(secret string, subject string, alg string, valid int64, domain strin
 	}
 	if issuer != "" {
 		claims["iss"] = issuer
+	}
+	if user != "" {
+		claims["user"] = user
 	}
 
 	token := jwt.NewWithClaims(signingMethod, claims)

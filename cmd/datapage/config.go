@@ -30,8 +30,10 @@ type Template struct {
 }
 
 type Solr struct {
-	Url  string `toml:"url"`
-	Core string `toml:"core"`
+	Url             string   `toml:"url"`
+	Core            string   `toml:"core"`
+	CacheExpiration duration `toml:"cacheexpiration"`
+	CacheSize       int      `toml:"cachesize"`
 }
 
 type AccessGroup struct {
@@ -55,6 +57,7 @@ type Config struct {
 	LoginUrl      string      `toml:"loginurl"`
 	LoginIssuer   string      `toml:"loginissuer"`
 	IdleTimeout   duration    `toml:"idletimeout"`
+	UserCacheSize int         `toml:"usercachesize"`
 	Google        Google      `toml:"google"`
 	Template      Template    `toml:"template"`
 	Solr          Solr        `toml:"solr"`

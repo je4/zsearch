@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"encoding/base64"
 	"github.com/goph/emperror"
+	"html/template"
 	"io"
 )
 
@@ -46,26 +47,43 @@ func (ml MediaList) Len() int           { return len(ml) }
 func (ml MediaList) Swap(i, j int)      { ml[i], ml[j] = ml[j], ml[i] }
 func (ml MediaList) Less(i, j int) bool { return ml[i].Name < ml[j].Name }
 
+type Note struct {
+	Title string
+	Note  template.HTML
+}
+
+type Reference struct {
+	Type      string
+	Title     string
+	Signature string
+}
+
 type Source interface {
 	Init(data string) error
 	Name() string
 	GetTitle() string
+	GetPlace() string
+	GetDate() string
 	GetCollectionTitle() string
 	GetNames() []Person
 	GetTags() []string
 	GetMedia() map[string]MediaList
-	GetNotes() []string
+	GetNotes() []Note
 	GetAbstract() string
+	GetReferences() []Reference
 }
 
 type SourceData struct {
 	Source          string               `json:"source"`
 	Title           string               `json:"title"`
+	Place           string               `json:"place"`
+	Date            string               `json:"date"`
 	CollectionTitle string               `json:"collectiontitle"`
 	Persons         []Person             `json:"persons"`
 	Tags            []string             `json:"tags"`
 	Media           map[string]MediaList `json:"media"`
-	Notes           []string             `json:"notes"`
+	Notes           []Note               `json:"notes"`
 	Abstract        string               `json:"abstract"`
 	HasMedia        bool                 `json:"hasmedia"`
+	References      []Reference          `json:"references"`
 }

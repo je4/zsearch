@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"flag"
-	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/mtsolr"
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/service"
+	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/source"
 	"io"
 	"os"
 	"os/signal"
@@ -67,12 +67,12 @@ func main() {
 		accesslog = f
 	}
 
-	mts, err := mtsolr.NewMTSolr(config.Solr.Url, config.Solr.Core)
+	mts, err := source.NewMTSolr(config.Solr.Url, config.Solr.Core, config.Solr.CacheExpiration.Duration, config.Solr.CacheSize)
 	if err != nil {
 		log.Panic(err)
 	}
 
-	uc, err := service.NewUserCache(config.IdleTimeout.Duration, 20)
+	uc, err := service.NewUserCache(config.IdleTimeout.Duration, config.UserCacheSize)
 	if err != nil {
 		log.Panic(err)
 	}

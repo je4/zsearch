@@ -9,7 +9,7 @@ import (
 )
 
 // Relations are empty array or string map
-type RelationList map[string]string
+type RelationList map[string][]string
 
 func (rl *RelationList) UnmarshalJSON(data []byte) error {
 	var i interface{}
@@ -20,7 +20,18 @@ func (rl *RelationList) UnmarshalJSON(data []byte) error {
 	case map[string]interface{}:
 		*rl = RelationList{}
 		for key, val := range d {
-			(*rl)[key], _ = val.(string)
+			switch value := val.(type) {
+			case []interface{}:
+				(*rl)[key] = []string{}
+				for _, val2 := range value {
+					switch value2 := val2.(type) {
+					case string:
+						(*rl)[key] = append((*rl)[key], value2)
+					}
+				}
+			case string:
+				(*rl)[key] = []string{value}
+			}
 		}
 	case []interface{}:
 		if len(d) > 0 {
