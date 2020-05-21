@@ -5,6 +5,7 @@ import (
 	"github.com/bluele/gcache"
 	"github.com/goph/emperror"
 	"github.com/pkg/errors"
+	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/generic"
 	"time"
 )
 
@@ -27,23 +28,24 @@ func (u User) LinkSignature(signature string) string {
 	if u.Server.srv.TLSConfig.Certificates != nil {
 		proto = "https"
 	}
-	urlstr := fmt.Sprintf("%s://%s/%s/%s", proto, u.Server.srv.Addr, u.Server.publicPrefix, signature)
+	urlstr := fmt.Sprintf("%s://%s/%s/%s", proto, u.Server.srv.Addr, u.Server.detailPrefix, signature)
 	 */
-	urlstr := signature
+	var urlstr string
 	if u.LoggedIn {
-		jwt, err := NewJWT(
+		jwt, err := generic.NewJWT(
 			u.Server.jwtKey,
 			fmt.Sprintf("detail:%s", signature ),
 			"HS256",
-			3600,
+			int64(u.Server.linkTokenExp.Seconds()),
 			"catalogue",
 			"mediathek",
 			fmt.Sprintf("%v", u.Id))
 		if err != nil {
 			return fmt.Sprintf("ERROR: %v", err)
 		}
-		urlstr += fmt.Sprintf("?token=%s", jwt)
-
+		urlstr = fmt.Sprintf("%s/%s/%s?token=%s", u.Server.addrExt, u.Server.detailPrefix, signature, jwt)
+	} else {
+		urlstr = signature
 	}
 	return urlstr
 }

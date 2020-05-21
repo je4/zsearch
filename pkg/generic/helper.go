@@ -1,4 +1,4 @@
-package service
+package generic
 
 import (
 	"errors"
@@ -17,6 +17,24 @@ var _logformat = logging.MustStringFormatter(
 )
 
 var bearerPrefix = "Bearer "
+
+func AppendIfMissing(slice []string, s string) []string {
+	for _, ele := range slice {
+		if ele == s {
+			return slice
+		}
+	}
+	return append(slice, s)
+}
+
+func InList(slice[]string, s string) bool {
+	for _, ele := range slice {
+		if ele == s {
+			return true
+		}
+	}
+	return false
+}
 
 func FileExists(filename string) bool {
 	info, err := os.Stat(filename)

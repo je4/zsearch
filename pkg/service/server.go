@@ -7,6 +7,7 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/op/go-logging"
+	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/generic"
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/source"
 	"html/template"
 	"io"
@@ -42,12 +43,13 @@ type Server struct {
 	userCache         *UserCache
 	host              string
 	port              string
+	addrExt           string
 	staticDir         string
-	publicPrefix      string
-	privatePrefix     string
+	detailPrefix      string
 	staticPrefix      string
 	jwtKey            string
 	jwtAlg            []string
+	linkTokenExp      time.Duration
 	loginUrl          string
 	loginIssuer       string
 	guestGroup        string
@@ -56,7 +58,8 @@ type Server struct {
 	errorTemplate     *template.Template
 	forbiddenTemplate *template.Template
 	mediaserver       string
-	mediaserverkey    string
+	mediaserverKey    string
+	mediaTokenExp     time.Duration
 	log               *logging.Logger
 	accesslog         io.Writer
 }
@@ -68,23 +71,22 @@ func NewServer(
 	errorTemplate,
 	forbiddenTemplate []string,
 	addr,
+	addrExt,
 	mediaserver,
 	mediaserverkey string,
+	mediatokenexp time.Duration,
 	log *logging.Logger,
 	accesslog io.Writer,
 	staticPrefix,
 	staticDir,
 	jwtKey string,
 	jwtAlg []string,
+	linkTokenExp time.Duration,
 	loginUrl,
 	loginIssuer string,
 	guestGroup string,
 	adminGroup string,
-	privatePrefix,
-	publicPrefix string) (*Server, error) {
-	staticPrefix = "/" + strings.Trim(staticPrefix, "/") + "/"
-	privatePrefix = "/" + strings.Trim(privatePrefix, "/") + "/"
-	publicPrefix = "/" + strings.Trim(publicPrefix, "/") + "/"
+	detailPrefix string) (*Server, error) {
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		//log.Panicf("cannot split address %s: %v", addr, err)
@@ -96,20 +98,22 @@ func NewServer(
 		userCache:      uc,
 		host:           host,
 		port:           port,
+		addrExt:        addrExt,
 		mediaserver:    mediaserver,
-		mediaserverkey: mediaserverkey,
+		mediaserverKey: mediaserverkey,
+		mediaTokenExp:  mediatokenexp,
 		log:            log,
 		accesslog:      accesslog,
 		staticPrefix:   staticPrefix,
 		staticDir:      staticDir,
 		jwtKey:         jwtKey,
 		jwtAlg:         jwtAlg,
+		linkTokenExp:   linkTokenExp,
 		loginUrl:       loginUrl,
 		loginIssuer:    loginIssuer,
 		guestGroup:     guestGroup,
 		adminGroup:     adminGroup,
-		privatePrefix:  privatePrefix,
-		publicPrefix:   publicPrefix,
+		detailPrefix:   detailPrefix,
 	}
 	if err := srv.Init(detailTemplate, errorTemplate, forbiddenTemplate); err != nil {
 		return nil, emperror.Wrapf(err, "cannot initialize server")
@@ -144,11 +148,11 @@ func (s *Server) Init(detailTemplate, errorTemplate, forbiddenTemplate []string)
 				signature := matches[2]
 				url := fmt.Sprintf("%s/%s/%s/%s/%s", s.mediaserver, collection, signature, action, param)
 				if token {
-					jwt, err := NewJWT(
-						s.mediaserverkey,
+					jwt, err := generic.NewJWT(
+						s.mediaserverKey,
 						strings.TrimRight(fmt.Sprintf("mediaserver:%s/%s/%s/%s", collection, signature, action, strings.Join(params, "/")), "/"),
 						"HS256",
-						3600,
+						int64(s.mediaTokenExp.Seconds()),
 						"mediaserver",
 						"mediathek",
 						"")
@@ -203,7 +207,7 @@ func (s *Server) DoPanic(writer http.ResponseWriter, status int, message string)
 func (s *Server) userFromToken(tokenstring, signature string) (*User, error) {
 
 	// jwt valid?
-	claims, err := CheckJWTValid(tokenstring, s.jwtKey, s.jwtAlg)
+	claims, err := generic.CheckJWTValid(tokenstring, s.jwtKey, s.jwtAlg)
 	if err != nil {
 		return nil, emperror.Wrapf(err, "invalid access token")
 	}
@@ -231,7 +235,7 @@ func (s *Server) userFromToken(tokenstring, signature string) (*User, error) {
 		s.userCache.SetUser(user, user.Id)
 	} else {
 		// sub given?
-		sub, err := GetClaim(claims, "sub")
+		sub, err := generic.GetClaim(claims, "sub")
 		if err != nil {
 			return nil, emperror.Wrapf(err, "no sub in token")
 		}
@@ -240,7 +244,7 @@ func (s *Server) userFromToken(tokenstring, signature string) (*User, error) {
 			return nil, emperror.Wrapf(err, "invalid sub %s (should be %s) in token", sub, signature)
 		}
 		// user given?
-		userstr, err := GetClaim(claims, "user")
+		userstr, err := generic.GetClaim(claims, "user")
 		if err != nil {
 			return nil, emperror.Wrapf(err, "no user in token")
 		}
@@ -261,9 +265,7 @@ func (s *Server) userFromToken(tokenstring, signature string) (*User, error) {
 func (s *Server) ListenAndServe(cert, key string) error {
 	router := mux.NewRouter()
 
-	userRegexp := regexp.MustCompile(fmt.Sprintf("^/(%s|%s)/(.+)/user$",
-		strings.Trim(s.publicPrefix, "/"),
-		strings.Trim(s.privatePrefix, "/")))
+	userRegexp := regexp.MustCompile(fmt.Sprintf("^/%s/(.+)/user$", s.detailPrefix))
 	router.
 		MatcherFunc(func(r *http.Request, rm *mux.RouteMatch) bool {
 			matches := userRegexp.FindSubmatch([]byte(r.URL.Path))
@@ -271,15 +273,12 @@ func (s *Server) ListenAndServe(cert, key string) error {
 				return false
 			}
 			rm.Vars = map[string]string{}
-			rm.Vars["access"] = string(matches[1])
-			rm.Vars["signature"] = string(matches[2])
+			rm.Vars["signature"] = string(matches[1])
 			return true
 		}).HandlerFunc(s.userHandler)
 
-	// https://data.mediathek.hgk.fhnw.ch/[access]/[signature]
-	mainRegexp := regexp.MustCompile(fmt.Sprintf("^/(%s|%s)/(.+)$",
-		strings.Trim(s.publicPrefix, "/"),
-		strings.Trim(s.privatePrefix, "/")))
+	// https://data.mediathek.hgk.fhnw.ch/detail/[signature]
+	mainRegexp := regexp.MustCompile(fmt.Sprintf("^/%s/(.+)$", s.detailPrefix))
 	router.
 		MatcherFunc(func(r *http.Request, rm *mux.RouteMatch) bool {
 			matches := mainRegexp.FindSubmatch([]byte(r.URL.Path))
@@ -287,15 +286,14 @@ func (s *Server) ListenAndServe(cert, key string) error {
 				return false
 			}
 			rm.Vars = map[string]string{}
-			rm.Vars["access"] = string(matches[1])
-			rm.Vars["signature"] = string(matches[2])
+			rm.Vars["signature"] = string(matches[1])
 			return true
 		}).HandlerFunc(s.detailHandler)
 
 	// the static fileserver
 	router.
 		PathPrefix(s.staticPrefix).
-		Handler(http.StripPrefix(s.staticPrefix, http.FileServer(http.Dir(s.staticDir))))
+		Handler(http.StripPrefix("/"+s.staticPrefix, http.FileServer(http.Dir(s.staticDir))))
 
 	loggedRouter := handlers.LoggingHandler(s.accesslog, router)
 	addr := net.JoinHostPort(s.host, s.port)
@@ -317,19 +315,19 @@ func (s *Server) Shutdown(ctx context.Context) error {
 }
 
 func (s *Server) GetClaimUser(claims map[string]interface{}) (*User, error) {
-	id, err := GetClaim(claims, "userId")
+	id, err := generic.GetClaim(claims, "userId")
 	if err != nil {
 		return nil, emperror.Wrapf(err, "no userid in key")
 	}
-	groupstr, err := GetClaim(claims, "groups")
+	groupstr, err := generic.GetClaim(claims, "groups")
 	if err != nil {
 		groupstr = "global/guest"
 	}
 	groups := strings.Split(groupstr, ";")
-	firstName, _ := GetClaim(claims, "firstName")
-	lastName, _ := GetClaim(claims, "lastName")
-	homeOrg, _ := GetClaim(claims, "homeOrg")
-	email, _ := GetClaim(claims, "email")
+	firstName, _ := generic.GetClaim(claims, "firstName")
+	lastName, _ := generic.GetClaim(claims, "lastName")
+	homeOrg, _ := generic.GetClaim(claims, "homeOrg")
+	email, _ := generic.GetClaim(claims, "email")
 	expval, ok := claims["exp"]
 	if !ok {
 		return nil, emperror.Wrapf(err, "no exp in key")

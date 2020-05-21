@@ -2,9 +2,12 @@ package source
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/goph/emperror"
+	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/generic"
 	"html/template"
+	"reflect"
 	"regexp"
 	"sort"
 	"strings"
@@ -16,11 +19,23 @@ type Zotero struct {
 	collMeta map[string]string
 }
 
+var zoteroIgnoreMetaFields = []string{
+	"AbstractNote",
+	"Collections",
+	"Creators",
+	"Date",
+	"Media",
+	"Place",
+	"Relations",
+	"Tags",
+	"Title",
+}
+
 func NewZotero(data string, mts *MTSolr) (*Zotero, error) {
 	zot := &Zotero{
-		zdata: ZoteroData{},
+		zdata:    ZoteroData{},
 		collMeta: map[string]string{},
-		mts: mts,
+		mts:      mts,
 	}
 	return zot, zot.Init(data)
 }
@@ -60,6 +75,40 @@ func (zot *Zotero) GetDate() string {
 	return zot.zdata.Data.Date
 }
 
+func (zot *Zotero) GetMeta() map[string]string {
+	var result = make(map[string]string)
+	s := reflect.ValueOf(&zot.zdata.Data).Elem()
+	typeOfT := s.Type()
+	for i := 0; i < s.NumField(); i++ {
+		f := s.Field(i)
+		fname := typeOfT.Field(i).Name
+		if generic.InList(zoteroIgnoreMetaFields, fname) {
+			continue
+		}
+		if fname == "ItemDataBase" {
+			continue
+		}
+		valstr := strings.TrimSpace(fmt.Sprintf("%v", f.Interface()))
+		if valstr != "" {
+			result[fname] = valstr
+		}
+	}
+	s = reflect.ValueOf(&zot.zdata.Data.ItemDataBase).Elem()
+	typeOfT = s.Type()
+	for i := 0; i < s.NumField(); i++ {
+		f := s.Field(i)
+		fname := typeOfT.Field(i).Name
+		if generic.InList(zoteroIgnoreMetaFields, fname) {
+			continue
+		}
+		valstr := strings.TrimSpace(fmt.Sprintf("%v", f.Interface()))
+		if valstr != "" {
+			result[fname] = valstr
+		}
+	}
+	return result
+}
+
 func (zot *Zotero) GetAbstract() string {
 	return zot.zdata.Data.AbstractNote
 }
@@ -78,12 +127,42 @@ func (zot *Zotero) GetNames() []Person {
 	return persons
 }
 
+func (zot *Zotero) getColl(key string) (*ZoteroCollection, error) {
+	if key == "" {
+		return nil, errors.New("empty collection key")
+	}
+	for _, c := range zot.zdata.Data.Collections {
+		for _, coll := range zot.zdata.Collections {
+			if coll.Key == c {
+				return &coll, nil
+			}
+		}
+	}
+	return nil, fmt.Errorf("collection %s not found", key)
+}
+
 func (zot *Zotero) GetTags() []string {
 	var tags []string
 	for _, t := range zot.zdata.Data.Tags {
-		tags = append(tags, t.Tag)
+		tags = generic.AppendIfMissing(tags, strings.ToLower(t.Tag))
 	}
-	tags = append(tags, zot.zdata.Group.Data.Name)
+	tags = generic.AppendIfMissing(tags, strings.ToLower(zot.zdata.Group.Data.Name))
+
+	for _, c := range zot.zdata.Data.Collections {
+		for _, coll := range zot.zdata.Collections {
+			if coll.Key == c {
+				tags = generic.AppendIfMissing(tags, strings.ToLower(coll.Data.Name))
+				for ok := true; ok; ok = (coll.Data.ParentCollection == "") {
+					coll, err := zot.getColl(string(coll.Data.ParentCollection))
+					if err != nil {
+						break
+					}
+					tags = generic.AppendIfMissing(tags, strings.ToLower(coll.Data.Name))
+				}
+			}
+		}
+	}
+
 	return tags
 }
 

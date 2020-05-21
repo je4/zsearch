@@ -10,29 +10,18 @@ import (
 func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 	// remove prefix and use whole rest of url as signature
 	vars := mux.Vars(req)
-	_, ok := vars["access"]
-	if !ok {
-		s.DoPanicf(w, http.StatusBadRequest, "no accesstype in url: %s", req.URL.Path)
-		return
-	}
 	signature, ok := vars["signature"]
 	if !ok {
 		s.DoPanicf(w, http.StatusBadRequest, "no signature in url: %s", req.URL.Path)
 		return
 	}
 
-	var proto string
-	if req.TLS != nil {
-		proto = "https"
-	} else {
-		proto = "http"
-	}
 	status := Status{
 		Doc:       nil,
 		User:      nil,
 		ContentOK: false,
 		MetaOK:    false,
-		Self:      fmt.Sprintf("%s://%s/%s", proto, req.Host, strings.TrimLeft(req.URL.Path, "/")),
+		Self:      fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(req.URL.Path, "/")),
 		SelfPath:  req.URL.Path,
 		LoginUrl:  s.loginUrl,
 		Notifications: []Notification{},

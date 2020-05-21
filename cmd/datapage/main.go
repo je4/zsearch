@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/generic"
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/service"
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/source"
 	"io"
@@ -51,7 +52,7 @@ func main() {
 	config := LoadConfig(*cfgfile)
 
 	// create logger instance
-	log, lf := service.CreateLogger("memostream", config.Logfile, config.Loglevel)
+	log, lf := generic.CreateLogger("memostream", config.Logfile, config.Loglevel)
 	defer lf.Close()
 
 	var accesslog io.Writer
@@ -84,20 +85,22 @@ func main() {
 		config.Template.Error,
 		config.Template.Forbidden,
 		config.Addr,
-		config.Template.Mediaserver,
-		config.Template.MediaserverKey,
+		config.AddrExt,
+		config.Mediaserver,
+		config.MediaserverKey,
+		config.MediaserverExp.Duration,
 		log,
 		accesslog,
 		config.StaticPrefix,
 		config.StaticDir,
 		config.JWTKey,
 		config.JWTAlg,
+		config.LinkTokenExp.Duration,
 		config.LoginUrl,
 		config.LoginIssuer,
 		config.AccessGroup.Guest,
 		config.AccessGroup.Admin,
-		config.PrivatePrefix,
-		config.PublicPrefix,
+		config.DetailPrefix,
 	)
 
 	if err != nil {

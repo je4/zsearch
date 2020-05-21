@@ -22,11 +22,9 @@ type Google struct {
 }
 
 type Template struct {
-	Mediaserver    string   `toml:"mediaserver"`
-	MediaserverKey string   `toml:"mediaserverkey"`
-	Detail         []string `toml:"detail"`
-	Error          []string `toml:"error"`
-	Forbidden      []string `toml:"forbidden"`
+	Detail    []string `toml:"detail"`
+	Error     []string `toml:"error"`
+	Forbidden []string `toml:"forbidden"`
 }
 
 type Solr struct {
@@ -42,26 +40,30 @@ type AccessGroup struct {
 }
 
 type Config struct {
-	Logfile       string      `toml:"logfile"`
-	Loglevel      string      `toml:"loglevel"`
-	AccessLog     string      `toml:"accesslog"`
-	Addr          string      `toml:"addr"`
-	CertPEM       string      `toml:"certpem"`
-	KeyPEM        string      `toml:"keypem"`
-	StaticDir     string      `toml:"staticdir"`
-	StaticPrefix  string      `toml:"staticprefix"`
-	PublicPrefix  string      `toml:"publicprefix"`
-	PrivatePrefix string      `toml:"privateprefix"`
-	JWTKey        string      `toml:"jwtkey"`
-	JWTAlg        []string    `toml:"jwtalg"`
-	LoginUrl      string      `toml:"loginurl"`
-	LoginIssuer   string      `toml:"loginissuer"`
-	IdleTimeout   duration    `toml:"idletimeout"`
-	UserCacheSize int         `toml:"usercachesize"`
-	Google        Google      `toml:"google"`
-	Template      Template    `toml:"template"`
-	Solr          Solr        `toml:"solr"`
-	AccessGroup   AccessGroup `toml:"access"`
+	Logfile        string      `toml:"logfile"`
+	Loglevel       string      `toml:"loglevel"`
+	AccessLog      string      `toml:"accesslog"`
+	Addr           string      `toml:"addr"`
+	AddrExt        string      `toml:"addrext"`
+	CertPEM        string      `toml:"certpem"`
+	KeyPEM         string      `toml:"keypem"`
+	StaticDir      string      `toml:"staticdir"`
+	StaticPrefix   string      `toml:"staticprefix"`
+	DetailPrefix   string      `toml:"publicprefix"`
+	JWTKey         string      `toml:"jwtkey"`
+	JWTAlg         []string    `toml:"jwtalg"`
+	LinkTokenExp   duration    `toml:"linktokenexp"`
+	LoginUrl       string      `toml:"loginurl"`
+	LoginIssuer    string      `toml:"loginissuer"`
+	IdleTimeout    duration    `toml:"idletimeout"`
+	UserCacheSize  int         `toml:"usercachesize"`
+	Google         Google      `toml:"google"`
+	Template       Template    `toml:"template"`
+	Solr           Solr        `toml:"solr"`
+	AccessGroup    AccessGroup `toml:"access"`
+	Mediaserver    string      `toml:"mediaserver"`
+	MediaserverKey string      `toml:"mediaserverkey"`
+	MediaserverExp duration    `toml:"mediaserverexp"`
 }
 
 func LoadConfig(filepath string) Config {
@@ -71,6 +73,9 @@ func LoadConfig(filepath string) Config {
 		log.Fatalln("Error on loading config: ", err)
 	}
 	// make sure, that medaiserver url ends with an /
-	conf.Template.Mediaserver = strings.TrimRight(conf.Template.Mediaserver, "/")
+	conf.Mediaserver = strings.TrimRight(conf.Mediaserver, "/")
+	conf.AddrExt = strings.TrimRight(conf.AddrExt, "/")
+	conf.StaticPrefix = strings.Trim(conf.StaticPrefix, "/")
+	conf.DetailPrefix = strings.Trim(conf.DetailPrefix, "/")
 	return conf
 }

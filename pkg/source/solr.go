@@ -120,6 +120,7 @@ func (mts *MTSolr) LoadEntity(id string) (*Document, error) {
 		Notes:           entry.content.GetNotes(),
 		Abstract:        entry.content.GetAbstract(),
 		References:      entry.content.GetReferences(),
+		Meta: entry.content.GetMeta(),
 	}
 	sourceData.HasMedia = len(sourceData.Media) > 0
 
