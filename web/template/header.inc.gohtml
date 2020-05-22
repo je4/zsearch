@@ -141,7 +141,8 @@
                 </div>
             </a>
         {{else}}
-            <a href="{{.Self}}" class="text-decoration-none mr2 ampstart-headerbar-fixed-link ">
+            {{$url := .User.LinkSignatureCache .Doc.Id}}
+            <a href="{{$url}}" class="text-decoration-none mr2 ampstart-headerbar-fixed-link ">
 
                 <div class="ampstart-headerbar-icon-wrapper relative">
                     <svg

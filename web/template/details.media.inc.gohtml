@@ -48,12 +48,13 @@
                 </amp-state>
                 {{$video := index .Doc.Source.Media.video 0}}
                 {{$src := mediachild $video.Uri "$$web"}}
+                {{$isMedia := (eq (substr 0 12 $video.Uri) "mediaserver:")}}
                 {{$poster := printf "%s$$timeshot$$3" $video.Uri}}
                 <amp-video
                         src="{{medialink $src "master" "" (not $contentPublic)}}"
                         [src]="video.videos[video.selectedVideo]"
-                        poster="{{medialink $poster "master" "" (not $contentPublic)}}"
-                        [poster]="video.posters[video.selectedVideo]"
+                        {{if $isMedia}}poster="{{medialink $poster "master" "" (not $contentPublic)}}"
+                        [poster]="video.posters[video.selectedVideo]"{{end}}
                         artwork=""
                         width="1280"
                         height="720"

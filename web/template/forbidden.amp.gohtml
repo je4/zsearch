@@ -35,32 +35,8 @@ limitations under the License.
     <script custom-element="amp-bind" src="https://cdn.ampproject.org/v0/amp-bind-0.1.js" async=""></script>
     <script custom-element="amp-carousel" src="https://cdn.ampproject.org/v0/amp-carousel-0.1.js" async=""></script>
     <script custom-element="amp-selector" src="https://cdn.ampproject.org/v0/amp-selector-0.1.js" async=""></script>
-    <script custom-template="amp-mustache" src="https://cdn.ampproject.org/v0/amp-mustache-0.1.js" async=""></script>
-    <script async custom-element="amp-access" src="https://cdn.ampproject.org/v0/amp-access-0.1.js"></script>
-
     <script async custom-element="amp-user-notification" src="https://cdn.ampproject.org/v0/amp-user-notification-0.1.js"></script>
-
-    <script id="amp-access" type="application/json">
-        {
-            "authorization":"SOURCE_URL/user?rid=READER_ID",
-            "login": {
-                "sign-in": "{{.LoginUrl}}?callback=AMPDOC_URL?rid=READER_ID&token=_JWT_"
-            },
-            "authorizationFallbackResponse": {
-                "id": "0",
-                "groups": [
-                "global/guest"
-                ],
-                "email": "",
-                "firstName": "",
-                "lastName": "Guest",
-                "homeOrg": "",
-                "loggedIn": false,
-                "loggedOut": false
-            },
-            "noPingback": true
-        }
-    </script>
+    <script async custom-template="amp-mustache" src="https://cdn.ampproject.org/v0/amp-mustache-0.2.js"></script>
 
     <!-- link href="https://fonts.googleapis.com/css?family=Open+Sans+Condensed:300,700|Material+Icons+Outlined" rel="stylesheet" -->
     <!-- <link href="https://fonts.googleapis.com/css?family=Material+Icons|Material+Icons+Outlined|Material+Icons+Two+Tone|Material+Icons+Round|Material+Icons+Sharp" rel="stylesheet"> -->

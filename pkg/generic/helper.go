@@ -6,7 +6,9 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/goph/emperror"
 	"github.com/op/go-logging"
+	"golang.org/x/net/idna"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -17,6 +19,24 @@ var _logformat = logging.MustStringFormatter(
 )
 
 var bearerPrefix = "Bearer "
+
+func UrlAmp(u string, ampCache string, t string) (string, error) {
+	url, err := url.Parse(u)
+	if err != nil {
+		return "", emperror.Wrapf(err, "cannot parse external address %s", u)
+	}
+	// convert domain to unicode
+	domain, err := idna.ToUnicode(url.Host)
+	if err != nil {
+		return "", emperror.Wrapf(err, "cannot convert domain %s from punycode to unicode", url.Host)
+	}
+	// replace all - with --
+	domain = strings.ReplaceAll(domain, "-", "--")
+	// replace . with -
+	domain = strings.ReplaceAll(domain, ".", "-")
+
+	return strings.TrimRight(fmt.Sprintf("https://%s.%s/%s/s/%s/%s", domain, ampCache, t, url.Host, strings.Trim(url.Path, "/")), "/"), nil
+}
 
 func AppendIfMissing(slice []string, s string) []string {
 	for _, ele := range slice {

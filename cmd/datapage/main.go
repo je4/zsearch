@@ -43,6 +43,10 @@ http://localhost:82/public/zotero-2206003.FG8UDJZG
 Mehrere Audio
 http://localhost:82/public/zotero-2180340.TPS2WVNX
 
+
+https://mediathek.hgk.fhnw.ch/amp/detail/zotero-1624911.27CDTZ4B
+-->
+https://mediathek-hgk-fhnw-ch.cdn.ampproject.org/c/s/mediathek.hgk.fhnw.ch/amp/detail/zotero-1624911.27CDTZ4B
  */
 
 func main() {
@@ -101,6 +105,9 @@ func main() {
 		config.AccessGroup.Guest,
 		config.AccessGroup.Admin,
 		config.DetailPrefix,
+		config.UpdatePrefix,
+		config.PreferredAmpCache,
+		config.AmpApiKey,
 	)
 
 	if err != nil {

@@ -1,18 +1,28 @@
 package service
 
 import (
+	"bufio"
 	"context"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
+	"errors"
 	"fmt"
+	"github.com/Masterminds/sprig"
 	"github.com/goph/emperror"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/op/go-logging"
+	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/amp"
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/generic"
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/source"
 	"html/template"
 	"io"
+	"math/rand"
 	"net"
 	"net/http"
+	"os"
+	"reflect"
 	"regexp"
 	"sort"
 	"strings"
@@ -32,8 +42,10 @@ type Status struct {
 	ContentPublic bool
 	MetaOK        bool
 	ContentOK     bool
+	IsAmp         bool
 	Self          string
 	SelfPath      string
+	AmpBase       string
 	LoginUrl      string
 }
 
@@ -47,6 +59,7 @@ type Server struct {
 	staticDir         string
 	detailPrefix      string
 	staticPrefix      string
+	updatePrefix      string
 	jwtKey            string
 	jwtAlg            []string
 	linkTokenExp      time.Duration
@@ -62,6 +75,8 @@ type Server struct {
 	mediaTokenExp     time.Duration
 	log               *logging.Logger
 	accesslog         io.Writer
+	ampApiKey         *rsa.PrivateKey
+	ampCache          *amp.Cache
 }
 
 func NewServer(
@@ -86,11 +101,44 @@ func NewServer(
 	loginIssuer string,
 	guestGroup string,
 	adminGroup string,
-	detailPrefix string) (*Server, error) {
+	detailPrefix string,
+	updatePrefix string,
+	preferredAmpCache string,
+	ampApiKeyFile string,
+) (*Server, error) {
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		//log.Panicf("cannot split address %s: %v", addr, err)
 		return nil, emperror.Wrapf(err, "cannot split address %s", addr)
+	}
+
+	// load private api key
+	privateKeyFile, err := os.Open(ampApiKeyFile)
+	if err != nil {
+		return nil, emperror.Wrapf(err, "cannot open %s", ampApiKeyFile)
+	}
+	pemfileinfo, _ := privateKeyFile.Stat()
+	pembytes := make([]byte, pemfileinfo.Size())
+	buffer := bufio.NewReader(privateKeyFile)
+	_, err = buffer.Read(pembytes)
+	data, _ := pem.Decode([]byte(pembytes))
+	privateKeyFile.Close()
+	ampApiKey, err := x509.ParsePKCS1PrivateKey(data.Bytes)
+	if err != nil {
+		return nil, emperror.Wrapf(err, "cannot parse private key %s", string(data.Bytes))
+	}
+
+	aCaches, err := amp.GetCaches()
+	if err != nil {
+		return nil, err
+	}
+	ampCache, ok := aCaches[preferredAmpCache]
+	if !ok {
+		keys := reflect.ValueOf(aCaches).MapKeys()
+		if len(keys) == 0 {
+			return nil, errors.New("no AMP caches found")
+		}
+		ampCache = aCaches[keys[rand.Intn(len(keys))].Interface().(string)]
 	}
 
 	srv := &Server{
@@ -114,66 +162,75 @@ func NewServer(
 		guestGroup:     guestGroup,
 		adminGroup:     adminGroup,
 		detailPrefix:   detailPrefix,
+		updatePrefix:   updatePrefix,
+		ampCache:       &ampCache,
+		ampApiKey:      ampApiKey,
 	}
-	if err := srv.Init(detailTemplate, errorTemplate, forbiddenTemplate); err != nil {
+	if err := srv.InitTemplates(detailTemplate, errorTemplate, forbiddenTemplate); err != nil {
 		return nil, emperror.Wrapf(err, "cannot initialize server")
 	}
 	return srv, nil
 }
 
-func (s *Server) Init(detailTemplate, errorTemplate, forbiddenTemplate []string) (err error) {
+func (s *Server) InitTemplates(detailTemplate, errorTemplate, forbiddenTemplate []string) (err error) {
 	mediaMatch := regexp.MustCompile(`^mediaserver:([^/]+)/([^/]+)$`)
-	s.detailTemplate, err = template.New("details.amp.gohtml").
-		Funcs(template.FuncMap{
-			// incrementing a value
-			"add": func(value, increment int) int {
-				return value + increment
-			},
-			"mediachild": func(uri, child string) string {
-				matches := mediaMatch.FindStringSubmatch(uri)
-				if matches == nil {
-					return uri
-				}
-				return uri + child
-			},
-			"medialink": func(uri, action, param string, token bool) string {
-				matches := mediaMatch.FindStringSubmatch(uri)
-				params := strings.Split(param, "/")
-				sort.Strings(params)
-				// if not matching, just return the uri
-				if matches == nil {
-					return uri
-				}
-				collection := matches[1]
-				signature := matches[2]
-				url := fmt.Sprintf("%s/%s/%s/%s/%s", s.mediaserver, collection, signature, action, param)
-				if token {
-					jwt, err := generic.NewJWT(
-						s.mediaserverKey,
-						strings.TrimRight(fmt.Sprintf("mediaserver:%s/%s/%s/%s", collection, signature, action, strings.Join(params, "/")), "/"),
-						"HS256",
-						int64(s.mediaTokenExp.Seconds()),
-						"mediaserver",
-						"mediathek",
-						"")
-					if err != nil {
-						return fmt.Sprintf("ERROR: %v", err)
-					}
-					url = fmt.Sprintf("%s?token=%s", url, jwt)
-				}
-				return url
-			},
-		}).ParseFiles(detailTemplate...)
+
+	funcMap := sprig.FuncMap()
+	// incrementing a value
+	funcMap["add"] = func(value, increment int) int {
+		return value + increment
+	}
+	funcMap["mediachild"] = func(uri, child string) string {
+		matches := mediaMatch.FindStringSubmatch(uri)
+		if matches == nil {
+			return uri
+		}
+		return uri + child
+	}
+	funcMap["medialink"] = func(uri, action, param string, token bool) string {
+		matches := mediaMatch.FindStringSubmatch(uri)
+		params := strings.Split(param, "/")
+		sort.Strings(params)
+		// if not matching, just return the uri
+		if matches == nil {
+			return uri
+		}
+		collection := matches[1]
+		signature := matches[2]
+		url := fmt.Sprintf("%s/%s/%s/%s/%s", s.mediaserver, collection, signature, action, param)
+		if token {
+			jwt, err := generic.NewJWT(
+				s.mediaserverKey,
+				strings.TrimRight(fmt.Sprintf("mediaserver:%s/%s/%s/%s", collection, signature, action, strings.Join(params, "/")), "/"),
+				"HS256",
+				int64(s.mediaTokenExp.Seconds()),
+				"mediaserver",
+				"mediathek",
+				"")
+			if err != nil {
+				return fmt.Sprintf("ERROR: %v", err)
+			}
+			url = fmt.Sprintf("%s?token=%s", url, jwt)
+		} else {
+			url, err = s.ampCache.BuildUrl(url, amp.IMAGE)
+			if err != nil {
+				return fmt.Sprintf("ERROR: %v", err)
+			}
+		}
+		return url
+	}
+
+	s.detailTemplate, err = template.New("details.amp.gohtml").Funcs(funcMap).ParseFiles(detailTemplate...)
 	//ParseFiles(detailTemplate)
 	//s.detailTemplate, err = template.ParseFiles(detailTemplate)
 	if err != nil {
 		return emperror.Wrapf(err, "cannot parse detail template %v", detailTemplate)
 	}
-	s.errorTemplate, err = template.New("error.gohtml").ParseFiles(errorTemplate...)
+	s.errorTemplate, err = template.New("error.gohtml").Funcs(funcMap).ParseFiles(errorTemplate...)
 	if err != nil {
 		return emperror.Wrapf(err, "cannot parse error template %v", errorTemplate)
 	}
-	s.forbiddenTemplate, err = template.New("forbidden.amp.gohtml").ParseFiles(forbiddenTemplate...)
+	s.forbiddenTemplate, err = template.New("forbidden.amp.gohtml").Funcs(funcMap).ParseFiles(forbiddenTemplate...)
 	if err != nil {
 		return emperror.Wrapf(err, "cannot parse forbidden template %v", forbiddenTemplate)
 	}
@@ -289,6 +346,19 @@ func (s *Server) ListenAndServe(cert, key string) error {
 			rm.Vars["signature"] = string(matches[1])
 			return true
 		}).HandlerFunc(s.detailHandler)
+
+	// https://data.mediathek.hgk.fhnw.ch/update/[signature]
+	updateRegexp := regexp.MustCompile(fmt.Sprintf("^/%s/(.+)$", s.updatePrefix))
+	router.
+		MatcherFunc(func(r *http.Request, rm *mux.RouteMatch) bool {
+			matches := updateRegexp.FindSubmatch([]byte(r.URL.Path))
+			if len(matches) == 0 {
+				return false
+			}
+			rm.Vars = map[string]string{}
+			rm.Vars["signature"] = string(matches[1])
+			return true
+		}).HandlerFunc(s.updateHandler)
 
 	// the static fileserver
 	router.

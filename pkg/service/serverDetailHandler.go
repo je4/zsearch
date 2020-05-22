@@ -17,13 +17,13 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	status := Status{
-		Doc:       nil,
-		User:      nil,
-		ContentOK: false,
-		MetaOK:    false,
-		Self:      fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(req.URL.Path, "/")),
-		SelfPath:  req.URL.Path,
-		LoginUrl:  s.loginUrl,
+		Doc:           nil,
+		User:          nil,
+		ContentOK:     false,
+		MetaOK:        false,
+		Self:          fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(req.URL.Path, "/")),
+		SelfPath:      req.URL.Path,
+		LoginUrl:      s.loginUrl,
 		Notifications: []Notification{},
 	}
 	var err error
@@ -50,8 +50,8 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 				})
 				status.User = NewGuestUser(s)
 				status.User.LoggedOut = true
-//				s.DoPanicf(w, http.StatusForbidden, "%v", err)
-//				return
+				//				s.DoPanicf(w, http.StatusForbidden, "%v", err)
+				//				return
 			} else {
 				status.User = user
 			}
@@ -96,6 +96,8 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 		err = s.forbiddenTemplate.Execute(w, status)
 		return
 	}
+
+	status.IsAmp = status.User.LoggedIn && !status.User.LoggedOut && status.MetaOK
 
 	err = s.detailTemplate.Execute(w, status)
 	if err != nil {

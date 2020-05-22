@@ -40,30 +40,33 @@ type AccessGroup struct {
 }
 
 type Config struct {
-	Logfile        string      `toml:"logfile"`
-	Loglevel       string      `toml:"loglevel"`
-	AccessLog      string      `toml:"accesslog"`
-	Addr           string      `toml:"addr"`
-	AddrExt        string      `toml:"addrext"`
-	CertPEM        string      `toml:"certpem"`
-	KeyPEM         string      `toml:"keypem"`
-	StaticDir      string      `toml:"staticdir"`
-	StaticPrefix   string      `toml:"staticprefix"`
-	DetailPrefix   string      `toml:"publicprefix"`
-	JWTKey         string      `toml:"jwtkey"`
-	JWTAlg         []string    `toml:"jwtalg"`
-	LinkTokenExp   duration    `toml:"linktokenexp"`
-	LoginUrl       string      `toml:"loginurl"`
-	LoginIssuer    string      `toml:"loginissuer"`
-	IdleTimeout    duration    `toml:"idletimeout"`
-	UserCacheSize  int         `toml:"usercachesize"`
-	Google         Google      `toml:"google"`
-	Template       Template    `toml:"template"`
-	Solr           Solr        `toml:"solr"`
-	AccessGroup    AccessGroup `toml:"access"`
-	Mediaserver    string      `toml:"mediaserver"`
-	MediaserverKey string      `toml:"mediaserverkey"`
-	MediaserverExp duration    `toml:"mediaserverexp"`
+	Logfile           string      `toml:"logfile"`
+	Loglevel          string      `toml:"loglevel"`
+	AccessLog         string      `toml:"accesslog"`
+	Addr              string      `toml:"addr"`
+	AddrExt           string      `toml:"addrext"`
+	CertPEM           string      `toml:"certpem"`
+	KeyPEM            string      `toml:"keypem"`
+	StaticDir         string      `toml:"staticdir"`
+	StaticPrefix      string      `toml:"staticprefix"`
+	DetailPrefix      string      `toml:"detailprefix"`
+	UpdatePrefix      string      `toml:"updateprefix"`
+	JWTKey            string      `toml:"jwtkey"`
+	JWTAlg            []string    `toml:"jwtalg"`
+	LinkTokenExp      duration    `toml:"linktokenexp"`
+	LoginUrl          string      `toml:"loginurl"`
+	LoginIssuer       string      `toml:"loginissuer"`
+	IdleTimeout       duration    `toml:"idletimeout"`
+	UserCacheSize     int         `toml:"usercachesize"`
+	Google            Google      `toml:"google"`
+	Template          Template    `toml:"template"`
+	Solr              Solr        `toml:"solr"`
+	AccessGroup       AccessGroup `toml:"access"`
+	Mediaserver       string      `toml:"mediaserver"`
+	MediaserverKey    string      `toml:"mediaserverkey"`
+	MediaserverExp    duration    `toml:"mediaserverexp"`
+	PreferredAmpCache string      `toml:"preferredampcache"`
+	AmpApiKey         string      `toml:"ampapikey"`
 }
 
 func LoadConfig(filepath string) Config {
@@ -77,5 +80,6 @@ func LoadConfig(filepath string) Config {
 	conf.AddrExt = strings.TrimRight(conf.AddrExt, "/")
 	conf.StaticPrefix = strings.Trim(conf.StaticPrefix, "/")
 	conf.DetailPrefix = strings.Trim(conf.DetailPrefix, "/")
+	conf.UpdatePrefix = strings.Trim(conf.UpdatePrefix, "/")
 	return conf
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/bluele/gcache"
 	"github.com/goph/emperror"
 	"github.com/pkg/errors"
+	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/amp"
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/generic"
 	"time"
 )
@@ -22,6 +23,15 @@ type User struct {
 	LoggedOut bool      `json:"loggedOut"`
 }
 
+func (u User) LinkSignatureCache(signature string) string {
+	urlstr := fmt.Sprintf("%s/%s/%s", u.Server.addrExt, u.Server.detailPrefix, signature)
+	urlstr, err := u.Server.ampCache.BuildUrl(urlstr, amp.PAGE)
+	if err != nil {
+		return fmt.Sprintf("ERROR: %v", err)
+	}
+	return urlstr
+}
+
 func (u User) LinkSignature(signature string) string {
 	/*
 	proto := "http"
@@ -30,7 +40,7 @@ func (u User) LinkSignature(signature string) string {
 	}
 	urlstr := fmt.Sprintf("%s://%s/%s/%s", proto, u.Server.srv.Addr, u.Server.detailPrefix, signature)
 	 */
-	var urlstr string
+	urlstr := fmt.Sprintf("%s/%s/%s", u.Server.addrExt, u.Server.detailPrefix, signature)
 	if u.LoggedIn {
 		jwt, err := generic.NewJWT(
 			u.Server.jwtKey,
@@ -43,9 +53,17 @@ func (u User) LinkSignature(signature string) string {
 		if err != nil {
 			return fmt.Sprintf("ERROR: %v", err)
 		}
-		urlstr = fmt.Sprintf("%s/%s/%s?token=%s", u.Server.addrExt, u.Server.detailPrefix, signature, jwt)
+		urlstr = fmt.Sprintf("%s?token=%s", urlstr, jwt)
 	} else {
-		urlstr = signature
+		if u.Server.ampCache == nil {
+			urlstr = signature
+		} else {
+			var err error
+			urlstr, err = u.Server.ampCache.BuildUrl(urlstr, amp.PAGE)
+			if err != nil {
+				return fmt.Sprintf("ERROR: %v", err)
+			}
+		}
 	}
 	return urlstr
 }
