@@ -41,6 +41,7 @@ func NewMTSolr(url, core string, expiration time.Duration, cachesize int, db *ba
 }
 
 type cacheEntry struct {
+	Id string `json:"id"`
 	Source     string `json:"source"`
 	ContentStr string `json:"content"`
 	//	Content    Source              `json:"-"`
@@ -136,6 +137,7 @@ func (mts *MTSolr) cacheEntryFromDoc(doc solr.Document) (*cacheEntry, string, er
 	cluster := interface2StringSlice(clusterI)
 
 	entry := &cacheEntry{
+		Id: id,
 		Source:     srcstr,
 		ContentStr: metadata,
 		Acl: map[string][]string{
@@ -148,7 +150,7 @@ func (mts *MTSolr) cacheEntryFromDoc(doc solr.Document) (*cacheEntry, string, er
 	return entry, id, nil
 }
 
-func (mts *MTSolr) getSolrDoc(ids []string) (map[string]*cacheEntry, error) {
+func (mts *MTSolr) getSolrDocs(ids []string) (map[string]*cacheEntry, error) {
 	numIDs := len(ids)
 	qstr := ""
 	for _, id := range ids {
@@ -180,62 +182,71 @@ func (mts *MTSolr) getSolrDoc(ids []string) (map[string]*cacheEntry, error) {
 	return result, nil
 }
 
-func (mts *MTSolr) LoadData(id string) (*cacheEntry, error) {
+// todo: refactor fo multiple docs
+func (mts *MTSolr) LoadData(ids []string) (map[string]*cacheEntry, error) {
+	result := make(map[string]*cacheEntry)
 	mts.Lock()
 	defer mts.Unlock()
-	var entry *cacheEntry
-	// try to get ContentStr from cache
-	if err := mts.db.View(func(txn *badger.Txn) error {
-		it, err := txn.Get([]byte(id))
-		if err != nil {
-			return emperror.Wrapf(err, "cannot get item %s", id)
-		}
-		if err := it.Value(func(v []byte) error {
-			data, err := generic.Decompress(v)
+	for _, id := range ids {
+		var entry *cacheEntry
+		// try to get ContentStr from cache
+		if err := mts.db.View(func(txn *badger.Txn) error {
+			it, err := txn.Get([]byte(id))
 			if err != nil {
-				return emperror.Wrapf(err, "cannot deocmpress %s", string(v))
+				return emperror.Wrapf(err, "cannot get item %s", id)
 			}
-			entry = &cacheEntry{}
-			if err := json.Unmarshal(data, entry); err != nil {
-				return emperror.Wrapf(err, "cannot unmarshal json %s", string(v))
+			if err := it.Value(func(v []byte) error {
+				data, err := generic.Decompress(v)
+				if err != nil {
+					return emperror.Wrapf(err, "cannot deocmpress %s", string(v))
+				}
+				entry = &cacheEntry{}
+				if err := json.Unmarshal(data, entry); err != nil {
+					return emperror.Wrapf(err, "cannot unmarshal json %s", string(v))
+				}
+				return nil
+			}); err != nil {
+				return emperror.Wrapf(err, "cannot load item %s", id)
 			}
+			mts.log.Infof("document %s found in cache", id)
 			return nil
 		}); err != nil {
-			return emperror.Wrapf(err, "cannot load item %s", id)
-		}
-		mts.log.Infof("document %s found in cache", id)
-		return nil
-	}); err != nil {
-		entries, err := mts.getSolrDoc([]string{id})
-		if err != nil {
-			return nil, emperror.Wrapf(err, "cannot load document %s", id)
-		}
-		var ok bool
-		entry, ok = entries[id]
-		if !ok {
-			return nil, fmt.Errorf("id %v not in result", id)
-		}
-		if err := mts.db.Update(func(txn *badger.Txn) error {
-			// marshal entry
-			jsonstr, err := json.Marshal(*entry)
+			entries, err := mts.getSolrDocs([]string{id})
 			if err != nil {
-				return emperror.Wrap(err, "cannot marshal entry")
+				return nil, emperror.Wrapf(err, "cannot load document %s", id)
 			}
+			var ok bool
+			entry, ok = entries[id]
+			if !ok {
+				return nil, fmt.Errorf("id %v not in result", id)
+			}
+			if err := mts.db.Update(func(txn *badger.Txn) error {
+				// marshal entry
+				jsonstr, err := json.Marshal(*entry)
+				if err != nil {
+					return emperror.Wrap(err, "cannot marshal entry")
+				}
 
-			data := generic.Compress([]byte(jsonstr))
-			txn.Set([]byte(id), data)
-			return nil
-		}); err != nil {
-			return nil, err
+				data := generic.Compress([]byte(jsonstr))
+				txn.Set([]byte(id), data)
+				return nil
+			}); err != nil {
+				return nil, err
+			}
 		}
+		result[id] = entry
 	}
-	return entry, nil
+	return result, nil
 }
 
 func (mts *MTSolr) LoadEntity(id string) (*Document, error) {
-	entry, err := mts.LoadData(id)
+	entries, err := mts.LoadData([]string{id})
 	if err != nil {
-		return nil, err
+		return nil, emperror.Wrapf(err, "cannot load entity %s", id)
+	}
+	entry, ok := entries[id]
+	if !ok {
+		return nil, emperror.Wrapf(err, "cannot get entity %s from result", id)
 	}
 
 	content, err := mts.GetContent(entry)
