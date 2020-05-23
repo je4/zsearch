@@ -1,7 +1,10 @@
 package source
 
 type Document struct {
-	Source     *SourceData
-	ACL        map[string][]string
-	Id         string
+	Content *SourceData
+	ACL     map[string][]string
+	Id      string
+	Source  string
+	Catalog []string
+	Tag     []string
 }

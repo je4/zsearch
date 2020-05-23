@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/golang/snappy"
 	"github.com/goph/emperror"
 	"github.com/op/go-logging"
 	"golang.org/x/net/idna"
@@ -19,6 +20,15 @@ var _logformat = logging.MustStringFormatter(
 )
 
 var bearerPrefix = "Bearer "
+
+func Compress(data []byte) ([]byte) {
+	return snappy.Encode(nil, data)
+}
+
+func Decompress(data []byte) ([]byte, error) {
+	return snappy.Decode(nil, data)
+}
+
 
 func UrlAmp(u string, ampCache string, t string) (string, error) {
 	url, err := url.Parse(u)

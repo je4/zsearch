@@ -64,7 +64,7 @@ type ZoteroCollection struct {
 }
 
 type ItemTag struct {
-	Tag  string `json:"tag"`
+	Tag  string `json:"Tag"`
 	Type int64  `json:"type,omitempty"`
 }
 

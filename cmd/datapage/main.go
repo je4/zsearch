@@ -3,12 +3,14 @@ package main
 import (
 	"context"
 	"flag"
+	"github.com/dgraph-io/badger"
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/generic"
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/service"
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/source"
 	"io"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
 	"time"
 )
@@ -72,7 +74,40 @@ func main() {
 		accesslog = f
 	}
 
-	mts, err := source.NewMTSolr(config.Solr.Url, config.Solr.Core, config.Solr.CacheExpiration.Duration, config.Solr.CacheSize)
+	stat, err := os.Stat(config.CacheDir)
+	if err != nil {
+		log.Panicf("cannot stat %s", config.CacheDir)
+		return
+	}
+	if !stat.IsDir() {
+		log.Panicf("%s not a director", config.CacheDir)
+		return
+	}
+	/*
+	if err := os.RemoveAll(config.CacheDir); err != nil {
+		log.Errorf("cannot remove %s: %v", config.CacheDir, err)
+	}
+	*/
+	bconfig := badger.DefaultOptions(config.CacheDir)
+	if runtime.GOOS == "windows" {
+		bconfig.Truncate = true
+	}
+	bconfig.Logger = log
+	db, err := badger.Open(bconfig)
+	if err != nil {
+		log.Panicf("cannot open badger database: %v", err)
+		return
+	}
+	defer db.Close()
+
+
+	mts, err := source.NewMTSolr(
+		config.Solr.Url,
+		config.Solr.Core,
+		config.Solr.CacheExpiration.Duration,
+		config.Solr.CacheSize,
+		db,
+		log)
 	if err != nil {
 		log.Panic(err)
 	}

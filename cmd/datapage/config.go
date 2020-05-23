@@ -67,6 +67,7 @@ type Config struct {
 	MediaserverExp    duration    `toml:"mediaserverexp"`
 	PreferredAmpCache string      `toml:"preferredampcache"`
 	AmpApiKey         string      `toml:"ampapikey"`
+	CacheDir          string      `toml:"cachedir"`
 }
 
 func LoadConfig(filepath string) Config {

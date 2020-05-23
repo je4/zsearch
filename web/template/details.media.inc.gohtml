@@ -1,6 +1,6 @@
 <!-- Media area -->
 {{if not .ContentOK}}
-    {{if .Doc.Source.HasMedia}}
+    {{if .Doc.Content.HasMedia}}
     <div class="ampstart-card" style="min-height: 300px;position:relative;">
         <div class="box-center">
             <h4 class="h3">insufficient rights for media display</h4>
@@ -16,8 +16,8 @@
 {{$expanded := true}}
 <amp-accordion
         expand-single-section>
-    {{if .Doc.Source.Media.video}}
-        {{$len = len .Doc.Source.Media.video}}
+    {{if .Doc.Content.Media.video}}
+        {{$len = len .Doc.Content.Media.video}}
         <section{{if $expanded}} expanded{{end}} [data-expand]="mediasection==1">
             {{$expanded = false}}
             <h4 class="hidden">Video ({{$len}})</h4>
@@ -26,18 +26,18 @@
                     <script type="application/json">
                     {
                         "videos": [
-                        {{range $key, $video := .Doc.Source.Media.video}}
+                        {{range $key, $video := .Doc.Content.Media.video}}
                         {{$web := mediachild $video.Uri "$$web"}}
                         {{if $key}},{{end}}"{{medialink $web "master" "" (not $contentPublic)}}"
                         {{end}}
                         ],
                         "iframes": [
-                        {{range $key, $video := .Doc.Source.Media.video}}
+                        {{range $key, $video := .Doc.Content.Media.video}}
                         {{if $key}},{{end}}"{{medialink $video.Uri "iframe" "" (not $contentPublic)}}"
                         {{end}}
                         ],
                         "posters": [
-                        {{range $key, $video := .Doc.Source.Media.video}}
+                        {{range $key, $video := .Doc.Content.Media.video}}
                             {{$poster := printf "%s$$timeshot$$3" $video.Uri}}
                             {{if $key}},{{end}}"{{medialink $poster "master" "" (not $contentPublic)}}"
                         {{end}}
@@ -46,7 +46,7 @@
                     }
                     </script>
                 </amp-state>
-                {{$video := index .Doc.Source.Media.video 0}}
+                {{$video := index .Doc.Content.Media.video 0}}
                 {{$src := mediachild $video.Uri "$$web"}}
                 {{$isMedia := (eq (substr 0 12 $video.Uri) "mediaserver:")}}
                 {{$poster := printf "%s$$timeshot$$3" $video.Uri}}
@@ -71,7 +71,7 @@
                 {{if gt $len 1}}
                 <amp-selector class="center" [selected]="video.selectedVideo" on="select:AMP.setState({video: {selectedVideo: event.targetOption}})">
                     <ul class="list-reset inline-block">
-                        {{range $key, $video := .Doc.Source.Media.video}}
+                        {{range $key, $video := .Doc.Content.Media.video}}
                             <li class="inline-block">
                                 <div option="{{$key}}" class="ampstart-btn ampstart-btn-selectlist caps">{{add $key 1}}</div>
                             </li>
@@ -83,8 +83,8 @@
         </section>
     {{end}}
 
-    {{if .Doc.Source.Media.audio}}
-        {{$len = len .Doc.Source.Media.audio}}
+    {{if .Doc.Content.Media.audio}}
+        {{$len = len .Doc.Content.Media.audio}}
         <section{{if $expanded}} expanded{{end}} [data-expand]="mediasection==2">
             {{$expanded = false}}
             <h4 class="hidden">Audio ({{$len}})</h4>
@@ -93,12 +93,12 @@
                     <script type="application/json">
                     {
                         "audios": [
-                        {{range $key, $audio := .Doc.Source.Media.audio}}
+                        {{range $key, $audio := .Doc.Content.Media.audio}}
                         {{if $key}},{{end}}"{{medialink $audio.Uri "master" "" (not $contentPublic)}}"
                         {{end}}
                         ],
                         "posters": [
-                        {{range $key, $audio := .Doc.Source.Media.audio}}
+                        {{range $key, $audio := .Doc.Content.Media.audio}}
                         {{$poster := printf "%s$$poster" $audio.Uri}}
                         {{if $key}},{{end}}"{{medialink $poster "resize" "size1280x150/stretch" (not $contentPublic)}}"
                         {{end}}
@@ -107,7 +107,7 @@
                     }
                     </script>
                 </amp-state>
-                {{$audio := index .Doc.Source.Media.audio 0}}
+                {{$audio := index .Doc.Content.Media.audio 0}}
                 {{$src := printf "%s$$web$$1" $audio.Uri}}
                 {{$poster := printf "%s$$poster" $audio.Uri}}
                 <amp-img async
@@ -126,7 +126,7 @@
                 {{if gt $len 1}}
                     <amp-selector class="center" [selected]="audio.selectedAudio" on="select:AMP.setState({audio: {selectedAudio: event.targetOption}})">
                         <ul class="list-reset inline-block">
-                            {{range $key, $audio := .Doc.Source.Media.audio}}
+                            {{range $key, $audio := .Doc.Content.Media.audio}}
                                 <li class="inline-block">
                                     <div option="{{$key}}" class="ampstart-btn ampstart-btn-selectlist caps">{{add $key 1}}</div>
                                 </li>
@@ -138,13 +138,13 @@
         </section>
     {{end}}
 
-    {{if .Doc.Source.Media.image}}
-        {{$len = len .Doc.Source.Media.image}}
+    {{if .Doc.Content.Media.image}}
+        {{$len = len .Doc.Content.Media.image}}
         <section{{if $expanded}} expanded{{end}} [data-expand]="mediasection==3">
             {{$expanded = false}}
             <h4 class="hidden">Image ({{$len}})</h4>
             <div>
-                {{range $key, $image := .Doc.Source.Media.image}}
+                {{range $key, $image := .Doc.Content.Media.image}}
                 <!-- Thumbnail -->
                 <amp-img
                         id="img-{{$key}}"
@@ -159,7 +159,7 @@
                               height="720"
                               layout="responsive"
                               type="slides">
-                    {{range $key, $image := .Doc.Source.Media.image}}
+                    {{range $key, $image := .Doc.Content.Media.image}}
                         <!-- Image -->
                         <amp-img
                                 src="{{medialink $image.Uri "resize" "size1280x720" (not $contentPublic)}}"
@@ -177,8 +177,8 @@
         </section>
     {{end}}
 
-    {{if .Doc.Source.Media.pdf}}
-        {{$len = len .Doc.Source.Media.pdf}}
+    {{if .Doc.Content.Media.pdf}}
+        {{$len = len .Doc.Content.Media.pdf}}
         <section{{if $expanded}} expanded{{end}} [data-expand]="mediasection==4">
         {{$expanded = false}}
                 <h4 class="hidden">PDF</h4>
@@ -187,7 +187,7 @@
                 <script type="application/json">
                     {
                         "pdfs": [
-                        {{range $key, $pdf := .Doc.Source.Media.pdf}}
+                        {{range $key, $pdf := .Doc.Content.Media.pdf}}
                             {{if $key}},{{end}}"{{medialink $pdf.Uri "master" "" (not $contentPublic)}}"
                         {{end}}
                         ],
@@ -197,7 +197,7 @@
             </amp-state>
                 <div>
                     <amp-google-document-embed
-                            {{$pdf := index .Doc.Source.Media.pdf 0}}
+                            {{$pdf := index .Doc.Content.Media.pdf 0}}
                             src="{{medialink $pdf.Uri "master" "" (not $contentPublic)}}"
                             [src]="pdf.pdfs[pdf.selectedPdf]"
                             width="1280"
@@ -207,7 +207,7 @@
                 </div>
                 <amp-selector class="center" [selected]="pdf.selectedPdf" on="select:AMP.setState({pdf: {selectedPdf: event.targetOption}})">
                     <ul class="list-reset inline-block">
-                    {{range $key, $pdf := .Doc.Source.Media.pdf}}
+                    {{range $key, $pdf := .Doc.Content.Media.pdf}}
                             <li class="inline-block">
                                 <div option="{{$key}}" class="ampstart-btn ampstart-btn-selectlist caps">{{add $key 1}}</div>
                             </li>
@@ -222,7 +222,7 @@
 <!-- BEGIN Media Type Selector -->
 <amp-selector class="media-selector"
               layout="container">
-    {{if .Doc.Source.Media.video}}
+    {{if .Doc.Content.Media.video}}
         <svg xmlns="http://www.w3.org/2000/svg"
              height="48px"
              viewBox="0 0 24 24"
@@ -245,7 +245,7 @@
         -->
     {{end}}
 
-    {{if .Doc.Source.Media.audio}}
+    {{if .Doc.Content.Media.audio}}
         <svg xmlns="http://www.w3.org/2000/svg"
              height="48px"
              viewBox="0 0 24 24"
@@ -268,7 +268,7 @@
         -->
     {{end}}
 
-    {{if .Doc.Source.Media.image}}
+    {{if .Doc.Content.Media.image}}
         <svg xmlns="http://www.w3.org/2000/svg"
              height="48px"
              viewBox="0 0 24 24"
@@ -292,7 +292,7 @@
         -->
     {{end}}
 
-    {{if .Doc.Source.Media.pdf}}
+    {{if .Doc.Content.Media.pdf}}
         <svg xmlns="http://www.w3.org/2000/svg"
              height="48px"
              viewBox="0 0 24 24"

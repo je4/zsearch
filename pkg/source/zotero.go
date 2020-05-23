@@ -15,8 +15,8 @@ import (
 
 type Zotero struct {
 	mts      *MTSolr
-	zdata    ZoteroData
-	collMeta map[string]string
+	ZData    ZoteroData        `json:"ZData"`
+	CollMeta map[string]string `json:"collmeta"`
 }
 
 var zoteroIgnoreMetaFields = []string{
@@ -33,22 +33,22 @@ var zoteroIgnoreMetaFields = []string{
 
 func NewZotero(data string, mts *MTSolr) (*Zotero, error) {
 	zot := &Zotero{
-		zdata:    ZoteroData{},
-		collMeta: map[string]string{},
-		mts:      mts,
+		ZData:   ZoteroData{},
+		CollMeta: map[string]string{},
+		mts:     mts,
 	}
 	return zot, zot.Init(data)
 }
 
 func (zot *Zotero) Init(data string) error {
-	err := json.Unmarshal([]byte(data), &zot.zdata)
+	err := json.Unmarshal([]byte(data), &zot.ZData)
 	if err != nil {
 		return emperror.Wrapf(err, "cannot unmarshal json\n%s", data)
 	}
 	r := regexp.MustCompile("([^<>]+):([^<>]+)")
-	matches := r.FindAllStringSubmatch(zot.zdata.Group.Data.Description, -1)
+	matches := r.FindAllStringSubmatch(zot.ZData.Group.Data.Description, -1)
 	for _, match := range matches {
-		zot.collMeta[strings.TrimSpace(strings.ToLower(match[1]))] = strings.TrimSpace(match[2])
+		zot.CollMeta[strings.TrimSpace(strings.ToLower(match[1]))] = strings.TrimSpace(match[2])
 	}
 	return nil
 }
@@ -56,7 +56,7 @@ func (zot *Zotero) Init(data string) error {
 func (zot *Zotero) Name() string { return "zotero" }
 
 func (zot *Zotero) GetCollectionTitle() string {
-	t, ok := zot.collMeta["title"]
+	t, ok := zot.CollMeta["title"]
 	if !ok {
 		return ""
 	}
@@ -64,20 +64,20 @@ func (zot *Zotero) GetCollectionTitle() string {
 }
 
 func (zot *Zotero) GetTitle() string {
-	return zot.zdata.Data.Title
+	return zot.ZData.Data.Title
 }
 
 func (zot *Zotero) GetPlace() string {
-	return zot.zdata.Data.Place
+	return zot.ZData.Data.Place
 }
 
 func (zot *Zotero) GetDate() string {
-	return zot.zdata.Data.Date
+	return zot.ZData.Data.Date
 }
 
 func (zot *Zotero) GetMeta() map[string]string {
 	var result = make(map[string]string)
-	s := reflect.ValueOf(&zot.zdata.Data).Elem()
+	s := reflect.ValueOf(&zot.ZData.Data).Elem()
 	typeOfT := s.Type()
 	for i := 0; i < s.NumField(); i++ {
 		f := s.Field(i)
@@ -93,7 +93,7 @@ func (zot *Zotero) GetMeta() map[string]string {
 			result[fname] = valstr
 		}
 	}
-	s = reflect.ValueOf(&zot.zdata.Data.ItemDataBase).Elem()
+	s = reflect.ValueOf(&zot.ZData.Data.ItemDataBase).Elem()
 	typeOfT = s.Type()
 	for i := 0; i < s.NumField(); i++ {
 		f := s.Field(i)
@@ -110,12 +110,12 @@ func (zot *Zotero) GetMeta() map[string]string {
 }
 
 func (zot *Zotero) GetAbstract() string {
-	return zot.zdata.Data.AbstractNote
+	return zot.ZData.Data.AbstractNote
 }
 
 func (zot *Zotero) GetNames() []Person {
 	var persons []Person
-	for _, c := range zot.zdata.Data.ItemDataBase.Creators {
+	for _, c := range zot.ZData.Data.ItemDataBase.Creators {
 		name := strings.Trim(fmt.Sprintf("%s, %s", c.LastName, c.FirstName), " ,")
 		if name != "" {
 			persons = append(persons, Person{
@@ -131,8 +131,8 @@ func (zot *Zotero) getColl(key string) (*ZoteroCollection, error) {
 	if key == "" {
 		return nil, errors.New("empty collection key")
 	}
-	for _, c := range zot.zdata.Data.Collections {
-		for _, coll := range zot.zdata.Collections {
+	for _, c := range zot.ZData.Data.Collections {
+		for _, coll := range zot.ZData.Collections {
 			if coll.Key == c {
 				return &coll, nil
 			}
@@ -143,13 +143,13 @@ func (zot *Zotero) getColl(key string) (*ZoteroCollection, error) {
 
 func (zot *Zotero) GetTags() []string {
 	var tags []string
-	for _, t := range zot.zdata.Data.Tags {
+	for _, t := range zot.ZData.Data.Tags {
 		tags = generic.AppendIfMissing(tags, strings.ToLower(t.Tag))
 	}
-	tags = generic.AppendIfMissing(tags, strings.ToLower(zot.zdata.Group.Data.Name))
+	tags = generic.AppendIfMissing(tags, strings.ToLower(zot.ZData.Group.Data.Name))
 
-	for _, c := range zot.zdata.Data.Collections {
-		for _, coll := range zot.zdata.Collections {
+	for _, c := range zot.ZData.Data.Collections {
+		for _, coll := range zot.ZData.Collections {
 			if coll.Key == c {
 				tags = generic.AppendIfMissing(tags, strings.ToLower(coll.Data.Name))
 				for ok := true; ok; ok = (coll.Data.ParentCollection == "") {
@@ -168,7 +168,7 @@ func (zot *Zotero) GetTags() []string {
 
 func (zot *Zotero) GetChildren(itemType, linkMode string) []ZoteroData {
 	var children []ZoteroData
-	for _, child := range zot.zdata.Children {
+	for _, child := range zot.ZData.Children {
 		if child.Data.ItemType != itemType {
 			continue
 		}
@@ -204,7 +204,7 @@ var zoterolinkregexp = regexp.MustCompile("^https?://zotero.org/groups/([^/]+)/i
 
 func (zot *Zotero) GetReferences() []Reference {
 	var references []Reference
-	for key, values := range zot.zdata.Data.ItemDataBase.Relations {
+	for key, values := range zot.ZData.Data.ItemDataBase.Relations {
 		for _, value := range values {
 			if matches := zoterolinkregexp.FindStringSubmatch(value); matches != nil {
 				signature := fmt.Sprintf("zotero-%s.%s", matches[1], matches[2])
@@ -213,9 +213,15 @@ func (zot *Zotero) GetReferences() []Reference {
 				if err != nil {
 					continue
 				}
+				content, err := zot.mts.GetContent(entry)
+				if err != nil {
+					zot.mts.log.Errorf("cannot get content: %v", err)
+					continue
+				}
+
 				references = append(references, Reference{
 					Type:      key,
-					Title:     entry.content.GetTitle(),
+					Title:     content.GetTitle(),
 					Signature: signature,
 				})
 			}

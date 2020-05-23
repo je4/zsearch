@@ -47,7 +47,7 @@ func (s *Server) userHandler(w http.ResponseWriter, req *http.Request) {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal user: %v", user)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("ContentStr-Type", "application/json")
 	w.Write(js)
 }
 

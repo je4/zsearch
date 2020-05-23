@@ -75,7 +75,7 @@ type Source interface {
 }
 
 type SourceData struct {
-	Source          string               `json:"source"`
+	Source          string               `json:"Source"`
 	Title           string               `json:"title"`
 	Place           string               `json:"place"`
 	Date            string               `json:"date"`
