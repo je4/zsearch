@@ -113,6 +113,10 @@ func (zot *Zotero) GetAbstract() string {
 	return zot.ZData.Data.AbstractNote
 }
 
+func (zot *Zotero) GetType() string {
+	return zot.ZData.Data.ItemDataBase.ItemType
+}
+
 func (zot *Zotero) GetNames() []Person {
 	var persons []Person
 	for _, c := range zot.ZData.Data.ItemDataBase.Creators {
@@ -208,24 +212,8 @@ func (zot *Zotero) GetReferences() []Reference {
 		for _, value := range values {
 			if matches := zoterolinkregexp.FindStringSubmatch(value); matches != nil {
 				signature := fmt.Sprintf("zotero-%s.%s", matches[1], matches[2])
-				entries, err := zot.mts.LoadData([]string{signature})
-				// todo: implement error handling for unknown resources
-				if err != nil {
-					continue
-				}
-				entry, ok := entries[signature]
-				if !ok {
-					continue
-				}
-				content, err := zot.mts.GetContent(entry)
-				if err != nil {
-					zot.mts.log.Errorf("cannot get content: %v", err)
-					continue
-				}
-
 				references = append(references, Reference{
 					Type:      key,
-					Title:     content.GetTitle(),
 					Signature: signature,
 				})
 			}

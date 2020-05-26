@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/juliangruber/go-intersect"
 	"net/http"
 	"strings"
 )
@@ -89,6 +90,23 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 			status.ContentOK = true
 		}
 	}
+
+	// load all references
+	// title only if rights ok
+	for key, ref := range status.Doc.Content.References {
+		if ref.Title == "" {
+			doc, err := s.mts.LoadEntity(ref.Signature)
+			if err == nil {
+				acl_meta, ok := status.Doc.ACL["meta"]
+				if ok && len(intersect.Simple(status.User.Groups, acl_meta)) > 0 {
+					status.Doc.Content.References[key].Title = doc.Content.Title
+				} else {
+					status.Doc.Content.References[key].Title = doc.Id
+				}
+			}
+		}
+	}
+
 
 	if !status.MetaOK {
 		w.WriteHeader(http.StatusForbidden)

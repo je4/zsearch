@@ -25,9 +25,14 @@ type User struct {
 
 func (u User) LinkSignatureCache(signature string) string {
 	urlstr := fmt.Sprintf("%s/%s/%s", u.Server.addrExt, u.Server.detailPrefix, signature)
-	urlstr, err := u.Server.ampCache.BuildUrl(urlstr, amp.PAGE)
-	if err != nil {
-		return fmt.Sprintf("ERROR: %v", err)
+	var err error
+	if u.Server.ampCache == nil {
+		urlstr = signature
+	} else {
+		urlstr, err = u.Server.ampCache.BuildUrl(urlstr, amp.PAGE)
+		if err != nil {
+			return fmt.Sprintf("ERROR: %v", err)
+		}
 	}
 	return urlstr
 }

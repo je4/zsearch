@@ -40,34 +40,34 @@ type AccessGroup struct {
 }
 
 type Config struct {
-	Logfile           string      `toml:"logfile"`
-	Loglevel          string      `toml:"loglevel"`
-	AccessLog         string      `toml:"accesslog"`
-	Addr              string      `toml:"addr"`
-	AddrExt           string      `toml:"addrext"`
-	CertPEM           string      `toml:"certpem"`
-	KeyPEM            string      `toml:"keypem"`
-	StaticDir         string      `toml:"staticdir"`
-	StaticPrefix      string      `toml:"staticprefix"`
-	DetailPrefix      string      `toml:"detailprefix"`
-	UpdatePrefix      string      `toml:"updateprefix"`
-	JWTKey            string      `toml:"jwtkey"`
-	JWTAlg            []string    `toml:"jwtalg"`
-	LinkTokenExp      duration    `toml:"linktokenexp"`
-	LoginUrl          string      `toml:"loginurl"`
-	LoginIssuer       string      `toml:"loginissuer"`
-	IdleTimeout       duration    `toml:"idletimeout"`
-	UserCacheSize     int         `toml:"usercachesize"`
-	Google            Google      `toml:"google"`
-	Template          Template    `toml:"template"`
-	Solr              Solr        `toml:"solr"`
-	AccessGroup       AccessGroup `toml:"access"`
-	Mediaserver       string      `toml:"mediaserver"`
-	MediaserverKey    string      `toml:"mediaserverkey"`
-	MediaserverExp    duration    `toml:"mediaserverexp"`
-	PreferredAmpCache string      `toml:"preferredampcache"`
-	AmpApiKey         string      `toml:"ampapikey"`
-	CacheDir          string      `toml:"cachedir"`
+	Logfile        string      `toml:"logfile"`
+	Loglevel       string      `toml:"loglevel"`
+	AccessLog      string      `toml:"accesslog"`
+	Addr           string      `toml:"addr"`
+	AddrExt        string      `toml:"addrext"`
+	CertPEM        string      `toml:"certpem"`
+	KeyPEM         string      `toml:"keypem"`
+	StaticDir      string      `toml:"staticdir"`
+	StaticPrefix   string      `toml:"staticprefix"`
+	DetailPrefix   string      `toml:"detailprefix"`
+	UpdatePrefix   string      `toml:"updateprefix"`
+	JWTKey         string      `toml:"jwtkey"`
+	JWTAlg         []string    `toml:"jwtalg"`
+	LinkTokenExp   duration    `toml:"linktokenexp"`
+	LoginUrl       string      `toml:"loginurl"`
+	LoginIssuer    string      `toml:"loginissuer"`
+	IdleTimeout    duration    `toml:"idletimeout"`
+	UserCacheSize  int         `toml:"usercachesize"`
+	Google         Google      `toml:"google"`
+	Template       Template    `toml:"template"`
+	Solr           Solr        `toml:"solr"`
+	AccessGroup    AccessGroup `toml:"access"`
+	Mediaserver    string      `toml:"mediaserver"`
+	MediaserverKey string      `toml:"mediaserverkey"`
+	MediaserverExp duration    `toml:"mediaserverexp"`
+	AmpCache       string      `toml:"ampcache"`
+	AmpApiKey      string      `toml:"ampapikey"`
+	CacheDir       string      `toml:"cachedir"`
 }
 
 func LoadConfig(filepath string) Config {

@@ -72,6 +72,7 @@ type Source interface {
 	GetAbstract() string
 	GetReferences() []Reference
 	GetMeta() map[string]string
+	GetType() string
 }
 
 type SourceData struct {
@@ -88,4 +89,5 @@ type SourceData struct {
 	HasMedia        bool                 `json:"hasmedia"`
 	References      []Reference          `json:"references"`
 	Meta            map[string]string    `json:"meta"`
+	Type            string               `json:"type"`
 }

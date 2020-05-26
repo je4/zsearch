@@ -41,7 +41,7 @@ func NewMTSolr(url, core string, expiration time.Duration, cachesize int, db *ba
 }
 
 type cacheEntry struct {
-	Id string `json:"id"`
+	Id         string `json:"id"`
 	Source     string `json:"source"`
 	ContentStr string `json:"content"`
 	//	Content    Source              `json:"-"`
@@ -90,7 +90,7 @@ func (mts *MTSolr) cacheEntryFromDoc(doc solr.Document) (*cacheEntry, string, er
 	if !ok {
 		return nil, "", errors.New(fmt.Sprintf("id not a string"))
 	}
-	
+
 	if !doc.Has("metagz") {
 		return nil, "", errors.New(fmt.Sprintf("id %s has no metagz field", id))
 	}
@@ -137,12 +137,12 @@ func (mts *MTSolr) cacheEntryFromDoc(doc solr.Document) (*cacheEntry, string, er
 	cluster := interface2StringSlice(clusterI)
 
 	entry := &cacheEntry{
-		Id: id,
+		Id:         id,
 		Source:     srcstr,
 		ContentStr: metadata,
 		Acl: map[string][]string{
 			"meta":       acl_meta,
-			"ContentStr": acl_content,
+			"content": acl_content,
 		},
 		Catalog: catalog,
 		Tag:     cluster,
@@ -152,6 +152,9 @@ func (mts *MTSolr) cacheEntryFromDoc(doc solr.Document) (*cacheEntry, string, er
 
 func (mts *MTSolr) getSolrDocs(ids []string) (map[string]*cacheEntry, error) {
 	numIDs := len(ids)
+	if numIDs == 0 {
+		return make(map[string]*cacheEntry), nil
+	}
 	qstr := ""
 	for _, id := range ids {
 		if qstr != "" {
@@ -182,101 +185,134 @@ func (mts *MTSolr) getSolrDocs(ids []string) (map[string]*cacheEntry, error) {
 	return result, nil
 }
 
-// todo: refactor fo multiple docs
-func (mts *MTSolr) LoadData(ids []string) (map[string]*cacheEntry, error) {
-	result := make(map[string]*cacheEntry)
+func (mts *MTSolr) LoadEntity(id string) (*Document, error) {
+	entries, err := mts.LoadEntities([]string{id})
+	if err != nil {
+		return nil, err
+	}
+	entry, ok := entries[id]
+	if !ok {
+		return nil, fmt.Errorf("could not get entity %s", id)
+	}
+	if entry.Error != "" {
+		return nil, fmt.Errorf("could not load entity %s: %s", entry.Error)
+	}
+	return entry, nil
+}
+
+func (mts *MTSolr) LoadEntities(ids []string) (map[string]*Document, error) {
+	// todo: need better locking stragegy
 	mts.Lock()
 	defer mts.Unlock()
+
+	var result = make(map[string]*Document)
+	var toLoad []string
+
+	//
+	// try loading from cache
+	//
 	for _, id := range ids {
-		var entry *cacheEntry
-		// try to get ContentStr from cache
 		if err := mts.db.View(func(txn *badger.Txn) error {
 			it, err := txn.Get([]byte(id))
 			if err != nil {
 				return emperror.Wrapf(err, "cannot get item %s", id)
 			}
 			if err := it.Value(func(v []byte) error {
+				var doc = &Document{}
+
+				// decompress...
 				data, err := generic.Decompress(v)
 				if err != nil {
 					return emperror.Wrapf(err, "cannot deocmpress %s", string(v))
 				}
-				entry = &cacheEntry{}
-				if err := json.Unmarshal(data, entry); err != nil {
+				// ...unmarshal
+				if err := json.Unmarshal(data, doc); err != nil {
 					return emperror.Wrapf(err, "cannot unmarshal json %s", string(v))
 				}
+				mts.log.Infof("document %s found in cache", id)
+				result[doc.Id] = doc
 				return nil
 			}); err != nil {
 				return emperror.Wrapf(err, "cannot load item %s", id)
 			}
-			mts.log.Infof("document %s found in cache", id)
 			return nil
 		}); err != nil {
-			entries, err := mts.getSolrDocs([]string{id})
-			if err != nil {
-				return nil, emperror.Wrapf(err, "cannot load document %s", id)
-			}
-			var ok bool
-			entry, ok = entries[id]
-			if !ok {
-				return nil, fmt.Errorf("id %v not in result", id)
-			}
-			if err := mts.db.Update(func(txn *badger.Txn) error {
-				// marshal entry
-				jsonstr, err := json.Marshal(*entry)
-				if err != nil {
-					return emperror.Wrap(err, "cannot marshal entry")
-				}
-
-				data := generic.Compress([]byte(jsonstr))
-				txn.Set([]byte(id), data)
-				return nil
-			}); err != nil {
-				return nil, err
-			}
+			toLoad = append(toLoad, id)
 		}
-		result[id] = entry
 	}
-	return result, nil
-}
 
-func (mts *MTSolr) LoadEntity(id string) (*Document, error) {
-	entries, err := mts.LoadData([]string{id})
+	//
+	// then load the rest from index
+	//
+	entries, err := mts.getSolrDocs(toLoad)
 	if err != nil {
-		return nil, emperror.Wrapf(err, "cannot load entity %s", id)
+		return nil, emperror.Wrapf(err, "cannot load entities %v", ids)
 	}
-	entry, ok := entries[id]
-	if !ok {
-		return nil, emperror.Wrapf(err, "cannot get entity %s from result", id)
-	}
+	var doclist =make(map[string]*Document)
+	for _, id := range toLoad {
 
-	content, err := mts.GetContent(entry)
-	if err != nil {
-		return nil, emperror.Wrapf(err, "cannot load content of %s", id)
-	}
+		// check whether it's found
+		entry, ok := entries[id]
+		if !ok {
+			// keep error in cache as well
+			doc := &Document{Id: id, Error: fmt.Sprintf("id %s not found in index", id)}
+			doclist[doc.Id] = doc
+			continue
+		}
 
-	sourceData := &SourceData{
-		Source:          content.Name(),
-		Title:           content.GetTitle(),
-		Place:           content.GetPlace(),
-		Date:            content.GetDate(),
-		CollectionTitle: content.GetCollectionTitle(),
-		Persons:         content.GetNames(),
-		Tags:            content.GetTags(),
-		Media:           content.GetMedia(),
-		Notes:           content.GetNotes(),
-		Abstract:        content.GetAbstract(),
-		References:      content.GetReferences(),
-		Meta:            content.GetMeta(),
-	}
-	sourceData.HasMedia = len(sourceData.Media) > 0
+		// load the content
+		content, err := mts.GetContent(entry)
+		if err != nil {
+			// keep error in cache as well
+			doc := &Document{Id: entry.Id, Error: emperror.Wrapf(err, "cannot load content of %s", entry.Id).Error()}
+			doclist[doc.Id] = doc
+			continue
+		}
 
-	result := &Document{
-		Content: sourceData,
-		ACL:     entry.Acl,
-		Catalog: entry.Catalog,
-		Tag:     entry.Tag,
-		Source:  entry.Source,
-		Id:      id,
+		// build full document
+		sourceData := &SourceData{
+			Source:          content.Name(),
+			Title:           content.GetTitle(),
+			Place:           content.GetPlace(),
+			Date:            content.GetDate(),
+			CollectionTitle: content.GetCollectionTitle(),
+			Persons:         content.GetNames(),
+			Tags:            content.GetTags(),
+			Media:           content.GetMedia(),
+			Notes:           content.GetNotes(),
+			Abstract:        content.GetAbstract(),
+			References:      content.GetReferences(),
+			Meta:            content.GetMeta(),
+			Type:            content.GetType(),
+		}
+		sourceData.HasMedia = len(sourceData.Media) > 0
+
+		doc := &Document{
+			Content: sourceData,
+			ACL:     entry.Acl,
+			Catalog: entry.Catalog,
+			Tag:     entry.Tag,
+			Source:  entry.Source,
+			Id:      entry.Id,
+			Error:   "",
+		}
+		doclist[id] = doc
+	}
+	for _, doc := range doclist {
+		// marshal entry
+		jsonstr, err := json.Marshal(*doc)
+		if err != nil {
+			return nil, emperror.Wrap(err, "cannot marshal entry")
+		}
+		// compress it
+		data := generic.Compress([]byte(jsonstr))
+		if err := mts.db.Update(func(txn *badger.Txn) error {
+			txn.Set([]byte(doc.Id), data)
+			return nil
+		}); err != nil {
+			return nil, err
+		}
+		result[doc.Id] = doc
 	}
 	return result, nil
 }

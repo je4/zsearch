@@ -162,7 +162,7 @@ func (c *Cache) BuildUrl(u string, urltype URLType) (string, error) {
 	return strings.TrimRight(fmt.Sprintf("%s/%s", baseurl, strings.TrimLeft(url.Path, "/")), "/"), nil
 }
 
-func GetCaches() (map[string]Cache, error) {
+func GetCaches() (map[string]*Cache, error) {
 	resp, err := http.Get("https://cdn.ampproject.org/caches.json")
 	if err != nil {
 		return nil, emperror.Wrapf(err, "cannot load json from https://cdn.ampproject.org/caches.json")
@@ -172,7 +172,7 @@ func GetCaches() (map[string]Cache, error) {
 	if err := json.NewDecoder(resp.Body).Decode(&cachesjson); err != nil {
 		return nil, emperror.Wrapf(err, "cannot decode json")
 	}
-	var result = make(map[string]Cache)
+	var result = make(map[string]*Cache)
 	caches, ok := cachesjson["caches"]
 	if !ok {
 		return nil, errors.New("no caches in result")
@@ -180,7 +180,7 @@ func GetCaches() (map[string]Cache, error) {
 
 	for _, c := range caches {
 		c.Init()
-		result[c.Id] = c
+		result[c.Id] = &c
 	}
 	return result, nil
 }

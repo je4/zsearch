@@ -6,7 +6,6 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
-	"errors"
 	"fmt"
 	"github.com/Masterminds/sprig"
 	"github.com/goph/emperror"
@@ -18,11 +17,9 @@ import (
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/source"
 	"html/template"
 	"io"
-	"math/rand"
 	"net"
 	"net/http"
 	"os"
-	"reflect"
 	"regexp"
 	"sort"
 	"strings"
@@ -103,7 +100,7 @@ func NewServer(
 	adminGroup string,
 	detailPrefix string,
 	updatePrefix string,
-	preferredAmpCache string,
+	AmpCache string,
 	ampApiKeyFile string,
 ) (*Server, error) {
 	host, port, err := net.SplitHostPort(addr)
@@ -132,7 +129,8 @@ func NewServer(
 	if err != nil {
 		return nil, err
 	}
-	ampCache, ok := aCaches[preferredAmpCache]
+	ampCache, _ := aCaches[AmpCache]
+	/*
 	if !ok {
 		keys := reflect.ValueOf(aCaches).MapKeys()
 		if len(keys) == 0 {
@@ -140,6 +138,7 @@ func NewServer(
 		}
 		ampCache = aCaches[keys[rand.Intn(len(keys))].Interface().(string)]
 	}
+	 */
 
 	srv := &Server{
 		mts:            mts,
@@ -163,7 +162,7 @@ func NewServer(
 		adminGroup:     adminGroup,
 		detailPrefix:   detailPrefix,
 		updatePrefix:   updatePrefix,
-		ampCache:       &ampCache,
+		ampCache:       ampCache,
 		ampApiKey:      ampApiKey,
 	}
 	if err := srv.InitTemplates(detailTemplate, errorTemplate, forbiddenTemplate); err != nil {
@@ -212,9 +211,11 @@ func (s *Server) InitTemplates(detailTemplate, errorTemplate, forbiddenTemplate 
 			}
 			url = fmt.Sprintf("%s?token=%s", url, jwt)
 		} else {
-			url, err = s.ampCache.BuildUrl(url, amp.IMAGE)
-			if err != nil {
-				return fmt.Sprintf("ERROR: %v", err)
+			if s.ampCache != nil {
+				url, err = s.ampCache.BuildUrl(url, amp.IMAGE)
+				if err != nil {
+					return fmt.Sprintf("ERROR: %v", err)
+				}
 			}
 		}
 		return url

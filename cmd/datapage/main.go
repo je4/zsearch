@@ -141,7 +141,7 @@ func main() {
 		config.AccessGroup.Admin,
 		config.DetailPrefix,
 		config.UpdatePrefix,
-		config.PreferredAmpCache,
+		config.AmpCache,
 		config.AmpApiKey,
 	)
 
