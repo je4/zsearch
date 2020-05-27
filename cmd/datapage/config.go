@@ -25,6 +25,7 @@ type Template struct {
 	Detail    []string `toml:"detail"`
 	Error     []string `toml:"error"`
 	Forbidden []string `toml:"forbidden"`
+	Search    []string `toml:"search"`
 }
 
 type Solr struct {
@@ -51,6 +52,7 @@ type Config struct {
 	StaticPrefix   string      `toml:"staticprefix"`
 	DetailPrefix   string      `toml:"detailprefix"`
 	UpdatePrefix   string      `toml:"updateprefix"`
+	SearchPrefix   string      `toml:"searchprefix"`
 	JWTKey         string      `toml:"jwtkey"`
 	JWTAlg         []string    `toml:"jwtalg"`
 	LinkTokenExp   duration    `toml:"linktokenexp"`
@@ -82,5 +84,6 @@ func LoadConfig(filepath string) Config {
 	conf.StaticPrefix = strings.Trim(conf.StaticPrefix, "/")
 	conf.DetailPrefix = strings.Trim(conf.DetailPrefix, "/")
 	conf.UpdatePrefix = strings.Trim(conf.UpdatePrefix, "/")
+	conf.SearchPrefix = strings.Trim(conf.SearchPrefix, "/")
 	return conf
 }

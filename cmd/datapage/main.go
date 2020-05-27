@@ -123,6 +123,7 @@ func main() {
 		config.Template.Detail,
 		config.Template.Error,
 		config.Template.Forbidden,
+		config.Template.Search,
 		config.Addr,
 		config.AddrExt,
 		config.Mediaserver,
@@ -141,6 +142,7 @@ func main() {
 		config.AccessGroup.Admin,
 		config.DetailPrefix,
 		config.UpdatePrefix,
+		config.SearchPrefix,
 		config.AmpCache,
 		config.AmpApiKey,
 	)

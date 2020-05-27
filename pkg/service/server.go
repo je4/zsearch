@@ -31,7 +31,7 @@ type Notification struct {
 	Message string
 }
 
-type Status struct {
+type DetailStatus struct {
 	Notifications []Notification
 	Doc           *source.Document
 	User          *User
@@ -44,6 +44,17 @@ type Status struct {
 	SelfPath      string
 	AmpBase       string
 	LoginUrl      string
+	Title         string
+}
+
+type SearchStatus struct {
+	Notifications []Notification
+	User          *User
+	Self          string
+	SelfPath      string
+	AmpBase       string
+	LoginUrl      string
+	Title         string
 }
 
 type Server struct {
@@ -57,6 +68,7 @@ type Server struct {
 	detailPrefix      string
 	staticPrefix      string
 	updatePrefix      string
+	searchPrefix      string
 	jwtKey            string
 	jwtAlg            []string
 	linkTokenExp      time.Duration
@@ -67,6 +79,7 @@ type Server struct {
 	detailTemplate    *template.Template
 	errorTemplate     *template.Template
 	forbiddenTemplate *template.Template
+	searchTemplate    *template.Template
 	mediaserver       string
 	mediaserverKey    string
 	mediaTokenExp     time.Duration
@@ -82,6 +95,7 @@ func NewServer(
 	detailTemplate,
 	errorTemplate,
 	forbiddenTemplate []string,
+	searchTemplate []string,
 	addr,
 	addrExt,
 	mediaserver,
@@ -100,6 +114,7 @@ func NewServer(
 	adminGroup string,
 	detailPrefix string,
 	updatePrefix string,
+	searchPrefix string,
 	AmpCache string,
 	ampApiKeyFile string,
 ) (*Server, error) {
@@ -131,14 +146,14 @@ func NewServer(
 	}
 	ampCache, _ := aCaches[AmpCache]
 	/*
-	if !ok {
-		keys := reflect.ValueOf(aCaches).MapKeys()
-		if len(keys) == 0 {
-			return nil, errors.New("no AMP caches found")
+		if !ok {
+			keys := reflect.ValueOf(aCaches).MapKeys()
+			if len(keys) == 0 {
+				return nil, errors.New("no AMP caches found")
+			}
+			ampCache = aCaches[keys[rand.Intn(len(keys))].Interface().(string)]
 		}
-		ampCache = aCaches[keys[rand.Intn(len(keys))].Interface().(string)]
-	}
-	 */
+	*/
 
 	srv := &Server{
 		mts:            mts,
@@ -162,16 +177,17 @@ func NewServer(
 		adminGroup:     adminGroup,
 		detailPrefix:   detailPrefix,
 		updatePrefix:   updatePrefix,
+		searchPrefix:   searchPrefix,
 		ampCache:       ampCache,
 		ampApiKey:      ampApiKey,
 	}
-	if err := srv.InitTemplates(detailTemplate, errorTemplate, forbiddenTemplate); err != nil {
+	if err := srv.InitTemplates(detailTemplate, errorTemplate, forbiddenTemplate, searchTemplate); err != nil {
 		return nil, emperror.Wrapf(err, "cannot initialize server")
 	}
 	return srv, nil
 }
 
-func (s *Server) InitTemplates(detailTemplate, errorTemplate, forbiddenTemplate []string) (err error) {
+func (s *Server) InitTemplates(detailTemplate, errorTemplate, forbiddenTemplate, searchTemplate []string) (err error) {
 	mediaMatch := regexp.MustCompile(`^mediaserver:([^/]+)/([^/]+)$`)
 
 	funcMap := sprig.FuncMap()
@@ -232,6 +248,10 @@ func (s *Server) InitTemplates(detailTemplate, errorTemplate, forbiddenTemplate 
 		return emperror.Wrapf(err, "cannot parse error template %v", errorTemplate)
 	}
 	s.forbiddenTemplate, err = template.New("forbidden.amp.gohtml").Funcs(funcMap).ParseFiles(forbiddenTemplate...)
+	if err != nil {
+		return emperror.Wrapf(err, "cannot parse forbidden template %v", forbiddenTemplate)
+	}
+	s.searchTemplate, err = template.New("search.amp.gohtml").Funcs(funcMap).ParseFiles(searchTemplate...)
 	if err != nil {
 		return emperror.Wrapf(err, "cannot parse forbidden template %v", forbiddenTemplate)
 	}
@@ -323,17 +343,8 @@ func (s *Server) userFromToken(tokenstring, signature string) (*User, error) {
 func (s *Server) ListenAndServe(cert, key string) error {
 	router := mux.NewRouter()
 
-	userRegexp := regexp.MustCompile(fmt.Sprintf("^/%s/(.+)/user$", s.detailPrefix))
-	router.
-		MatcherFunc(func(r *http.Request, rm *mux.RouteMatch) bool {
-			matches := userRegexp.FindSubmatch([]byte(r.URL.Path))
-			if len(matches) == 0 {
-				return false
-			}
-			rm.Vars = map[string]string{}
-			rm.Vars["signature"] = string(matches[1])
-			return true
-		}).HandlerFunc(s.userHandler)
+	// https://data.mediathek.hgk.fhnw.ch/search
+	router.HandleFunc(fmt.Sprintf("/%s", s.searchPrefix), s.searchHandler)
 
 	// https://data.mediathek.hgk.fhnw.ch/detail/[signature]
 	mainRegexp := regexp.MustCompile(fmt.Sprintf("^/%s/(.+)$", s.detailPrefix))
@@ -363,7 +374,7 @@ func (s *Server) ListenAndServe(cert, key string) error {
 
 	// the static fileserver
 	router.
-		PathPrefix(s.staticPrefix).
+		PathPrefix(fmt.Sprintf("/%s", s.staticPrefix)).
 		Handler(http.StripPrefix("/"+s.staticPrefix, http.FileServer(http.Dir(s.staticDir))))
 
 	loggedRouter := handlers.LoggingHandler(s.accesslog, router)

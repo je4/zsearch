@@ -17,7 +17,7 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	status := Status{
+	status := DetailStatus{
 		Doc:           nil,
 		User:          nil,
 		ContentOK:     false,
@@ -115,6 +115,7 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	status.Title = status.Doc.Content.CollectionTitle
 	status.IsAmp = status.User.LoggedIn && !status.User.LoggedOut && status.MetaOK
 
 	err = s.detailTemplate.Execute(w, status)
