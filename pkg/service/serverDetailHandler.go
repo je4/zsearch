@@ -13,11 +13,12 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	signature, ok := vars["signature"]
 	if !ok {
-		s.DoPanicf(w, http.StatusBadRequest, "no signature in url: %s", req.URL.Path)
+		s.DoPanicf(w, http.StatusBadRequest, "no signature in url: %s", false, req.URL.Path)
 		return
 	}
 
 	status := DetailStatus{
+		Type:          "detail",
 		Doc:           nil,
 		User:          nil,
 		ContentOK:     false,
@@ -30,7 +31,7 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 	var err error
 	status.Doc, err = s.mts.LoadEntity(signature)
 	if err != nil {
-		s.DoPanicf(w, http.StatusNotFound, "error loading signature %s: %v", signature, err)
+		s.DoPanicf(w, http.StatusNotFound, "error loading signature %s: %v", false, signature, err)
 		return
 	}
 
@@ -38,7 +39,7 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 	if ok {
 		// jwt in parameter?
 		if len(jwt) == 0 {
-			s.DoPanicf(w, http.StatusForbidden, "invalid token %v", jwt)
+			s.DoPanicf(w, http.StatusForbidden, "invalid token %v", false, jwt)
 			return
 		}
 		tokenstring := jwt[0]
@@ -107,7 +108,6 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-
 	if !status.MetaOK {
 		w.WriteHeader(http.StatusForbidden)
 		// if there's no error Template, there's no help...
@@ -120,7 +120,7 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 
 	err = s.detailTemplate.Execute(w, status)
 	if err != nil {
-		s.DoPanicf(w, http.StatusInternalServerError, "cannot parse template: %+v", err)
+		s.DoPanicf(w, http.StatusInternalServerError, "cannot parse template: %+v", false, err)
 		return
 	}
 	//	w.Write([]byte(fmt.Sprintf("%s/%s", access, signature)))

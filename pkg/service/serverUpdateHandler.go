@@ -14,16 +14,16 @@ func (s *Server) updateHandler(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	signature, ok := vars["signature"]
 	if !ok {
-		s.DoPanicf(w, http.StatusBadRequest, "no signature in url: %s", req.URL.Path)
+		s.DoPanicf(w, http.StatusBadRequest, "no signature in url: %s", false, req.URL.Path)
 		return
 	}
 	if s.ampCache == nil {
-		s.DoPanicf(w, http.StatusInternalServerError, "no amp configured")
+		s.DoPanicf(w, http.StatusInternalServerError, "no amp configured", false)
 		return
 	}
 	doc, err := s.mts.LoadEntity(signature)
 	if err != nil {
-		s.DoPanicf(w, http.StatusNotFound, "error loading signature %s: %v", signature, err)
+		s.DoPanicf(w, http.StatusNotFound, "error loading signature %s: %v", false, signature, err)
 		return
 	}
 
@@ -31,7 +31,7 @@ func (s *Server) updateHandler(w http.ResponseWriter, req *http.Request) {
 	if ok {
 		// jwt in parameter?
 		if len(jwt) == 0 {
-			s.DoPanicf(w, http.StatusForbidden, "invalid token %v", jwt)
+			s.DoPanicf(w, http.StatusForbidden, "invalid token %v", false, jwt)
 			return
 		}
 		tokenstring := jwt[0]
@@ -39,19 +39,19 @@ func (s *Server) updateHandler(w http.ResponseWriter, req *http.Request) {
 			// jwt valid?
 			claims, err := generic.CheckJWTValid(tokenstring, s.jwtKey, s.jwtAlg)
 			if err != nil {
-				s.DoPanicf(w, http.StatusForbidden, "invalid access token: %v", err)
+				s.DoPanicf(w, http.StatusForbidden, "invalid access token: %v", false, err)
 				return
 			}
 
 			// sub given?
 			sub, err := generic.GetClaim(claims, "sub")
 			if err != nil {
-				s.DoPanicf(w, http.StatusForbidden, "no sub in token: %v", err)
+				s.DoPanicf(w, http.StatusForbidden, "no sub in token: %v", false, err)
 				return
 			}
 			// sub correct?
 			if strings.ToLower(sub) != strings.ToLower("update:"+signature) {
-				s.DoPanicf(w, http.StatusForbidden, "invalid sub %s (should be update:%s) in token: %v", sub, signature, err)
+				s.DoPanicf(w, http.StatusForbidden, "invalid sub %s (should be update:%s) in token: %v", false, sub, signature, err)
 				return
 			}
 		}
@@ -68,19 +68,19 @@ func (s *Server) updateHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 	if !metaPublic {
-		s.DoPanicf(w, http.StatusNotFound, "%s is not an amp page (metadata not public): %v", signature, err)
+		s.DoPanicf(w, http.StatusNotFound, "%s is not an amp page (metadata not public): %v", false, signature, err)
 		return
 	}
 
 	extUrl, err := url.Parse(s.addrExt)
 	if err != nil {
-		s.DoPanicf(w, http.StatusInternalServerError, "cannot parse addrExt %s: %v", s.addrExt, err)
+		s.DoPanicf(w, http.StatusInternalServerError, "cannot parse addrExt %s: %v", false, s.addrExt, err)
 		return
 	}
 	theUrl := fmt.Sprintf("%s/%s/%s", extUrl, s.detailPrefix, signature)
 	updateUrl, err := s.ampCache.BuildUpdateUrl(theUrl, s.ampApiKey)
 	if err != nil {
-		s.DoPanicf(w, http.StatusInternalServerError, "cannot build update url: %v", err)
+		s.DoPanicf(w, http.StatusInternalServerError, "cannot build update url: %v", false, err)
 		return
 	}
 	s.log.Infof("update url: %v", updateUrl)
@@ -88,7 +88,7 @@ func (s *Server) updateHandler(w http.ResponseWriter, req *http.Request) {
 
 	refresRSA, err := s.ampCache.BuildRefreshRSA(extUrl.Host)
 	if err != nil {
-		s.DoPanicf(w, http.StatusInternalServerError, "cannot build rsa refresh url: %v", err)
+		s.DoPanicf(w, http.StatusInternalServerError, "cannot build rsa refresh url: %v", false, err)
 		return
 	}
 	w.Write([]byte("\n\n"))

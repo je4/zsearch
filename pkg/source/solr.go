@@ -27,6 +27,17 @@ func escapeSolrString(str string) string {
 	return re.ReplaceAllString(str, "\\$1")
 }
 
+func orQuery( field string, values []string) string {
+	q := ""
+	for key, val := range values {
+		if key > 0 {
+			q += " OR "
+		}
+		q += fmt.Sprintf("(%s:%s)", field, val)
+	}
+	return q
+}
+
 func NewMTSolr(url, core string, expiration time.Duration, cachesize int, db *badger.DB, log *logging.Logger) (*MTSolr, error) {
 	si, err := solr.NewSolrInterface(url, core)
 	if err != nil {
@@ -315,4 +326,81 @@ func (mts *MTSolr) LoadEntities(ids []string) (map[string]*Document, error) {
 		result[doc.Id] = doc
 	}
 	return result, nil
+}
+
+func (mts *MTSolr) Search(text string, sources []string, facets map[string][]string, groups []string, contentVisible bool, start, rows int) ([]*Document, int64, error) {
+	//qstr := escapeSolrString(text)
+	qstr := text
+	if qstr == "" {
+		qstr = "*:*"
+	}
+	query := solr.NewQuery()
+
+	// build acl query
+	metaacl := orQuery("acl_meta", groups)
+	query.FilterQuery(metaacl)
+	if contentVisible {
+		contentacl := orQuery("acl_content", groups)
+		query.FilterQuery(contentacl)
+	}
+
+	// build facets with filter exclusion
+	for facet, selected := range facets {
+		query.AddFacet(fmt.Sprintf("{!ex=%s}%s", facet, facet))
+		// filterquery only needed if selections available
+		if len(selected) > 0 {
+			q := orQuery("mediatype", selected)
+			query.FilterQuery(fmt.Sprintf("{!tag=%s}%s", facet, q))
+		}
+	}
+
+	// source query
+	if len(sources) > 0 {
+		sq := orQuery("source", sources)
+		query.FilterQuery(sq)
+	}
+
+	query.Q(qstr)
+	// we only need the id's
+	query.FieldList("id")
+
+	// restrict result
+	query.Start(start)
+	query.Rows(rows)
+
+	mts.log.Infof("solr query: %s - %v", query.String(), facets)
+	s := mts.si.Search(query)
+	r, _ := s.Result(nil)
+	if r == nil || r.Results.NumFound == 0 {
+		return nil, 0, errors.New(fmt.Sprintf("no results for query %s - %v", qstr, facets))
+	}
+	mts.log.Infof("%v document(s) found", len(r.Results.Docs))
+
+	ids := []string{}
+	for _, doc := range r.Results.Docs {
+		if !doc.Has("id") {
+			return nil, 0, errors.New(fmt.Sprintf("doc has no id field"))
+		}
+		idInterface := doc.Get("id")
+		id, ok := idInterface.(string)
+		if !ok {
+			return nil, 0, errors.New(fmt.Sprintf("id not a string"))
+		}
+		ids = append(ids, id)
+	}
+	docs, err := mts.LoadEntities(ids)
+	if err != nil {
+		return nil, 0, emperror.Wrapf(err, "cannot load entities %v", ids)
+	}
+
+	// create a sorted list as result
+	result := []*Document{}
+	for _, id := range ids {
+		doc, ok := docs[id]
+		if !ok {
+			return nil, 0, fmt.Errorf("could not load entity %v", id)
+		}
+		result = append(result, doc)
+	}
+	return result, int64(r.Results.NumFound), nil
 }

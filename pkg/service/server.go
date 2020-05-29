@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"github.com/Masterminds/sprig"
@@ -32,6 +33,7 @@ type Notification struct {
 }
 
 type DetailStatus struct {
+	Type          string
 	Notifications []Notification
 	Doc           *source.Document
 	User          *User
@@ -48,6 +50,7 @@ type DetailStatus struct {
 }
 
 type SearchStatus struct {
+	Type          string
 	Notifications []Notification
 	User          *User
 	Self          string
@@ -69,6 +72,7 @@ type Server struct {
 	staticPrefix      string
 	updatePrefix      string
 	searchPrefix      string
+	apiPrefix         string
 	jwtKey            string
 	jwtAlg            []string
 	linkTokenExp      time.Duration
@@ -115,6 +119,7 @@ func NewServer(
 	detailPrefix string,
 	updatePrefix string,
 	searchPrefix string,
+	apiPrefix string,
 	AmpCache string,
 	ampApiKeyFile string,
 ) (*Server, error) {
@@ -178,6 +183,7 @@ func NewServer(
 		detailPrefix:   detailPrefix,
 		updatePrefix:   updatePrefix,
 		searchPrefix:   searchPrefix,
+		apiPrefix:      apiPrefix,
 		ampCache:       ampCache,
 		ampApiKey:      ampApiKey,
 	}
@@ -258,9 +264,13 @@ func (s *Server) InitTemplates(detailTemplate, errorTemplate, forbiddenTemplate,
 	return nil
 }
 
-func (s *Server) DoPanicf(writer http.ResponseWriter, status int, message string, a ...interface{}) (err error) {
+func (s *Server) DoPanicf(writer http.ResponseWriter, status int, message string, json bool, a ...interface{}) (err error) {
 	msg := fmt.Sprintf(message, a...)
-	s.DoPanic(writer, status, msg)
+	if json {
+		s.DoPanicJSON(writer, status, msg)
+	} else {
+		s.DoPanic(writer, status, msg)
+	}
 	return
 }
 
@@ -281,6 +291,25 @@ func (s *Server) DoPanic(writer http.ResponseWriter, status int, message string)
 	s.errorTemplate.Execute(writer, data)
 	return
 }
+
+func (s *Server) DoPanicJSON(writer http.ResponseWriter, status int, message string) (err error) {
+	type errData struct {
+		Status     int
+		StatusText string
+		Message    string
+	}
+	s.log.Error(message)
+	data := errData{
+		Status:     status,
+		StatusText: http.StatusText(status),
+		Message:    message,
+	}
+	writer.WriteHeader(status)
+	jenc := json.NewEncoder(writer)
+	jenc.Encode(data)
+	return
+}
+
 
 func (s *Server) userFromToken(tokenstring, signature string) (*User, error) {
 
@@ -344,7 +373,10 @@ func (s *Server) ListenAndServe(cert, key string) error {
 	router := mux.NewRouter()
 
 	// https://data.mediathek.hgk.fhnw.ch/search
-	router.HandleFunc(fmt.Sprintf("/%s", s.searchPrefix), s.searchHandler)
+	router.HandleFunc(fmt.Sprintf("/%s", s.searchPrefix), s.searchHandler).Methods("GET")
+
+	// https://data.mediathek.hgk.fhnw.ch/api/search
+	router.HandleFunc(fmt.Sprintf("/%s/search", s.apiPrefix), s.apiSearchHandler).Methods("GET", "POST")
 
 	// https://data.mediathek.hgk.fhnw.ch/detail/[signature]
 	mainRegexp := regexp.MustCompile(fmt.Sprintf("^/%s/(.+)$", s.detailPrefix))
@@ -357,7 +389,7 @@ func (s *Server) ListenAndServe(cert, key string) error {
 			rm.Vars = map[string]string{}
 			rm.Vars["signature"] = string(matches[1])
 			return true
-		}).HandlerFunc(s.detailHandler)
+		}).HandlerFunc(s.detailHandler).Methods("GET")
 
 	// https://data.mediathek.hgk.fhnw.ch/update/[signature]
 	updateRegexp := regexp.MustCompile(fmt.Sprintf("^/%s/(.+)$", s.updatePrefix))
@@ -370,12 +402,12 @@ func (s *Server) ListenAndServe(cert, key string) error {
 			rm.Vars = map[string]string{}
 			rm.Vars["signature"] = string(matches[1])
 			return true
-		}).HandlerFunc(s.updateHandler)
+		}).HandlerFunc(s.updateHandler).Methods("GET")
 
 	// the static fileserver
 	router.
 		PathPrefix(fmt.Sprintf("/%s", s.staticPrefix)).
-		Handler(http.StripPrefix("/"+s.staticPrefix, http.FileServer(http.Dir(s.staticDir))))
+		Handler(http.StripPrefix("/"+s.staticPrefix, http.FileServer(http.Dir(s.staticDir)))).Methods("GET")
 
 	loggedRouter := handlers.LoggingHandler(s.accesslog, router)
 	addr := net.JoinHostPort(s.host, s.port)

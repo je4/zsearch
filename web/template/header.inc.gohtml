@@ -141,7 +141,13 @@
                 </div>
             </a>
         {{else}}
-            {{$url := .User.LinkSignatureCache .Doc.Id}}
+            {{$url := ""}}
+            {{if eq .Type "detail"}}
+            {{$url = .User.LinkSignatureCache .Doc.Id}}
+            {{end}}
+            {{if eq .Type "search"}}
+            {{$url = .User.LinkSignatureCache "search"}}
+            {{end}}
             <a href="{{$url}}" class="text-decoration-none mr2 ampstart-headerbar-fixed-link ">
 
                 <div class="ampstart-headerbar-icon-wrapper relative">

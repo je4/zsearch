@@ -53,6 +53,7 @@ type Config struct {
 	DetailPrefix   string      `toml:"detailprefix"`
 	UpdatePrefix   string      `toml:"updateprefix"`
 	SearchPrefix   string      `toml:"searchprefix"`
+	ApiPrefix      string      `toml:"apiprefix"`
 	JWTKey         string      `toml:"jwtkey"`
 	JWTAlg         []string    `toml:"jwtalg"`
 	LinkTokenExp   duration    `toml:"linktokenexp"`
@@ -85,5 +86,6 @@ func LoadConfig(filepath string) Config {
 	conf.DetailPrefix = strings.Trim(conf.DetailPrefix, "/")
 	conf.UpdatePrefix = strings.Trim(conf.UpdatePrefix, "/")
 	conf.SearchPrefix = strings.Trim(conf.SearchPrefix, "/")
+	conf.ApiPrefix = strings.Trim(conf.ApiPrefix, "/")
 	return conf
 }

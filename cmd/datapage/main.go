@@ -143,6 +143,7 @@ func main() {
 		config.DetailPrefix,
 		config.UpdatePrefix,
 		config.SearchPrefix,
+		config.ApiPrefix,
 		config.AmpCache,
 		config.AmpApiKey,
 	)

@@ -11,12 +11,12 @@ func (s *Server) userHandler(w http.ResponseWriter, req *http.Request) {
 	vars := mux.Vars(req)
 	_, ok := vars["access"]
 	if !ok {
-		s.DoPanicf(w, http.StatusBadRequest, "no accesstype in url: %s", req.URL.Path)
+		s.DoPanicf(w, http.StatusBadRequest, "no accesstype in url: %s", false, req.URL.Path)
 		return
 	}
 	signature, ok := vars["signature"]
 	if !ok {
-		s.DoPanicf(w, http.StatusBadRequest, "no signature in url: %s", req.URL.Path)
+		s.DoPanicf(w, http.StatusBadRequest, "no signature in url: %s", false, req.URL.Path)
 		return
 	}
 
@@ -26,14 +26,14 @@ func (s *Server) userHandler(w http.ResponseWriter, req *http.Request) {
 	if ok {
 		// jwt in parameter?
 		if len(jwt) == 0 {
-			s.DoPanicf(w, http.StatusForbidden, "invalid token %v", jwt)
+			s.DoPanicf(w, http.StatusForbidden, "invalid token %v", false, jwt)
 			return
 		}
 		tokenstring := jwt[0]
 		if tokenstring != "" {
 			user, err = s.userFromToken(tokenstring, signature)
 			if err != nil {
-				s.DoPanicf(w, http.StatusForbidden, "%v", err)
+				s.DoPanicf(w, http.StatusForbidden, "%v", false, err)
 				return
 			}
 		}
@@ -44,7 +44,7 @@ func (s *Server) userHandler(w http.ResponseWriter, req *http.Request) {
 
 	js, err := json.Marshal(user)
 	if err != nil {
-		s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal user: %v", user)
+		s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal user: %v", false, user)
 		return
 	}
 	w.Header().Set("ContentStr-Type", "application/json")
