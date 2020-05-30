@@ -93,10 +93,10 @@ limitations under the License.
             </div>
             <div class="col-12 self-start pb4">
                 {{if len .Doc.Content.Abstract}}
-                <amp-truncate-text layout="fixed-height" height="8em">
-                    {{.Doc.Content.Abstract}}
-                    <button class="ampstart-btn ampstart-btn-seemore caps" slot="collapsed">See more</button>
-                </amp-truncate-text>
+                    <amp-truncate-text layout="fixed-height" height="8em">
+                        {{.Doc.Content.Abstract}}
+                        <button class="ampstart-btn ampstart-btn-seemore caps" slot="collapsed">See more</button>
+                    </amp-truncate-text>
                 {{end}}
                 <div>
                     {{.Doc.Content.Place}}{{if and (gt (len .Doc.Content.Place) 0) (gt (len .Doc.Content.Date) 0)}}, {{end}}{{.Doc.Content.Date}}

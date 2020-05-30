@@ -151,7 +151,7 @@
                         width="250"
                         height="250"
                         layout="nodisplay"
-                        src="{{medialink $image.Uri "resize" "size250x250/crop" (not $contentPublic)}}">
+                        src="{{medialink $image.Uri "resize" "size250x250/crop/formatJPEG" (not $contentPublic)}}">
                 </amp-img>
                 {{end}}
                 <amp-carousel lightbox
@@ -162,7 +162,7 @@
                     {{range $key, $image := .Doc.Content.Media.image}}
                         <!-- Image -->
                         <amp-img
-                                src="{{medialink $image.Uri "resize" "size1280x720" (not $contentPublic)}}"
+                                src="{{medialink $image.Uri "resize" "size1280x720/formatJPEG" (not $contentPublic)}}"
                                 width="1280"
                                 height="720"
                                 layout="responsive"

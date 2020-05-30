@@ -19,7 +19,7 @@ limitations under the License.
 
 <head>
     <meta charset="utf-8">
-    <title>Mediathek - Access forbidden</title>
+    <title>Mediathek</title>
     <link rel="canonical" href="{{.Self}}">
     <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
     <meta name="amp-google-client-id-api" content="googleanalytics">
@@ -54,17 +54,6 @@ limitations under the License.
 <!-- End Navbar -->
 
 <main id="content" role="main" class="main">
-    <amp-state id="searchResult">
-        <script type="application/json">
-            {
-                "rows": 1,
-                "start": 0,
-                "total": 0,
-                "items": []
-            }
-        </script>
-    </amp-state>
-
     {{range $key, $notification := .Notifications}}
         <amp-user-notification
                 layout="nodisplay"
@@ -77,13 +66,17 @@ limitations under the License.
             </div>
         </amp-user-notification>
     {{end}}
-    <amp-img class="commerce-listing-banner xs-hide sm-hide" src="../static/img/wide-mediathek-hero.jpg" width="2560" height="400" layout="responsive" alt="Mediathek Search" noloading=""><div placeholder="" class="commerce-loader"></div></amp-img>
+    <amp-img class="commerce-listing-banner xs-hide sm-hide" src="static/img/wide-mediathek-hero.jpg" width="2560" height="400" layout="responsive" alt="Mediathek Search" noloading=""><div placeholder="" class="commerce-loader"></div></amp-img>
+    <amp-state id="SearchResult">
+        <script type="application/json">
+       {{.SearchResult}}
+        </script>
+    </amp-state>
     <form method="POST"
           id="search"
-          action-xhr="/api/search"
-          on="submit-success:AMP.setState({'searchResult': event.response})"
+          action-xhr="api/search"
+          on="submit-success: AMP.setState({SearchResult:{result: event.response.result}})"
           target="_top">
-
         <section class="commerce-listing-content mx-auto flex flex-wrap pb4">
             <div class="col-3 xs-hide sm-hide flex flex-column">
                 <div class="commerce-side-panel pt4 pr4 self-center">
@@ -114,7 +107,6 @@ limitations under the License.
                     <!-- End Radio -->
                 </div>
             </div>
-
             <div class="col-12 md-col-7 pt2 pb3 md-px4 md-pt1 md-pb7">
                 <div class="md-commerce-header relative md-flex flex-wrap items-center md-mx0 md-mb2">
                     <h1 class="h3 mb2 md-mt2 md-mb2 md-ml0 flex-auto px2"><input type="text" name="search" placeholder="" required><svg
@@ -125,6 +117,7 @@ limitations under the License.
                                     fill="black"
                                     role="button"
                                     style="vertical-align: middle;"
+                                    tabindex="1"
                                     on="tap:search.submit"
                                     viewBox="0 0 24 24">
                                 <defs
@@ -168,25 +161,35 @@ limitations under the License.
                         </div>
                     </div>
                 </div>
-                <template type="amp-mustache">
-                Result here: {{`{{searchResult.rows}}`}} rows <br />
-                </template>
-                <amp-list src="amp-state:searchResult" height="50" [height]="searchResult.rows * 30" width="300" layout="responsive" style="border:1px solid black">
+                <div submitting>
                     <template type="amp-mustache">
-                        <li><a href="/detail/{{`{{id}}`}}">{{`{{title}}`}}</a>xxxx</li>
+                        Searching...
                     </template>
-                </amp-list>
-
-                <!--
-                                <amp-list class="mx1 md-mxn1" src="amp-state:searchResult" height="1000" width="300" layout="responsive">
-                                    <template type="amp-mustache">
-                                        <div class="h6 mt1"><a href="/detail/{{`{{id}}`}}">{{`{{title}}`}}</a>xxxx</div>
-                                    </template>
-                                </amp-list>
-                -->
+                </div>
+                <div submit-error>
+                    <template type="amp-mustache">
+                        <p>Oops</p>
+                        [{{`{{status}}`}}] {{`{{statustext}}`}} <br />
+                        {{`{{message}}`}}
+                    </template>
+                </div>
+                <div submit-success>
+                    <template type="amp-mustache">
+                        {{`{{#result.items}}`}}
+                        <div class="md-result-list relative md-flex flex-wrap items-center md-mx0">
+                            <div>
+                                <h2 class="commerce-listing-product-name h6">
+                                    {{html `<a href="detail/{{id}}" target="_blank">`}}{{`{{title}}`}}</a>
+                                </h2>
+                                {{`{{#collection}}`}}<b>{{`{{collection}}`}}</b><br />{{`{{/collection}}`}}
+                                {{`{{#authors}}`}}{{`{{.}}`}} {{`{{/authors}}`}}
+                            </div>
+                        </div>
+                        {{`{{/result.items}}`}}
+                    </template>
+                </div>
             </div>
         </section>
-
     </form>
 </main>
 

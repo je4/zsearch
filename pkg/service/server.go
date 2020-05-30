@@ -58,6 +58,7 @@ type SearchStatus struct {
 	AmpBase       string
 	LoginUrl      string
 	Title         string
+	SearchResult  template.JS
 }
 
 type Server struct {
@@ -197,9 +198,23 @@ func (s *Server) InitTemplates(detailTemplate, errorTemplate, forbiddenTemplate,
 	mediaMatch := regexp.MustCompile(`^mediaserver:([^/]+)/([^/]+)$`)
 
 	funcMap := sprig.FuncMap()
-	// incrementing a value
-	funcMap["add"] = func(value, increment int) int {
-		return value + increment
+	funcMap["url"] = func(value string) template.URL {
+		return template.URL(value)
+	}
+	funcMap["js"] = func(value string) template.JS {
+		return template.JS(value)
+	}
+	funcMap["htmlattr"] = func(value string) template.HTMLAttr {
+		return template.HTMLAttr(value)
+	}
+	funcMap["jsstr"] = func(value string) template.JSStr {
+		return template.JSStr(value)
+	}
+	funcMap["html"] = func(value string) template.HTML {
+		return template.HTML(value)
+	}
+	funcMap["srcset"] = func(value string) template.Srcset {
+		return template.Srcset(value)
 	}
 	funcMap["mediachild"] = func(uri, child string) string {
 		matches := mediaMatch.FindStringSubmatch(uri)
@@ -294,9 +309,9 @@ func (s *Server) DoPanic(writer http.ResponseWriter, status int, message string)
 
 func (s *Server) DoPanicJSON(writer http.ResponseWriter, status int, message string) (err error) {
 	type errData struct {
-		Status     int
-		StatusText string
-		Message    string
+		Status     int `json:"status"`
+		StatusText string `json:"statustext"`
+		Message    string `json:"message"`
 	}
 	s.log.Error(message)
 	data := errData{

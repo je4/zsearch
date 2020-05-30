@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"html/template"
 	"net/http"
 	"strings"
 )
@@ -42,6 +43,22 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 	if status.User == nil {
 		status.User = NewGuestUser(s)
 	}
+
+	docs, total, err := s.mts.Search("", []string{"zotero"}, map[string][]string{"mediatype": []string{}}, status.User.Groups, false, 0, 10)
+	if err != nil {
+		s.DoPanicf(w, http.StatusInternalServerError, "cannot execute solr query: %v", false, err)
+		return
+	}
+	if total == 0 {
+		s.DoPanicf(w, http.StatusNoContent, "no results found", false)
+		return
+	}
+	json, err := doc2json(docs, total, 0)
+	if err != nil {
+		s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal result: %v", false, err)
+		return
+	}
+	status.SearchResult = template.JS(json)
 
 	if err := s.searchTemplate.Execute(w, status); err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot render template: %v", false, err)

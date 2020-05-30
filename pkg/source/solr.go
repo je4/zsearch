@@ -22,7 +22,7 @@ type MTSolr struct {
 	log *logging.Logger
 }
 
-func escapeSolrString(str string) string {
+func EscapeSolrString(str string) string {
 	var re = regexp.MustCompile(`([-\\!():^\[\]"{}~*?|&;/+]|[[:space:]])`)
 	return re.ReplaceAllString(str, "\\$1")
 }
@@ -171,7 +171,7 @@ func (mts *MTSolr) getSolrDocs(ids []string) (map[string]*cacheEntry, error) {
 		if qstr != "" {
 			qstr += " OR "
 		}
-		qstr += fmt.Sprintf("(id:%s)", escapeSolrString(id))
+		qstr += fmt.Sprintf("(id:%s)", EscapeSolrString(id))
 	}
 	query := solr.NewQuery()
 	query.Q(qstr)
@@ -329,7 +329,7 @@ func (mts *MTSolr) LoadEntities(ids []string) (map[string]*Document, error) {
 }
 
 func (mts *MTSolr) Search(text string, sources []string, facets map[string][]string, groups []string, contentVisible bool, start, rows int) ([]*Document, int64, error) {
-	//qstr := escapeSolrString(text)
+	//qstr := EscapeSolrString(text)
 	qstr := text
 	if qstr == "" {
 		qstr = "*:*"
@@ -370,9 +370,15 @@ func (mts *MTSolr) Search(text string, sources []string, facets map[string][]str
 
 	mts.log.Infof("solr query: %s - %v", query.String(), facets)
 	s := mts.si.Search(query)
-	r, _ := s.Result(nil)
-	if r == nil || r.Results.NumFound == 0 {
+	r, err := s.Result(nil)
+	if err != nil {
+		return nil, 0, emperror.Wrapf(err, "search error for query %s - %v", query.String(), facets)
+	}
+	if r == nil  {
 		return nil, 0, errors.New(fmt.Sprintf("no results for query %s - %v", qstr, facets))
+	}
+	if r.Results.NumFound == 0 {
+		return []*Document{}, 0, nil
 	}
 	mts.log.Infof("%v document(s) found", len(r.Results.Docs))
 

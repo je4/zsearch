@@ -29,6 +29,7 @@ var zoteroIgnoreMetaFields = []string{
 	"Relations",
 	"Tags",
 	"Title",
+	"Extra",
 }
 
 func NewZotero(data string, mts *MTSolr) (*Zotero, error) {
@@ -110,7 +111,7 @@ func (zot *Zotero) GetMeta() map[string]string {
 }
 
 func (zot *Zotero) GetAbstract() string {
-	return zot.ZData.Data.AbstractNote
+	return strings.TrimSpace(zot.ZData.Data.AbstractNote + "\n" + zot.ZData.Data.Extra)
 }
 
 func (zot *Zotero) GetType() string {
