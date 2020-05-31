@@ -4,8 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/goph/emperror"
+	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/generic"
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/source"
 	"net/http"
+	"net/url"
+	"strconv"
 	"strings"
 	"text/scanner"
 )
@@ -15,6 +18,8 @@ type searchResult struct {
 	Total int64              `json:"total"`
 	Start int64              `json:"start"`
 	Rows  int64              `json:"rows"`
+	Query string             `json:"query"`
+	Next  string             `json:"next"`
 }
 
 type searchResultItem struct {
@@ -23,23 +28,37 @@ type searchResultItem struct {
 	Text       string   `json:"text"`
 	Collection string   `json:"collection"`
 	Authors    []string `json:"authors"`
+	Link       string   `json:"link"`
+	FirstItem  bool     `json:"firstitem"`
+	Total      int64    `json:"total,omitempty"`
 }
 
-func doc2json(docs []*source.Document, total int64, start int64) ([]byte, error) {
+func doc2json(query string, docs []*source.Document, total int64, start int64, user *User, next string) ([]byte, error) {
 	result := &searchResult{
 		Items: []searchResultItem{},
 		Total: total,
 		Start: start,
 		Rows:  int64(len(docs)),
+		Query: query,
+		Next:  next,
 	}
 
-	for _, doc := range docs {
+	for key, doc := range docs {
+		link := user.LinkSignature(doc.Id)
+		if !strings.HasPrefix(strings.ToLower(link), "http") {
+			link = "detail/" + link
+		}
 		item := searchResultItem{
-			Id:      doc.Id,
-			Title:   doc.Content.Title,
-			Text:    "",
+			Id:         doc.Id,
+			Title:      doc.Content.Title,
+			Text:       "",
 			Collection: doc.Content.CollectionTitle,
-			Authors: []string{},
+			Authors:    []string{},
+			Link:       link,
+		}
+		if key == 0 {
+			item.FirstItem = true
+			item.Total = total
 		}
 		for _, p := range doc.Content.Persons {
 			name := p.Name
@@ -54,7 +73,7 @@ func doc2json(docs []*source.Document, total int64, start int64) ([]byte, error)
 	if err != nil {
 		return nil, emperror.Wrapf(err, "cannot marshal result")
 	}
-	return []byte(fmt.Sprintf("{\"result\":%s}", string(r))), nil
+	return r, nil
 }
 
 func solrOr(field string, values []string, weight1, weight2, weight3, weight4 int) string {
@@ -114,25 +133,39 @@ func (s *Server) apiSearchHandler(w http.ResponseWriter, req *http.Request) {
 		user = NewGuestUser(s)
 	}
 
-	if err := req.ParseForm(); err != nil {
-		s.DoPanicf(w, http.StatusInternalServerError, "cannot parse formdata: %v", true, err)
-		return
+	if req.Method == "POST" {
+		if err := req.ParseMultipartForm(0); err != nil {
+			s.DoPanicf(w, http.StatusInternalServerError, "cannot parse multipart formdata: %v", true, err)
+			return
+		}
+	} else {
+		if err := req.ParseForm(); err != nil {
+			s.DoPanicf(w, http.StatusInternalServerError, "cannot parse formdata: %v", true, err)
+			return
+		}
 	}
 
-	if err := req.ParseMultipartForm(0); err != nil {
-		s.DoPanicf(w, http.StatusInternalServerError, "cannot parse multipart formdata: %v", true, err)
-		return
+	var start int64 = 0
+	var rows int64 = 10
+
+	startstr, ok := req.Form["start"]
+	if ok && len(startstr) > 0 {
+		start, _ = strconv.ParseInt(startstr[0], 10, 64)
+	}
+	rowsstr, ok := req.Form["rows"]
+	if ok && len(rowsstr) > 0 {
+		rows, _ = strconv.ParseInt(rowsstr[0], 10, 64)
 	}
 
-	qstr := ""
-	qstrs := req.Form["search"]
-	if len(qstrs) == 1 {
-		qstr = qstrs[0]
+	search := ""
+	searchs := req.Form["search"]
+	if len(searchs) == 1 {
+		search = searchs[0]
 	}
 
 	var sc scanner.Scanner
 
-	sc.Init(strings.NewReader(qstr))
+	sc.Init(strings.NewReader(search))
 	slice := []string{}
 	for tok := sc.Scan(); tok != scanner.EOF; tok = sc.Scan() {
 		slice = append(slice, sc.TokenText())
@@ -148,7 +181,7 @@ func (s *Server) apiSearchHandler(w http.ResponseWriter, req *http.Request) {
 	   	OR ( signature:"fell down the mountains"^25 )
 	       )
 	*/
-
+	var qstr string = "*:*"
 	if len(slice) > 0 {
 		qstr = fmt.Sprintf("%s OR %s OR %s OR %s OR %s OR %s",
 			solrOr("title", slice, 10, 0, 20, 15),
@@ -158,13 +191,11 @@ func (s *Server) apiSearchHandler(w http.ResponseWriter, req *http.Request) {
 			solrOr("abstract", slice, 0, 8, 15, 8),
 			solrOr("signature", slice, 0, 0, 25, 18),
 		)
-	} else {
-		qstr = "*:*"
 	}
 
 	s.log.Infof("Query: %s", qstr)
 
-	docs, total, err := s.mts.Search(qstr, []string{"zotero"}, map[string][]string{"mediatype": []string{}}, user.Groups, false, 0, 10)
+	docs, total, err := s.mts.Search(qstr, []string{"zotero"}, map[string][]string{"mediatype": []string{}}, user.Groups, false, int(start), int(rows))
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot execute solr query: %v", true, err)
 		return
@@ -174,7 +205,27 @@ func (s *Server) apiSearchHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	json, err := doc2json(docs, total, 0)
+	next := ""
+	if total > start+rows {
+		next = fmt.Sprintf("%s/%s?search=%s&start=%d&rows=%d", s.addrExt, "api/search", url.QueryEscape(search), start+rows, rows)
+		if user.LoggedIn {
+			jwt, err := generic.NewJWT(
+				user.Server.jwtKey,
+				"search",
+				"HS256",
+				int64(user.Server.linkTokenExp.Seconds()),
+				"catalogue",
+				"mediathek",
+				fmt.Sprintf("%v", user.Id))
+			if err != nil {
+				s.DoPanicf(w, http.StatusInternalServerError, "create token: %v", false, err)
+				return
+			}
+			next += "&token=" + jwt
+		}
+	}
+
+	json, err := doc2json(qstr, docs, total, start, user, next)
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal result: %v", true, err)
 		return

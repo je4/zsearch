@@ -211,6 +211,55 @@ func (mts *MTSolr) LoadEntity(id string) (*Document, error) {
 	return entry, nil
 }
 
+func (mts *MTSolr) storeCache(doc *Document) error {
+	// marshal entry
+	jsonstr, err := json.Marshal(*doc)
+	if err != nil {
+		return emperror.Wrap(err, "cannot marshal entry")
+	}
+	// compress it
+	data := generic.Compress([]byte(jsonstr))
+	if err := mts.db.Update(func(txn *badger.Txn) error {
+		txn.Set([]byte(doc.Id), data)
+		return nil
+	}); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (mts *MTSolr) getFromCache(id string) (*Document, error) {
+	var result *Document
+	if err := mts.db.View(func(txn *badger.Txn) error {
+		it, err := txn.Get([]byte(id))
+		if err != nil {
+			return emperror.Wrapf(err, "cannot get item %s", id)
+		}
+		if err := it.Value(func(v []byte) error {
+			var doc = &Document{}
+
+			// decompress...
+			data, err := generic.Decompress(v)
+			if err != nil {
+				return emperror.Wrapf(err, "cannot deocmpress %s", string(v))
+			}
+			// ...unmarshal
+			if err := json.Unmarshal(data, doc); err != nil {
+				return emperror.Wrapf(err, "cannot unmarshal json %s", string(v))
+			}
+			mts.log.Infof("document %s found in cache", id)
+			result = doc
+			return nil
+		}); err != nil {
+			return emperror.Wrapf(err, "cannot load item %s", id)
+		}
+		return nil
+	}); err != nil {
+		return nil, emperror.Wrap(err, "item not found")
+	}
+	return result, nil
+}
+
 func (mts *MTSolr) LoadEntities(ids []string) (map[string]*Document, error) {
 	// todo: need better locking stragegy
 	mts.Lock()
@@ -223,32 +272,11 @@ func (mts *MTSolr) LoadEntities(ids []string) (map[string]*Document, error) {
 	// try loading from cache
 	//
 	for _, id := range ids {
-		if err := mts.db.View(func(txn *badger.Txn) error {
-			it, err := txn.Get([]byte(id))
-			if err != nil {
-				return emperror.Wrapf(err, "cannot get item %s", id)
-			}
-			if err := it.Value(func(v []byte) error {
-				var doc = &Document{}
-
-				// decompress...
-				data, err := generic.Decompress(v)
-				if err != nil {
-					return emperror.Wrapf(err, "cannot deocmpress %s", string(v))
-				}
-				// ...unmarshal
-				if err := json.Unmarshal(data, doc); err != nil {
-					return emperror.Wrapf(err, "cannot unmarshal json %s", string(v))
-				}
-				mts.log.Infof("document %s found in cache", id)
-				result[doc.Id] = doc
-				return nil
-			}); err != nil {
-				return emperror.Wrapf(err, "cannot load item %s", id)
-			}
-			return nil
-		}); err != nil {
+		doc, err := mts.getFromCache(id)
+		if err != nil  {
 			toLoad = append(toLoad, id)
+		} else {
+			result[doc.Id] = doc
 		}
 	}
 
@@ -310,17 +338,7 @@ func (mts *MTSolr) LoadEntities(ids []string) (map[string]*Document, error) {
 		doclist[id] = doc
 	}
 	for _, doc := range doclist {
-		// marshal entry
-		jsonstr, err := json.Marshal(*doc)
-		if err != nil {
-			return nil, emperror.Wrap(err, "cannot marshal entry")
-		}
-		// compress it
-		data := generic.Compress([]byte(jsonstr))
-		if err := mts.db.Update(func(txn *badger.Txn) error {
-			txn.Set([]byte(doc.Id), data)
-			return nil
-		}); err != nil {
+		if err := mts.storeCache(doc); err != nil {
 			return nil, err
 		}
 		result[doc.Id] = doc
@@ -362,7 +380,7 @@ func (mts *MTSolr) Search(text string, sources []string, facets map[string][]str
 
 	query.Q(qstr)
 	// we only need the id's
-	query.FieldList("id")
+	//query.FieldList("id")
 
 	// restrict result
 	query.Start(start)
@@ -383,6 +401,8 @@ func (mts *MTSolr) Search(text string, sources []string, facets map[string][]str
 	mts.log.Infof("%v document(s) found", len(r.Results.Docs))
 
 	ids := []string{}
+	result := []*Document{}
+
 	for _, doc := range r.Results.Docs {
 		if !doc.Has("id") {
 			return nil, 0, errors.New(fmt.Sprintf("doc has no id field"))
@@ -393,20 +413,54 @@ func (mts *MTSolr) Search(text string, sources []string, facets map[string][]str
 			return nil, 0, errors.New(fmt.Sprintf("id not a string"))
 		}
 		ids = append(ids, id)
-	}
-	docs, err := mts.LoadEntities(ids)
-	if err != nil {
-		return nil, 0, emperror.Wrapf(err, "cannot load entities %v", ids)
-	}
-
-	// create a sorted list as result
-	result := []*Document{}
-	for _, id := range ids {
-		doc, ok := docs[id]
-		if !ok {
-			return nil, 0, fmt.Errorf("could not load entity %v", id)
+		entry, id, err := mts.cacheEntryFromDoc(doc)
+		if err != nil {
+			return nil, 0, emperror.Wrapf(err, "cannot create cache entry from document")
 		}
-		result = append(result, doc)
+
+		var cDoc *Document
+		cDoc, err = mts.getFromCache(id)
+		if err != nil {
+			// load the content
+			content, err := mts.GetContent(entry)
+			if err != nil {
+				// keep error in cache as well
+				cDoc = &Document{Id: entry.Id, Error: emperror.Wrapf(err, "cannot load content of %s", entry.Id).Error()}
+			} else {
+
+				// build full document
+				sourceData := &SourceData{
+					Source:          content.Name(),
+					Title:           content.GetTitle(),
+					Place:           content.GetPlace(),
+					Date:            content.GetDate(),
+					CollectionTitle: content.GetCollectionTitle(),
+					Persons:         content.GetNames(),
+					Tags:            content.GetTags(),
+					Media:           content.GetMedia(),
+					Notes:           content.GetNotes(),
+					Abstract:        content.GetAbstract(),
+					References:      content.GetReferences(),
+					Meta:            content.GetMeta(),
+					Type:            content.GetType(),
+				}
+				sourceData.HasMedia = len(sourceData.Media) > 0
+
+				cDoc = &Document{
+					Content: sourceData,
+					ACL:     entry.Acl,
+					Catalog: entry.Catalog,
+					Tag:     entry.Tag,
+					Source:  entry.Source,
+					Id:      entry.Id,
+					Error:   "",
+				}
+			}
+			if err := mts.storeCache(cDoc); err != nil {
+				return nil, 0, emperror.Wrapf(err, "cannot store document in cache")
+			}
+		}
+		result = append(result, cDoc)
 	}
 	return result, int64(r.Results.NumFound), nil
 }

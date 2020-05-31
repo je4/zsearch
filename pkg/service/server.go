@@ -59,6 +59,7 @@ type SearchStatus struct {
 	LoginUrl      string
 	Title         string
 	SearchResult  template.JS
+	QueryApi      template.URL
 }
 
 type Server struct {
@@ -309,7 +310,7 @@ func (s *Server) DoPanic(writer http.ResponseWriter, status int, message string)
 
 func (s *Server) DoPanicJSON(writer http.ResponseWriter, status int, message string) (err error) {
 	type errData struct {
-		Status     int `json:"status"`
+		Status     int    `json:"status"`
 		StatusText string `json:"statustext"`
 		Message    string `json:"message"`
 	}
@@ -324,7 +325,6 @@ func (s *Server) DoPanicJSON(writer http.ResponseWriter, status int, message str
 	jenc.Encode(data)
 	return
 }
-
 
 func (s *Server) userFromToken(tokenstring, signature string) (*User, error) {
 

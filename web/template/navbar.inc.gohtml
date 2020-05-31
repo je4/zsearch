@@ -1,11 +1,30 @@
 <!-- Start Sidebar -->
 <amp-sidebar id="header-sidebar" class="ampstart-sidebar px3  md-flex flex-column justify-content items-center justify-center" layout="nodisplay">
     <div class="flex justify-start items-center ampstart-sidebar-header">
-        <div role="button" aria-label="close sidebar" on="tap:header-sidebar.toggle" tabindex="0" class="ampstart-navbar-trigger items-start">✕</div>
+        <div role="button" aria-label="close sidebar" on="tap:header-sidebar.toggle" tabindex="0" class="ampstart-navbar-trigger items-start">
+            <!-- ✕ -->
+            <svg
+                    id="svg6"
+                    version="1.1"
+                    height="48px"
+                    width="48px"
+                    fill="black"
+                    viewBox="0 0 24 24">
+                <defs
+                        id="defs10" />
+                <path
+                        id="path2"
+                        fill="none"
+                        d="M0 0h24v24H0V0z" />
+                <path
+                        id="path4"
+                        d="M 18.546295,6.0927981 18,5.5 11.878466,11.355337 5.9668544,5.4222235 5.3305085,6 11.19638,12.020853 5.417972,18 6,18.622477 l 5.7619,-6.069482 6.069625,6.103785 0.602184,-0.590489 -6.044194,-6.088388 z" />
+            </svg>
+        </div>
     </div>
     <nav class="ampstart-sidebar-nav ampstart-nav">
-        <ul class="list-reset m0 p0 ampstart-label">
-            <li class="ampstart-nav-item "><a href="https://mediathek.hgk.fhnw.ch" class="ampstart-nav-link">Mediathek</a></li>
+        <ul style="padding-left: 10px;" class="list-reset m0 p0 ampstart-label">
+            <li class="ampstart-nav-item "><a href="https://mediathek.hgk.fhnw.ch" class="ampstart-nav-link">Home</a></li>
             <li class="ampstart-nav-item "><a class="ampstart-nav-link" href="product-listing.amp.html">Products</a></li>
             <li class="ampstart-nav-item "><a class="ampstart-nav-link" href="blog-listing.amp.html">Blog</a></li>
             <li class="ampstart-nav-item "><a class="ampstart-nav-link" href="contact.amp.html">Contact us</a></li>

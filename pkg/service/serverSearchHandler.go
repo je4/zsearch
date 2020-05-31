@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/generic"
 	"html/template"
 	"net/http"
 	"strings"
@@ -16,6 +17,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		SelfPath:      req.URL.Path,
 		LoginUrl:      s.loginUrl,
 		Title:         "search",
+		QueryApi:      "api/search",
 	}
 
 	jwt, ok := req.URL.Query()["token"]
@@ -43,6 +45,21 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 	if status.User == nil {
 		status.User = NewGuestUser(s)
 	}
+	if status.User.LoggedIn {
+		jwt, err := generic.NewJWT(
+			status.User.Server.jwtKey,
+			"search",
+			"HS256",
+			int64(status.User.Server.linkTokenExp.Seconds()),
+			"catalogue",
+			"mediathek",
+			fmt.Sprintf("%v", status.User.Id))
+		if err != nil {
+			s.DoPanicf(w, http.StatusInternalServerError, "create token: %v", false, err)
+			return
+		}
+		status.QueryApi = template.URL(fmt.Sprintf("%s/%s?token=%s", s.addrExt, "api/search", jwt))
+	}
 
 	docs, total, err := s.mts.Search("", []string{"zotero"}, map[string][]string{"mediatype": []string{}}, status.User.Groups, false, 0, 10)
 	if err != nil {
@@ -53,7 +70,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		s.DoPanicf(w, http.StatusNoContent, "no results found", false)
 		return
 	}
-	json, err := doc2json(docs, total, 0)
+	json, err := doc2json("", docs, total, 0, status.User, "")
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal result: %v", false, err)
 		return

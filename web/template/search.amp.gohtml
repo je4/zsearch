@@ -67,15 +67,22 @@ limitations under the License.
         </amp-user-notification>
     {{end}}
     <amp-img class="commerce-listing-banner xs-hide sm-hide" src="static/img/wide-mediathek-hero.jpg" width="2560" height="400" layout="responsive" alt="Mediathek Search" noloading=""><div placeholder="" class="commerce-loader"></div></amp-img>
-    <amp-state id="SearchResult">
+-    <amp-state id="SearchResult">
         <script type="application/json">
        {{.SearchResult}}
         </script>
     </amp-state>
+    <!--
     <form method="POST"
           id="search"
-          action-xhr="api/search"
-          on="submit-success: AMP.setState({SearchResult:{result: event.response.result}})"
+          action-xhr="{{.QueryApi}}"
+          on="submit-success: AMP.setState({SearchResult: event.response})"
+          target="_top">
+    -->
+    <form method="GET"
+          id="search"
+          action-xhr="{{.QueryApi}}"
+          on="submit-success:AMP.setState({SearchResult: event.response}),resultList.refresh"
           target="_top">
         <section class="commerce-listing-content mx-auto flex flex-wrap pb4">
             <div class="col-3 xs-hide sm-hide flex flex-column">
@@ -175,19 +182,42 @@ limitations under the License.
                 </div>
                 <div submit-success>
                     <template type="amp-mustache">
-                        {{`{{#result.items}}`}}
+                    <h2 class="commerce-listing-product-name h6">
+                        {{`{{total}}`}} items found
+                    </h2>
+                    <p>&nbsp;</p>
+                    </template>
+                </div>
+                <amp-list
+                        id="resultList"
+                        src="amp-state:SearchResult"
+                        layout="responsive"
+                        width="800px"
+                        height="350px"
+                        load-more="manual"
+                        load-more-bookmark="next"
+                >
+                    <template type="amp-mustache" id="resultRow">
                         <div class="md-result-list relative md-flex flex-wrap items-center md-mx0">
                             <div>
                                 <h2 class="commerce-listing-product-name h6">
-                                    {{html `<a href="detail/{{id}}" target="_blank">`}}{{`{{title}}`}}</a>
+                                    {{html `<a href="{{link}}" target="_blank">`}}{{`{{title}}`}}</a>
                                 </h2>
                                 {{`{{#collection}}`}}<b>{{`{{collection}}`}}</b><br />{{`{{/collection}}`}}
                                 {{`{{#authors}}`}}{{`{{.}}`}} {{`{{/authors}}`}}
                             </div>
                         </div>
-                        {{`{{/result.items}}`}}
                     </template>
-                </div>
+                    <amp-list-load-more load-more-button>
+                        <button>See More</button> /* My custom see more button */
+                    </amp-list-load-more>
+                    <amp-list-load-more load-more-failed>
+                        error loading more data
+                    </amp-list-load-more>
+                    <amp-list-load-more load-more-end>
+                        END
+                    </amp-list-load-more>
+                </amp-list>
             </div>
         </section>
     </form>
