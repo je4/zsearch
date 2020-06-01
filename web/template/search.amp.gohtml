@@ -69,7 +69,12 @@ limitations under the License.
     <amp-img class="commerce-listing-banner xs-hide sm-hide" src="static/img/wide-mediathek-hero.jpg" width="2560" height="400" layout="responsive" alt="Mediathek Search" noloading=""><div placeholder="" class="commerce-loader"></div></amp-img>
 -    <amp-state id="SearchResult">
         <script type="application/json">
-       {}
+       {{.SearchResult}}
+        </script>
+    </amp-state>
+    -    <amp-state id="Total">
+        <script type="application/json">
+       {"items":[]}
         </script>
     </amp-state>
     <amp-state id="testing">
@@ -79,12 +84,7 @@ limitations under the License.
     </amp-state>
     <input id = "txtname" placeholder = "Type here" on =
     "input-throttled:AMP.setState({testing: event.value})">
-    <form method="GET"
-          id="search"
-          action-xhr="{{.QueryApi}}"
-          on="submit-success:AMP.setState({SearchResult: event.response}),resultList.refresh"
-          target="_top">
-        <section class="commerce-listing-content mx-auto flex flex-wrap pb4">
+    <section class="commerce-listing-content mx-auto flex flex-wrap pb4">
             <div class="col-3 xs-hide sm-hide flex flex-column">
                 <div class="commerce-side-panel pt4 pr4 self-center">
                     <h2 class="h5 mb2">Categories</h2>
@@ -116,34 +116,60 @@ limitations under the License.
             </div>
             <div class="col-12 md-col-7 pt2 pb3 md-px4 md-pt1 md-pb7">
                 <div class="md-commerce-header relative md-flex flex-wrap items-center md-mx0 md-mb2">
-                    <h1 class="h3 mb2 md-mt2 md-mb2 md-ml0 flex-auto px2">
-                        <input
-                                type="text"
-                                name="search"
-                                placeholder=""
-                        >
-                        <svg
-                                    id="svg6"
-                                    version="1.1"
-                                    height="48px"
-                                    width="48px"
-                                    fill="black"
-                                    role="button"
-                                    style="vertical-align: middle;"
-                                    tabindex="1"
-                                    on="tap:AMP.setState({SearchResult:{items: []}}),resultList.refresh,search.submit"
-                                    viewBox="0 0 24 24">
-                                <defs
-                                        id="defs10" />
-                                <path
-                                        id="path2"
-                                        fill="none"
-                                        d="M0 0h24v24H0V0z" />
-                                <path
-                                        id="path4"
-                                        d="M 15,14.251682 14.573347,14.120763 14,13.5 c 0.674387,-0.896631 1.548224,-2.390076 1.53259,-4 C 15.5,6.1440678 12.500036,3.5756919 9.4640454,3.5393187 6.1822034,3.5 3.6151921,5.9994876 3.557296,9.5179773 3.5,13 6.3601695,15.5 9.5210617,15.522963 11.131019,15.534658 12.426737,14.916441 13.566737,13.936441 L 14.104873,14.557458 14.230341,15 19.5,20.184386 20,19.5 Z M 9.5,14.575273 C 6.5,14.5 4.397261,12.497053 4.5325904,9.5719092 4.6747098,6.5 6.4999939,4.4218309 9.4820227,4.4606813 12.5,4.5 14.57614,6.6906036 14.539319,9.5 14.5,12.5 12.5,14.650546 9.5,14.575273 Z" />
-                        </svg>
-                    </h1>
+                    <form method="POST"
+                          id="search"
+                          action-xhr="{{.QueryApi}}"
+                          on="submit-success:AMP.setState({SearchResult: event.response,Total:{items:[{total:event.response.total,start:event.response.start,rows:event.response.rows}]}}),resultList.refresh"
+                          target="_top">
+                        <h1 class="h3 mb2 md-mt2 md-mb2 md-ml0 flex-auto px2">
+                            <input
+                                    type="text"
+                                    name="search"
+                                    placeholder=""
+                            >
+                            <svg
+                                        id="svg6"
+                                        version="1.1"
+                                        height="48px"
+                                        width="48px"
+                                        fill="black"
+                                        role="button"
+                                        style="vertical-align: middle;"
+                                        tabindex="1"
+                                        on="tap:AMP.setState({SearchResult:{items: []}}),resultList.refresh,search.submit"
+                                        viewBox="0 0 24 24">
+                                    <defs
+                                            id="defs10" />
+                                    <path
+                                            id="path2"
+                                            fill="none"
+                                            d="M0 0h24v24H0V0z" />
+                                    <path
+                                            id="path4"
+                                            d="M 15,14.251682 14.573347,14.120763 14,13.5 c 0.674387,-0.896631 1.548224,-2.390076 1.53259,-4 C 15.5,6.1440678 12.500036,3.5756919 9.4640454,3.5393187 6.1822034,3.5 3.6151921,5.9994876 3.557296,9.5179773 3.5,13 6.3601695,15.5 9.5210617,15.522963 11.131019,15.534658 12.426737,14.916441 13.566737,13.936441 L 14.104873,14.557458 14.230341,15 19.5,20.184386 20,19.5 Z M 9.5,14.575273 C 6.5,14.5 4.397261,12.497053 4.5325904,9.5719092 4.6747098,6.5 6.4999939,4.4218309 9.4820227,4.4606813 12.5,4.5 14.57614,6.6906036 14.539319,9.5 14.5,12.5 12.5,14.650546 9.5,14.575273 Z" />
+                            </svg>
+                        </h1>
+                        <div submitting>
+                            <template type="amp-mustache">
+                                Searching...
+                            </template>
+                        </div>
+                        <div submit-error>
+                            <template type="amp-mustache">
+                                <p>Oops</p>
+                                [{{`{{status}}`}}] {{`{{statustext}}`}} <br />
+                                {{`{{message}}`}}
+                            </template>
+                        </div>
+                        <div submit-success>
+                            <template type="amp-mustache">
+                                <h2 class="commerce-listing-product-name h6">
+                                    {{`{{total}}`}} items found
+                                </h2>
+                                <p>&nbsp;</p>
+                            </template>
+                        </div>
+                    </form>
 
                     <div class="commerce-listing-filters pt2 pb2 mb3 md-mb0">
                         <div class="commerce-select-wrapper inline-block md-mr1 pl2 md-hide lg-hide">
@@ -175,25 +201,16 @@ limitations under the License.
                         </div>
                     </div>
                 </div>
-                <div submitting>
-                    <template type="amp-mustache">
-                        Searching...
-                    </template>
-                </div>
-                <div submit-error>
-                    <template type="amp-mustache">
-                        <p>Oops</p>
-                        [{{`{{status}}`}}] {{`{{statustext}}`}} <br />
-                        {{`{{message}}`}}
-                    </template>
-                </div>
-                <div submit-success>
-                    <template type="amp-mustache">
-                    <h2 class="commerce-listing-product-name h6">
-                        {{`{{total}}`}} items found
-                    </h2>
-                    <p>&nbsp;</p>
-                    </template>
+                <div>
+                    <amp-list
+                            src="amp-state:Total"
+                            layout="responsive"
+                            width="800px"
+                            height="35px">
+                        <template type="amp-mustache">
+                                {{`{{total}}`}} items. {{`{{start}}`}} {{`{{rows}}`}}<br />
+                        </template>
+                    </amp-list>
                 </div>
                 <amp-list
                         id="resultList"
@@ -201,11 +218,9 @@ limitations under the License.
                         layout="responsive"
                         width="800px"
                         height="350px"
-                        load-more="auto"
-                        load-more-bookmark="next"
-                        reset-on-refresh="always"
+                        [height]="items.length * 35"
                 >
-                    <template type="amp-mustache" id="resultRow">
+                    <template type="amp-mustache">
                         <div class="md-result-list relative md-flex flex-wrap items-center md-mx0">
                             <div>
                                 <h2 class="commerce-listing-product-name h6">
@@ -216,19 +231,11 @@ limitations under the License.
                             </div>
                         </div>
                     </template>
-                    <amp-list-load-more load-more-button>
-                        <span class="ampstart-btn ampstart-btn-seemore caps">Show more</span>
-                    </amp-list-load-more>
-                    <amp-list-load-more load-more-failed>
-                        error loading more data
-                    </amp-list-load-more>
-                    <amp-list-load-more load-more-end>
-                        END
-                    </amp-list-load-more>
-                </amp-list>
+                </amp-list><br />
+                <div [hidden]="SearchResult.start > 0" class="ampstart-btn ampstart-btn-seemore caps">prev</div>
+                <div [hidden]="SearchResult.start + SearchResult.rows > SearchResult.total" class="ampstart-btn ampstart-btn-seemore caps">next</div>
             </div>
         </section>
-    </form>
 </main>
 
 {{template "footer.inc.gohtml" . }}
