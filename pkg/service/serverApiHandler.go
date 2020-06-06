@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/drgrib/maps"
 	"github.com/goph/emperror"
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/generic"
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/source"
@@ -13,18 +14,25 @@ import (
 	"strings"
 )
 
+type facetField struct {
+	Id       string `json:"id"`
+	Name     string `json:"name"`
+	Selected bool   `json:"selected"`
+}
+
 type searchResult struct {
-	Items  []searchResultItem `json:"items"`
-	Total  int64              `json:"total"`
-	Start  int64              `json:"start"`
-	Rows   int64              `json:"rows"`
-	Query  string             `json:"query"`
-	Search string             `json:"search"`
-	Next   string             `json:"next"`
+	Items           []searchResultItem `json:"items"`
+	Total           int64              `json:"total"`
+	Start           int64              `json:"start"`
+	Rows            int64              `json:"rows"`
+	Query           string             `json:"query"`
+	Search          string             `json:"search"`
+	Next            string             `json:"next"`
+	FacetFieldCount map[string]facetField       `json:"facetfieldcount"`
 }
 
 type searchResultItem struct {
-	Id         string   `json:"id"`
+	Id         string   `json:"Id"`
 	Title      string   `json:"title"`
 	Text       string   `json:"text"`
 	Collection string   `json:"collection"`
@@ -34,15 +42,27 @@ type searchResultItem struct {
 	Total      int64    `json:"total,omitempty"`
 }
 
-func doc2json(search string, query string, docs []*source.Document, total int64, start int64, user *User, next string) ([]byte, error) {
+func doc2json(search string, query string, docs []*source.Document, total int64, facetFieldCount source.FacetCountResult, start int64, user *User, next string) ([]byte, error) {
 	result := &searchResult{
-		Items:  []searchResultItem{},
-		Total:  total,
-		Start:  start,
-		Rows:   int64(len(docs)),
-		Query:  query,
-		Search: search,
-		Next:   next,
+		Items:           []searchResultItem{},
+		Total:           total,
+		Start:           start,
+		Rows:            int64(len(docs)),
+		Query:           query,
+		Search:          search,
+		Next:            next,
+		FacetFieldCount: make(map[string]facetField),
+	}
+
+	for facet, vals := range facetFieldCount {
+		for val, count := range vals {
+			id := fmt.Sprintf("%s.%s", facet, val)
+			result.FacetFieldCount[id] = facetField{
+				Id:       id,
+				Name:     fmt.Sprintf("%s (%d)", val, count),
+				Selected: true,
+			}
+		}
 	}
 
 	for key, doc := range docs {
@@ -87,16 +107,16 @@ func solrOr(field string, values []string, weight1, weight2 int) string {
 			val = trimmed
 		}
 		if weight1 > 0 {
-				if result != "" {
-					result += " OR "
-				}
-				result += fmt.Sprintf(`%s:%s^%d`, field, source.EscapeSolrString(val), weight1)
+			if result != "" {
+				result += " OR "
+			}
+			result += fmt.Sprintf(`%s:%s^%d`, field, source.EscapeSolrString(val), weight1)
 		}
 		if weight2 > 0 && !withQuotes {
-				if result != "" {
-					result += " OR "
-				}
-				result += fmt.Sprintf(`%s:%s*^%d`, field, source.EscapeSolrString(val), weight2)
+			if result != "" {
+				result += " OR "
+			}
+			result += fmt.Sprintf(`%s:%s*^%d`, field, source.EscapeSolrString(val), weight2)
 		}
 	}
 	return result
@@ -178,23 +198,25 @@ func (s *Server) apiSearchHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// expand to field an generic search
-	rexp2 := regexp.MustCompile(`^([a-zA-Z0-9]+):(.+)$`)
+	rexp2 := regexp.MustCompile(`^(` + strings.Join(maps.GetKeysStringString(s.searchFields), `|`) + `):(.+)$`)
 	fields := make(map[string][]string)
 	gen := []string{}
 
 	for _, f := range slice {
 		fldq := rexp2.FindStringSubmatch(f)
 		if fldq != nil {
-			if _, ok := fields[fldq[1]]; !ok {
-				fields[fldq[1]] = []string{}
+			fldname, ok := s.searchFields[fldq[1]]
+			if !ok {
+				continue
 			}
-			fields[fldq[1]] = append(fields[fldq[1]], fldq[2])
+			if _, ok := fields[fldname]; !ok {
+				fields[fldname] = []string{}
+			}
+			fields[fldname] = append(fields[fldname], fldq[2])
 		} else {
 			gen = append(gen, f)
 		}
 	}
-
-
 
 	/*
 	      (
@@ -216,18 +238,26 @@ func (s *Server) apiSearchHandler(w http.ResponseWriter, req *http.Request) {
 			solrOr("signature", gen, 20, 10),
 		)
 	}
+	qstr2 := ""
 	if len(fields) > 0 {
 		for field, val := range fields {
-			if qstr != "" {
-				qstr += " OR "
+			if qstr2 != "" {
+				qstr2 += " OR "
 			}
-			qstr += solrOr(field, val, 30, 15)
+			qstr2 += solrOr(field, val, 30, 15)
+		}
+	}
+	if qstr2 != "" {
+		if qstr != "" {
+			qstr = fmt.Sprintf("(%s) AND (%s)", qstr, qstr2)
+		} else {
+			qstr = qstr2
 		}
 	}
 
 	s.log.Infof("Query: %s", qstr)
 
-	docs, total, err := s.mts.Search(qstr, []string{"zotero"}, map[string][]string{"mediatype": []string{}}, user.Groups, false, int(start), int(rows))
+	docs, total, facetFields, err := s.mts.Search(qstr, []string{"zotero"}, map[string][]string{"mediatype": []string{}}, user.Groups, false, int(start), int(rows))
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot execute solr query: %v", true, err)
 		return
@@ -257,7 +287,7 @@ func (s *Server) apiSearchHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	json, err := doc2json(search, qstr, docs, total, start, user, next)
+	json, err := doc2json(search, qstr, docs, total, facetFields, start, user, next)
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal result: %v", true, err)
 		return

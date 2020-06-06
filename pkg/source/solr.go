@@ -22,6 +22,8 @@ type MTSolr struct {
 	log *logging.Logger
 }
 
+type FacetCountResult map[string]map[string]int
+
 func EscapeSolrString(str string) string {
 	var re = regexp.MustCompile(`([-\\!():^\[\]"{}~*?|&;/+]|[[:space:]])`)
 	return re.ReplaceAllString(str, "\\$1")
@@ -346,7 +348,7 @@ func (mts *MTSolr) LoadEntities(ids []string) (map[string]*Document, error) {
 	return result, nil
 }
 
-func (mts *MTSolr) Search(text string, sources []string, facets map[string][]string, groups []string, contentVisible bool, start, rows int) ([]*Document, int64, error) {
+func (mts *MTSolr) Search(text string, sources []string, facets map[string][]string, groups []string, contentVisible bool, start, rows int) ([]*Document, int64, FacetCountResult, error) {
 	//qstr := EscapeSolrString(text)
 	qstr := text
 	if qstr == "" {
@@ -379,6 +381,7 @@ func (mts *MTSolr) Search(text string, sources []string, facets map[string][]str
 	}
 
 	query.Q(qstr)
+
 	// we only need the id's
 	//query.FieldList("id")
 
@@ -390,32 +393,57 @@ func (mts *MTSolr) Search(text string, sources []string, facets map[string][]str
 	s := mts.si.Search(query)
 	r, err := s.Result(nil)
 	if err != nil {
-		return nil, 0, emperror.Wrapf(err, "search error for query %s - %v", query.String(), facets)
+		return nil, 0, nil, emperror.Wrapf(err, "search error for query %s - %v", query.String(), facets)
 	}
 	if r == nil  {
-		return nil, 0, errors.New(fmt.Sprintf("no results for query %s - %v", qstr, facets))
+		return nil, 0, nil, errors.New(fmt.Sprintf("no results for query %s - %v", qstr, facets))
 	}
 	if r.Results.NumFound == 0 {
-		return []*Document{}, 0, nil
+		return []*Document{}, 0, nil, nil
 	}
 	mts.log.Infof("%v document(s) found", len(r.Results.Docs))
 
 	ids := []string{}
 	result := []*Document{}
+	facetFields := make(FacetCountResult)
+	_fff, ok := r.FacetCounts["facet_fields"]
+	if ok {
+		fff, ok := _fff.(map[string]interface{})
+		if ok {
+			for facetField, _val := range fff {
+				if _, ok := facetFields[facetField]; !ok {
+					facetFields[facetField] = make(map[string]int)
+				}
+				val, ok := _val.([]interface{})
+				if ok {
+					fld := ""
+					for _, _v := range val {
+						switch v := _v.(type) {
+						case string:
+							fld = v
+						case float64:
+							facetFields[facetField][fld] = int(v)
+							fld = ""
+						}
+					}
+				}
+			}
+		}
+	}
 
 	for _, doc := range r.Results.Docs {
 		if !doc.Has("id") {
-			return nil, 0, errors.New(fmt.Sprintf("doc has no id field"))
+			return nil, 0, nil, errors.New(fmt.Sprintf("doc has no id field"))
 		}
 		idInterface := doc.Get("id")
 		id, ok := idInterface.(string)
 		if !ok {
-			return nil, 0, errors.New(fmt.Sprintf("id not a string"))
+			return nil, 0, nil, errors.New(fmt.Sprintf("id not a string"))
 		}
 		ids = append(ids, id)
 		entry, id, err := mts.cacheEntryFromDoc(doc)
 		if err != nil {
-			return nil, 0, emperror.Wrapf(err, "cannot create cache entry from document")
+			return nil, 0, nil, emperror.Wrapf(err, "cannot create cache entry from document")
 		}
 
 		var cDoc *Document
@@ -457,10 +485,10 @@ func (mts *MTSolr) Search(text string, sources []string, facets map[string][]str
 				}
 			}
 			if err := mts.storeCache(cDoc); err != nil {
-				return nil, 0, emperror.Wrapf(err, "cannot store document in cache")
+				return nil, 0, nil, emperror.Wrapf(err, "cannot store document in cache")
 			}
 		}
 		result = append(result, cDoc)
 	}
-	return result, int64(r.Results.NumFound), nil
+	return result, int64(r.Results.NumFound), facetFields, nil
 }

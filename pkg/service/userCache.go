@@ -12,7 +12,7 @@ import (
 
 type User struct {
 	Server    *Server   `json:"-"`
-	Id        string    `json:"id"`
+	Id        string    `json:"Id"`
 	Groups    []string  `json:"groups"`
 	Email     string    `json:"email"`
 	FirstName string    `json:"firstName"`

@@ -188,7 +188,7 @@
                     {
                         "pdfs": [
                         {{range $key, $pdf := .Doc.Content.Media.pdf}}
-                            {{if $key}},{{end}}"{{medialink $pdf.Uri "master" "" (not $contentPublic)}}"
+                            {{if $key}},{{end}}"{{medialink $pdf.Uri "iframe" "" (not $contentPublic)}}"
                         {{end}}
                         ],
                         "selectedPdf": 0
@@ -196,14 +196,17 @@
                 </script>
             </amp-state>
                 <div>
-                    <amp-google-document-embed
+                    <amp-iframe
                             {{$pdf := index .Doc.Content.Media.pdf 0}}
-                            src="{{medialink $pdf.Uri "master" "" (not $contentPublic)}}"
+                            src="{{medialink $pdf.Uri "iframe" "" (not $contentPublic)}}"
                             [src]="pdf.pdfs[pdf.selectedPdf]"
+                            sandbox="allow-scripts allow-same-origin"
+                            allowfullscreen
                             width="1280"
                             height="1000"
                             layout="responsive">
-                    </amp-google-document-embed>
+                        <amp-img layout="fill" src="https://foo.com/foo.png" placeholder></amp-img>
+                    </amp-iframe>
                 </div>
                 <amp-selector class="center" [selected]="pdf.selectedPdf" on="select:AMP.setState({pdf: {selectedPdf: event.targetOption}})">
                     <ul class="list-reset inline-block">

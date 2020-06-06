@@ -146,6 +146,7 @@ func main() {
 		config.ApiPrefix,
 		config.AmpCache,
 		config.AmpApiKey,
+		config.SearchFields,
 	)
 
 	if err != nil {

@@ -49,6 +49,12 @@ type DetailStatus struct {
 	Title         string
 }
 
+type FacetCountField struct {
+	Id       string
+	Name     string
+	Selected bool
+}
+
 type SearchStatus struct {
 	Type              string
 	Notifications     []Notification
@@ -64,6 +70,7 @@ type SearchStatus struct {
 	SearchResultRows  int
 	SearchResultTotal int
 	SearchString      string
+	FacetCount        []FacetCountField
 }
 
 type Server struct {
@@ -97,6 +104,7 @@ type Server struct {
 	accesslog         io.Writer
 	ampApiKey         *rsa.PrivateKey
 	ampCache          *amp.Cache
+	searchFields      map[string]string
 }
 
 func NewServer(
@@ -128,6 +136,7 @@ func NewServer(
 	apiPrefix string,
 	AmpCache string,
 	ampApiKeyFile string,
+	searchFields map[string]string,
 ) (*Server, error) {
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
@@ -192,6 +201,7 @@ func NewServer(
 		apiPrefix:      apiPrefix,
 		ampCache:       ampCache,
 		ampApiKey:      ampApiKey,
+		searchFields:   searchFields,
 	}
 	if err := srv.InitTemplates(detailTemplate, errorTemplate, forbiddenTemplate, searchTemplate); err != nil {
 		return nil, emperror.Wrapf(err, "cannot initialize server")
