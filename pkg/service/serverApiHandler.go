@@ -14,12 +14,13 @@ import (
 )
 
 type searchResult struct {
-	Items []searchResultItem `json:"items"`
-	Total int64              `json:"total"`
-	Start int64              `json:"start"`
-	Rows  int64              `json:"rows"`
-	Query string             `json:"query"`
-	Next  string             `json:"next"`
+	Items  []searchResultItem `json:"items"`
+	Total  int64              `json:"total"`
+	Start  int64              `json:"start"`
+	Rows   int64              `json:"rows"`
+	Query  string             `json:"query"`
+	Search string             `json:"search"`
+	Next   string             `json:"next"`
 }
 
 type searchResultItem struct {
@@ -33,14 +34,15 @@ type searchResultItem struct {
 	Total      int64    `json:"total,omitempty"`
 }
 
-func doc2json(query string, docs []*source.Document, total int64, start int64, user *User, next string) ([]byte, error) {
+func doc2json(search string, query string, docs []*source.Document, total int64, start int64, user *User, next string) ([]byte, error) {
 	result := &searchResult{
-		Items: []searchResultItem{},
-		Total: total,
-		Start: start,
-		Rows:  int64(len(docs)),
-		Query: query,
-		Next:  next,
+		Items:  []searchResultItem{},
+		Total:  total,
+		Start:  start,
+		Rows:   int64(len(docs)),
+		Query:  query,
+		Search: search,
+		Next:   next,
 	}
 
 	for key, doc := range docs {
@@ -152,6 +154,9 @@ func (s *Server) apiSearchHandler(w http.ResponseWriter, req *http.Request) {
 	if ok && len(startstr) > 0 {
 		start, _ = strconv.ParseInt(startstr[0], 10, 64)
 	}
+	if start < 0 {
+		start = 0
+	}
 	rowsstr, ok := req.Form["rows"]
 	if ok && len(rowsstr) > 0 {
 		rows, _ = strconv.ParseInt(rowsstr[0], 10, 64)
@@ -161,6 +166,16 @@ func (s *Server) apiSearchHandler(w http.ResponseWriter, req *http.Request) {
 	searchs := req.Form["search"]
 	if len(searchs) == 1 {
 		search = searchs[0]
+	}
+
+	lastsearch := ""
+	lastsearchs := req.Form["lastsearch"]
+	if len(lastsearchs) == 1 {
+		lastsearch = lastsearchs[0]
+	}
+
+	if lastsearch != search {
+		start = 0
 	}
 
 	var sc scanner.Scanner
@@ -225,7 +240,7 @@ func (s *Server) apiSearchHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	json, err := doc2json(qstr, docs, total, start, user, next)
+	json, err := doc2json(search, qstr, docs, total, start, user, next)
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal result: %v", true, err)
 		return

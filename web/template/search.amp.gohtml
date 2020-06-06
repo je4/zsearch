@@ -54,6 +54,8 @@ limitations under the License.
 <!-- End Navbar -->
 
 <main id="content" role="main" class="main">
+    <a class="target-anchor"
+       id="top"></a>
     {{range $key, $notification := .Notifications}}
         <amp-user-notification
                 layout="nodisplay"
@@ -67,14 +69,29 @@ limitations under the License.
         </amp-user-notification>
     {{end}}
     <amp-img class="commerce-listing-banner xs-hide sm-hide" src="static/img/wide-mediathek-hero.jpg" width="2560" height="400" layout="responsive" alt="Mediathek Search" noloading=""><div placeholder="" class="commerce-loader"></div></amp-img>
--    <amp-state id="SearchResult">
+    <amp-state id="SearchResultSearch">
         <script type="application/json">
-       {{.SearchResult}}
+            ""
         </script>
     </amp-state>
-    -    <amp-state id="Total">
+    <amp-state id="SearchResultStart">
         <script type="application/json">
-       {"items":[]}
+       {{.SearchResultStart}}
+        </script>
+    </amp-state>
+    <amp-state id="SearchResultRows">
+        <script type="application/json">
+       {{.SearchResultRows}}
+        </script>
+    </amp-state>
+    <amp-state id="SearchResultTotal">
+        <script type="application/json">
+       {{.SearchResultTotal}}
+        </script>
+    </amp-state>
+    <amp-state id="SearchResult">
+        <script type="application/json">
+       {{.SearchResult}}
         </script>
     </amp-state>
     <amp-state id="testing">
@@ -119,8 +136,16 @@ limitations under the License.
                     <form method="POST"
                           id="search"
                           action-xhr="{{.QueryApi}}"
-                          on="submit-success:AMP.setState({SearchResult: event.response,Total:{items:[{total:event.response.total,start:event.response.start,rows:event.response.rows}]}}),resultList.refresh"
+                          on="submit-success:AMP.setState({
+                                SearchResult: event.response,
+                                SearchResultTotal:event.response.total,
+                                SearchResultStart:event.response.start,
+                                SearchResultRows:event.response.rows,
+                                SearchResultSearch:event.response.search
+                            }),resultList.refresh"
                           target="_top">
+                        <input type="hidden" name="start" value="0" [value]="SearchResultStart"/>
+                        <input type="hidden" name="lastsearch" value="" [value]="SearchResultSearch"/>
                         <h1 class="h3 mb2 md-mt2 md-mb2 md-ml0 flex-auto px2">
                             <input
                                     type="text"
@@ -136,7 +161,7 @@ limitations under the License.
                                         role="button"
                                         style="vertical-align: middle;"
                                         tabindex="1"
-                                        on="tap:AMP.setState({SearchResult:{items: []}}),resultList.refresh,search.submit"
+                                        on="tap:AMP.setState({SearchResult:{items: []},SearchResultStart:0}),resultList.refresh,search.submit"
                                         viewBox="0 0 24 24">
                                     <defs
                                             id="defs10" />
@@ -163,10 +188,6 @@ limitations under the License.
                         </div>
                         <div submit-success>
                             <template type="amp-mustache">
-                                <h2 class="commerce-listing-product-name h6">
-                                    {{`{{total}}`}} items found
-                                </h2>
-                                <p>&nbsp;</p>
                             </template>
                         </div>
                     </form>
@@ -202,15 +223,91 @@ limitations under the License.
                     </div>
                 </div>
                 <div>
-                    <amp-list
-                            src="amp-state:Total"
-                            layout="responsive"
-                            width="800px"
-                            height="35px">
-                        <template type="amp-mustache">
-                                {{`{{total}}`}} items. {{`{{start}}`}} {{`{{rows}}`}}<br />
-                        </template>
-                    </amp-list>
+                    <h2 class="commerce-listing-product-name h6">
+                        <span text="{{.SearchResultTotal}}" [text]="SearchResult.total">{{.SearchResultTotal}}</span> items.
+                        <span text="{{add .SearchResultStart 1}}" [text]="SearchResultStart+1">{{add .SearchResultStart 1}}</span> -
+                        <span  text="{{add .SearchResultStart .SearchResultRows}}" [text]="SearchResultStart+SearchResultRows">{{add .SearchResultStart .SearchResultRows}}</span>
+                    </h2>
+                    <p>&nbsp;</p>
+                    <table>
+                        <tr>
+                            <td>
+                                <svg
+                                        [class]="(SearchResultStart<=0?'blur3 ':'')"
+                                        viewBox="0 0 24 24"
+                                        fill="black"
+                                        width="48px"
+                                        height="48px"
+                                        version="1.1"
+                                        id="svgfirst"
+                                        role="button"
+                                        tabindex="2"
+                                        on="tap:AMP.setState({SearchResultStart:0}),resultList.refresh,search.submit,top.scrollTo(duration=200)">
+                                    <defs id="defs10" />
+                                    <path d="M0 0h24v24H0V0z" fill="none" id="path2" />
+                                    <path d="m 15.739329,16.778762 -5,-4.778762 5,-4.9205085 L 15.097878,6.5 9.2393293,12 15.134829,17.5 Z" id="path4" />
+                                    <rect
+                                            y="6.5"
+                                            x="8"
+                                            height="11"
+                                            width="1"
+                                            id="rect1383"
+                                            style="fill:#020000;fill-opacity:1;stroke:none;stroke-width:0.5;stroke-opacity:1" />
+                                </svg>
+                            </td>
+                            <td>
+                                <svg
+                                        [class]="(SearchResultStart<=0?'blur3 ':'')"
+                                        id="svgleft"
+                                        version="1.1"
+                                        height="48px"
+                                        width="48px"
+                                        fill="black"
+                                        viewBox="0 0 24 24"
+                                        role="button"
+                                        tabindex="3"
+                                        on="tap:AMP.setState({SearchResultStart:(SearchResultStart-10)}),resultList.refresh,search.submit,top.scrollTo(duration=200)"
+                                >
+                                    <defs id="defs10" />
+                                    <path id="path2" fill="none" d="M0 0h24v24H0V0z" />
+                                    <path id="path4" d="M 15,16.778762 10,12 15,7.0794915 14.305085,6.3940678 8.5,12 l 5.8955,5.5 z" />
+                                </svg>
+                            </td>
+                            <td>
+                                <svg
+                                        id="svgright"
+                                        version="1.1"
+                                        height="48px"
+                                        width="48px"
+                                        fill="black"
+                                        viewBox="0 0 24 24"
+                                        role="button"
+                                        tabindex="4"
+                                        on="tap:AMP.setState({SearchResultStart:(SearchResultStart+10)}),resultList.refresh,search.submit,top.scrollTo(duration=200)"
+                                >
+                                    <defs id="defs10" />
+                                    <path id="path2" fill="none" d="M0 0h24v24H0V0z" />
+                                    <path id="path4" d="M 8.5,16.778762 13.5,12 8.5,7.0794915 9.194915,6.3940678 15,12 9.1045,17.5 Z" />
+                                </svg>
+                            </td>
+                        </tr>
+                    </table>
+                    <div style="display:flex;">
+                        <div
+                                style="flex: 0 0 50px;"
+                                [class]="(SearchResultStart<=0?'hidden ':''+'ampstart-btn ampstart-btn-seemore caps')"
+                                class="ampstart-btn ampstart-btn-seemore caps {{if le .SearchResultStart 0}}hidden{{end}}"
+                                on="tap:AMP.setState({SearchResultStart:(SearchResultStart-10),SearchResult:{items: []}}),resultList.refresh,search.submit,top.scrollTo(duration=200)"
+                        >prev</div>
+                        <div style="width:100%;">&nbsp;</div>
+                        <div
+                                style="flex: 1;"
+                                [class]="(SearchResultStart+SearchResultRows>=SearchResultTotal?'hidden ':'')+'ampstart-btn ampstart-btn-seemore caps'"
+                                class="ampstart-btn ampstart-btn-seemore caps {{if ge (add .SearchResultStart .SearchResultRows) .SearchResultTotal}}hidden{{end}}"
+                                on="tap:AMP.setState({SearchResultStart:(SearchResultStart+SearchResultRows),SearchResult:{items: []}}),resultList.refresh,search.submit,top.scrollTo(duration=200)"
+                        >next</div>
+                    </div>
+                    <p>&nbsp;</p>
                 </div>
                 <amp-list
                         id="resultList"
@@ -232,8 +329,84 @@ limitations under the License.
                         </div>
                     </template>
                 </amp-list><br />
-                <div [hidden]="SearchResult.start > 0" class="ampstart-btn ampstart-btn-seemore caps">prev</div>
-                <div [hidden]="SearchResult.start + SearchResult.rows > SearchResult.total" class="ampstart-btn ampstart-btn-seemore caps">next</div>
+                <table>
+                    <tr>
+                        <td>
+                            <svg
+                                    [class]="(SearchResultStart<=0?'blur3 ':'')"
+                                    viewBox="0 0 24 24"
+                                    fill="black"
+                                    width="48px"
+                                    height="48px"
+                                    version="1.1"
+                                    id="svgfirst"
+                                    role="button"
+                                    tabindex="2"
+                                    on="tap:AMP.setState({SearchResultStart:0}),resultList.refresh,search.submit,top.scrollTo(duration=200)">
+                                <defs id="defs10" />
+                                <path d="M0 0h24v24H0V0z" fill="none" id="path2" />
+                                <path d="m 15.739329,16.778762 -5,-4.778762 5,-4.9205085 L 15.097878,6.5 9.2393293,12 15.134829,17.5 Z" id="path4" />
+                                <rect
+                                        y="6.5"
+                                        x="8"
+                                        height="11"
+                                        width="1"
+                                        id="rect1383"
+                                        style="fill:#020000;fill-opacity:1;stroke:none;stroke-width:0.5;stroke-opacity:1" />
+                            </svg>
+                        </td>
+                        <td>
+                            <svg
+                                    [class]="(SearchResultStart<=0?'blur3 ':'')"
+                                    id="svgleft"
+                                    version="1.1"
+                                    height="48px"
+                                    width="48px"
+                                    fill="black"
+                                    viewBox="0 0 24 24"
+                                    role="button"
+                                    tabindex="3"
+                                    on="tap:AMP.setState({SearchResultStart:(SearchResultStart-10)}),resultList.refresh,search.submit,top.scrollTo(duration=200)"
+                            >
+                                <defs id="defs10" />
+                                <path id="path2" fill="none" d="M0 0h24v24H0V0z" />
+                                <path id="path4" d="M 15,16.778762 10,12 15,7.0794915 14.305085,6.3940678 8.5,12 l 5.8955,5.5 z" />
+                            </svg>
+                        </td>
+                        <td>
+                            <svg
+                                    id="svgright"
+                                    version="1.1"
+                                    height="48px"
+                                    width="48px"
+                                    fill="black"
+                                    viewBox="0 0 24 24"
+                                    role="button"
+                                    tabindex="4"
+                                    on="tap:AMP.setState({SearchResultStart:(SearchResultStart+10)}),resultList.refresh,search.submit,top.scrollTo(duration=200)"
+                            >
+                                <defs id="defs10" />
+                                <path id="path2" fill="none" d="M0 0h24v24H0V0z" />
+                                <path id="path4" d="M 8.5,16.778762 13.5,12 8.5,7.0794915 9.194915,6.3940678 15,12 9.1045,17.5 Z" />
+                            </svg>
+                        </td>
+                    </tr>
+                </table>
+                <div style="display:flex;">
+                    <div
+                            style="flex: 0 0 50px;"
+                            [class]="(SearchResultStart<=0?'hidden ':''+'ampstart-btn ampstart-btn-seemore caps')"
+                            class="ampstart-btn ampstart-btn-seemore caps {{if le .SearchResultStart 0}}hidden{{end}}"
+                            on="tap:AMP.setState({SearchResultStart:(SearchResultStart-10),SearchResult:{items: []}}),resultList.refresh,search.submit,top.scrollTo(duration=200)"
+                    >prev</div>
+                    <div style="width:100%;">&nbsp;</div>
+                    <div
+                            style="flex: 1;"
+                            [class]="(SearchResultStart+SearchResultRows>=SearchResultTotal?'hidden ':'')+'ampstart-btn ampstart-btn-seemore caps'"
+                            class="ampstart-btn ampstart-btn-seemore caps {{if ge (add .SearchResultStart .SearchResultRows) .SearchResultTotal}}hidden{{end}}"
+                            on="tap:AMP.setState({SearchResultStart:(SearchResultStart+SearchResultRows),SearchResult:{items: []}}),resultList.refresh,search.submit,top.scrollTo(duration=200)"
+                    >next</div>
+                </div>
             </div>
         </section>
 </main>

@@ -50,16 +50,20 @@ type DetailStatus struct {
 }
 
 type SearchStatus struct {
-	Type          string
-	Notifications []Notification
-	User          *User
-	Self          string
-	SelfPath      string
-	AmpBase       string
-	LoginUrl      string
-	Title         string
-	SearchResult  template.JS
-	QueryApi      template.URL
+	Type              string
+	Notifications     []Notification
+	User              *User
+	Self              string
+	SelfPath          string
+	AmpBase           string
+	LoginUrl          string
+	Title             string
+	SearchResult      template.JS
+	QueryApi          template.URL
+	SearchResultStart int
+	SearchResultRows  int
+	SearchResultTotal int
+	SearchString      string
 }
 
 type Server struct {

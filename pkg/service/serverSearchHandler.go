@@ -70,12 +70,15 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		s.DoPanicf(w, http.StatusNoContent, "no results found", false)
 		return
 	}
-	json, err := doc2json("", docs, total, 0, status.User, "")
+	json, err := doc2json("", "", docs, total, 0, status.User, "")
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal result: %v", false, err)
 		return
 	}
 	status.SearchResult = template.JS(json)
+	status.SearchResultRows = len(docs)
+	status.SearchResultTotal = int(total)
+	status.SearchResultStart = 0
 
 	if err := s.searchTemplate.Execute(w, status); err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot render template: %v", false, err)
