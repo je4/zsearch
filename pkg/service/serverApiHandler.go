@@ -8,9 +8,9 @@ import (
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/source"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
-	"text/scanner"
 )
 
 type searchResult struct {
@@ -78,35 +78,26 @@ func doc2json(search string, query string, docs []*source.Document, total int64,
 	return r, nil
 }
 
-func solrOr(field string, values []string, weight1, weight2, weight3, weight4 int) string {
+func solrOr(field string, values []string, weight1, weight2 int) string {
 	result := ""
-	if weight1 > 0 {
-		for _, val := range values {
-			if result != "" {
-				result += " OR "
-			}
-			result += fmt.Sprintf(`%s:%s^%d`, field, source.EscapeSolrString(val), weight1)
+	for _, val := range values {
+		trimmed := strings.Trim(val, `"`)
+		withQuotes := val != trimmed
+		if withQuotes {
+			val = trimmed
 		}
-	}
-	if weight2 > 0 {
-		for _, val := range values {
-			if result != "" {
-				result += " OR "
-			}
-			result += fmt.Sprintf(`%s:%s*^%d`, field, source.EscapeSolrString(val), weight2)
+		if weight1 > 0 {
+				if result != "" {
+					result += " OR "
+				}
+				result += fmt.Sprintf(`%s:%s^%d`, field, source.EscapeSolrString(val), weight1)
 		}
-	}
-	if weight3 > 0 {
-		if result != "" {
-			result += " OR "
+		if weight2 > 0 && !withQuotes {
+				if result != "" {
+					result += " OR "
+				}
+				result += fmt.Sprintf(`%s:%s*^%d`, field, source.EscapeSolrString(val), weight2)
 		}
-		result += fmt.Sprintf(`%s:%s^%d`, field, source.EscapeSolrString(strings.Join(values, " ")), weight3)
-	}
-	if weight4 > 0 {
-		if result != "" {
-			result += " OR "
-		}
-		result += fmt.Sprintf(`%s:%s*^%d`, field, source.EscapeSolrString(strings.Join(values, " ")), weight4)
 	}
 	return result
 }
@@ -178,13 +169,32 @@ func (s *Server) apiSearchHandler(w http.ResponseWriter, req *http.Request) {
 		start = 0
 	}
 
-	var sc scanner.Scanner
+	var qstr string
 
-	sc.Init(strings.NewReader(search))
-	slice := []string{}
-	for tok := sc.Scan(); tok != scanner.EOF; tok = sc.Scan() {
-		slice = append(slice, sc.TokenText())
+	rexp := regexp.MustCompile(`([a-zA-Z0-9]+:([^ "]+|"[^"]+"))|([^ "]+)|"([^"]+)"`)
+	slice := rexp.FindAllString(search, -1)
+	if slice == nil {
+		slice = []string{}
 	}
+
+	// expand to field an generic search
+	rexp2 := regexp.MustCompile(`^([a-zA-Z0-9]+):(.+)$`)
+	fields := make(map[string][]string)
+	gen := []string{}
+
+	for _, f := range slice {
+		fldq := rexp2.FindStringSubmatch(f)
+		if fldq != nil {
+			if _, ok := fields[fldq[1]]; !ok {
+				fields[fldq[1]] = []string{}
+			}
+			fields[fldq[1]] = append(fields[fldq[1]], fldq[2])
+		} else {
+			gen = append(gen, f)
+		}
+	}
+
+
 
 	/*
 	      (
@@ -196,16 +206,23 @@ func (s *Server) apiSearchHandler(w http.ResponseWriter, req *http.Request) {
 	   	OR ( signature:"fell down the mountains"^25 )
 	       )
 	*/
-	var qstr string = "*:*"
-	if len(slice) > 0 {
+	if len(gen) > 0 {
 		qstr = fmt.Sprintf("%s OR %s OR %s OR %s OR %s OR %s",
-			solrOr("title", slice, 10, 0, 20, 15),
-			solrOr("author", slice, 10, 0, 20, 15),
-			solrOr("publisher", slice, 8, 0, 18, 13),
-			solrOr("content", slice, 0, 6, 12, 10),
-			solrOr("abstract", slice, 0, 8, 15, 8),
-			solrOr("signature", slice, 0, 0, 25, 18),
+			solrOr("title", gen, 10, 10),
+			solrOr("author", gen, 10, 10),
+			solrOr("publisher", gen, 8, 10),
+			solrOr("content", gen, 0, 6),
+			solrOr("abstract", gen, 0, 8),
+			solrOr("signature", gen, 20, 10),
 		)
+	}
+	if len(fields) > 0 {
+		for field, val := range fields {
+			if qstr != "" {
+				qstr += " OR "
+			}
+			qstr += solrOr(field, val, 30, 15)
+		}
 	}
 
 	s.log.Infof("Query: %s", qstr)
