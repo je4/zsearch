@@ -208,7 +208,6 @@ func (imm *ItemMediaMeta) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-
 type ItemGeneric struct {
 	ItemDataBase
 	NumPages             string  `json:"numPages,omitempty"`             // # of Pages

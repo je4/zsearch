@@ -18,7 +18,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		LoginUrl:      s.loginUrl,
 		Title:         "search",
 		QueryApi:      "api/search",
-		FacetCount:    []FacetCountField{},
+		FacetCount:    make(map[string]FacetCountField),
 	}
 
 	jwt, ok := req.URL.Query()["token"]
@@ -62,6 +62,17 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		status.QueryApi = template.URL(fmt.Sprintf("%s/%s?token=%s", s.addrExt, "api/search", jwt))
 	}
 
+	facets := map[string][]string{"mediatype": []string{}}
+	for name, vals := range req.URL.Query() {
+		for key, _ := range facets {
+			if strings.HasPrefix(key+"_", name) && len(vals) > 0 {
+				val := vals[0]
+				fmt.Sprintf("%v", val)
+				facets[key] = append(facets[key], strings.TrimPrefix(key+"_", name))
+			}
+		}
+	}
+
 	docs, total, facetFieldCount, err := s.mts.Search("", []string{"zotero"}, map[string][]string{"mediatype": []string{}}, status.User.Groups, false, 0, 10)
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot execute solr query: %v", false, err)
@@ -71,7 +82,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		s.DoPanicf(w, http.StatusNoContent, "no results found", false)
 		return
 	}
-	json, err := doc2json("", "", docs, total, facetFieldCount, 0, status.User, "")
+	json, err := doc2json("", "", docs, total, facetFieldCount, facets, 0, status.User, "")
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal result: %v", false, err)
 		return
@@ -82,14 +93,14 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 	status.SearchResultStart = 0
 	for facet, vals := range facetFieldCount {
 		for val, count := range vals {
-			status.FacetCount = append(status.FacetCount, FacetCountField{
-				Id:       fmt.Sprintf("%s_%s", facet, val),
+			id := fmt.Sprintf("%s_%s", facet, val)
+			status.FacetCount[id] = FacetCountField{
+				Id:       id,
 				Name:     fmt.Sprintf("%s (%d)", val, count),
 				Selected: false,
-			})
+			}
 		}
 	}
-
 
 	if err := s.searchTemplate.Execute(w, status); err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot render template: %v", false, err)

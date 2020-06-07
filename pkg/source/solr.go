@@ -29,7 +29,7 @@ func EscapeSolrString(str string) string {
 	return re.ReplaceAllString(str, "\\$1")
 }
 
-func orQuery( field string, values []string) string {
+func orQuery(field string, values []string) string {
 	q := ""
 	for key, val := range values {
 		if key > 0 {
@@ -154,7 +154,7 @@ func (mts *MTSolr) cacheEntryFromDoc(doc solr.Document) (*cacheEntry, string, er
 		Source:     srcstr,
 		ContentStr: metadata,
 		Acl: map[string][]string{
-			"meta":       acl_meta,
+			"meta":    acl_meta,
 			"content": acl_content,
 		},
 		Catalog: catalog,
@@ -237,6 +237,9 @@ func (mts *MTSolr) getFromCache(id string) (*Document, error) {
 		if err != nil {
 			return emperror.Wrapf(err, "cannot get item %s", id)
 		}
+		if it == nil {
+			return fmt.Errorf("item %s not in cache", id)
+		}
 		if err := it.Value(func(v []byte) error {
 			var doc = &Document{}
 
@@ -275,7 +278,7 @@ func (mts *MTSolr) LoadEntities(ids []string) (map[string]*Document, error) {
 	//
 	for _, id := range ids {
 		doc, err := mts.getFromCache(id)
-		if err != nil  {
+		if err != nil {
 			toLoad = append(toLoad, id)
 		} else {
 			result[doc.Id] = doc
@@ -289,7 +292,7 @@ func (mts *MTSolr) LoadEntities(ids []string) (map[string]*Document, error) {
 	if err != nil {
 		return nil, emperror.Wrapf(err, "cannot load entities %v", ids)
 	}
-	var doclist =make(map[string]*Document)
+	var doclist = make(map[string]*Document)
 	for _, id := range toLoad {
 
 		// check whether it's found
@@ -395,7 +398,7 @@ func (mts *MTSolr) Search(text string, sources []string, facets map[string][]str
 	if err != nil {
 		return nil, 0, nil, emperror.Wrapf(err, "search error for query %s - %v", query.String(), facets)
 	}
-	if r == nil  {
+	if r == nil {
 		return nil, 0, nil, errors.New(fmt.Sprintf("no results for query %s - %v", qstr, facets))
 	}
 	if r.Results.NumFound == 0 {
@@ -420,9 +423,13 @@ func (mts *MTSolr) Search(text string, sources []string, facets map[string][]str
 					for _, _v := range val {
 						switch v := _v.(type) {
 						case string:
-							fld = v
+							if v != "default" {
+								fld = v
+							}
 						case float64:
-							facetFields[facetField][fld] = int(v)
+							if fld != "" {
+								facetFields[facetField][fld] = int(v)
+							}
 							fld = ""
 						}
 					}

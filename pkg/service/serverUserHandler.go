@@ -50,5 +50,3 @@ func (s *Server) userHandler(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("ContentStr-Type", "application/json")
 	w.Write(js)
 }
-
-

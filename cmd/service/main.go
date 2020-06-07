@@ -8,12 +8,12 @@ import (
 	"log"
 )
 
-
 const (
 	apiKey = "AIzaSyDsNXE5m9mv9juuFQswIZfS_dTt-_TIH3k"
 	cx     = "013219768911029609903:u7pzivy74dt"
 	query  = "gestaltung"
 )
+
 func main() {
 
 	svc, err := customsearch.NewService(context.Background(), option.WithAPIKey(apiKey))

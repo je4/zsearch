@@ -21,14 +21,14 @@ type facetField struct {
 }
 
 type searchResult struct {
-	Items           []searchResultItem `json:"items"`
-	Total           int64              `json:"total"`
-	Start           int64              `json:"start"`
-	Rows            int64              `json:"rows"`
-	Query           string             `json:"query"`
-	Search          string             `json:"search"`
-	Next            string             `json:"next"`
-	FacetFieldCount map[string]facetField       `json:"facetfieldcount"`
+	Items           []searchResultItem    `json:"items"`
+	Total           int64                 `json:"total"`
+	Start           int64                 `json:"start"`
+	Rows            int64                 `json:"rows"`
+	Query           string                `json:"query"`
+	Search          string                `json:"search"`
+	Next            string                `json:"next"`
+	FacetFieldCount map[string]facetField `json:"facetfieldcount"`
 }
 
 type searchResultItem struct {
@@ -37,12 +37,14 @@ type searchResultItem struct {
 	Text       string   `json:"text"`
 	Collection string   `json:"collection"`
 	Authors    []string `json:"authors"`
+	AuthorText string   `json:"authortext"`
 	Link       string   `json:"link"`
 	FirstItem  bool     `json:"firstitem"`
 	Total      int64    `json:"total,omitempty"`
+	Date       string   `json:"date"`
 }
 
-func doc2json(search string, query string, docs []*source.Document, total int64, facetFieldCount source.FacetCountResult, start int64, user *User, next string) ([]byte, error) {
+func doc2json(search string, query string, docs []*source.Document, total int64, facetFieldCount source.FacetCountResult, facets map[string][]string, start int64, user *User, next string) ([]byte, error) {
 	result := &searchResult{
 		Items:           []searchResultItem{},
 		Total:           total,
@@ -56,11 +58,22 @@ func doc2json(search string, query string, docs []*source.Document, total int64,
 
 	for facet, vals := range facetFieldCount {
 		for val, count := range vals {
-			id := fmt.Sprintf("%s.%s", facet, val)
+			id := fmt.Sprintf("%s_%s", facet, val)
 			result.FacetFieldCount[id] = facetField{
-				Id:       id,
-				Name:     fmt.Sprintf("%s (%d)", val, count),
-				Selected: true,
+				Id:   id,
+				Name: fmt.Sprintf("%s (%d)", val, count),
+				Selected: func() bool {
+					res, ok := facets[facet]
+					if !ok {
+						return false
+					}
+					for _, n := range res {
+						if n == val {
+							return true
+						}
+					}
+					return false
+				}(),
 			}
 		}
 	}
@@ -77,6 +90,7 @@ func doc2json(search string, query string, docs []*source.Document, total int64,
 			Collection: doc.Content.CollectionTitle,
 			Authors:    []string{},
 			Link:       link,
+			Date:       doc.Content.Date,
 		}
 		if key == 0 {
 			item.FirstItem = true
@@ -84,11 +98,18 @@ func doc2json(search string, query string, docs []*source.Document, total int64,
 		}
 		for _, p := range doc.Content.Persons {
 			name := p.Name
-			if p.Role != "author" {
+			if p.Role != "author" && p.Role != "director" {
 				name += fmt.Sprintf(" (%s)", p.Role)
 			}
 			item.Authors = append(item.Authors, name)
 		}
+		if len(item.Authors) > 0 {
+			item.AuthorText = item.Authors[0]
+		}
+		if len(item.Authors) > 1 {
+			item.AuthorText += " et al."
+		}
+
 		result.Items = append(result.Items, item)
 	}
 	r, err := json.Marshal(result)
@@ -257,7 +278,19 @@ func (s *Server) apiSearchHandler(w http.ResponseWriter, req *http.Request) {
 
 	s.log.Infof("Query: %s", qstr)
 
-	docs, total, facetFields, err := s.mts.Search(qstr, []string{"zotero"}, map[string][]string{"mediatype": []string{}}, user.Groups, false, int(start), int(rows))
+	facets := map[string][]string{"mediatype": []string{}}
+	for name, vals := range req.Form {
+		for key, _ := range facets {
+			if strings.HasPrefix(name, key+"_") && len(vals) > 0 {
+				val := vals[0]
+				if fmt.Sprintf("%v", val) == "true" {
+					facets[key] = append(facets[key], strings.TrimPrefix(name, key+"_"))
+				}
+			}
+		}
+	}
+
+	docs, total, facetFields, err := s.mts.Search(qstr, []string{"zotero"}, facets, user.Groups, false, int(start), int(rows))
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot execute solr query: %v", true, err)
 		return
@@ -287,7 +320,7 @@ func (s *Server) apiSearchHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	json, err := doc2json(search, qstr, docs, total, facetFields, start, user, next)
+	json, err := doc2json(search, qstr, docs, total, facetFields, facets, start, user, next)
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal result: %v", true, err)
 		return

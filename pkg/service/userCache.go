@@ -39,17 +39,17 @@ func (u User) LinkSignatureCache(signature string) string {
 
 func (u User) LinkSignature(signature string) string {
 	/*
-	proto := "http"
-	if u.Server.srv.TLSConfig.Certificates != nil {
-		proto = "https"
-	}
-	urlstr := fmt.Sprintf("%s://%s/%s/%s", proto, u.Server.srv.Addr, u.Server.detailPrefix, signature)
-	 */
+		proto := "http"
+		if u.Server.srv.TLSConfig.Certificates != nil {
+			proto = "https"
+		}
+		urlstr := fmt.Sprintf("%s://%s/%s/%s", proto, u.Server.srv.Addr, u.Server.detailPrefix, signature)
+	*/
 	urlstr := fmt.Sprintf("%s/%s/%s", u.Server.addrExt, u.Server.detailPrefix, signature)
 	if u.LoggedIn {
 		jwt, err := generic.NewJWT(
 			u.Server.jwtKey,
-			fmt.Sprintf("detail:%s", signature ),
+			fmt.Sprintf("detail:%s", signature),
 			"HS256",
 			int64(u.Server.linkTokenExp.Seconds()),
 			"catalogue",

@@ -34,9 +34,9 @@ var zoteroIgnoreMetaFields = []string{
 
 func NewZotero(data string, mts *MTSolr) (*Zotero, error) {
 	zot := &Zotero{
-		ZData:   ZoteroData{},
+		ZData:    ZoteroData{},
 		CollMeta: map[string]string{},
-		mts:     mts,
+		mts:      mts,
 	}
 	return zot, zot.Init(data)
 }
@@ -59,7 +59,7 @@ func (zot *Zotero) Name() string { return "zotero" }
 func (zot *Zotero) GetCollectionTitle() string {
 	t, ok := zot.CollMeta["title"]
 	if !ok {
-		return ""
+		return strings.ReplaceAll(zot.ZData.Group.Data.Name, `_`, ` `)
 	}
 	return t
 }

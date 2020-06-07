@@ -21,14 +21,13 @@ var _logformat = logging.MustStringFormatter(
 
 var bearerPrefix = "Bearer "
 
-func Compress(data []byte) ([]byte) {
+func Compress(data []byte) []byte {
 	return snappy.Encode(nil, data)
 }
 
 func Decompress(data []byte) ([]byte, error) {
 	return snappy.Decode(nil, data)
 }
-
 
 func UrlAmp(u string, ampCache string, t string) (string, error) {
 	url, err := url.Parse(u)
@@ -57,7 +56,7 @@ func AppendIfMissing(slice []string, s string) []string {
 	return append(slice, s)
 }
 
-func InList(slice[]string, s string) bool {
+func InList(slice []string, s string) bool {
 	for _, ele := range slice {
 		if ele == s {
 			return true

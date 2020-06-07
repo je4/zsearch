@@ -70,7 +70,7 @@ type SearchStatus struct {
 	SearchResultRows  int
 	SearchResultTotal int
 	SearchString      string
-	FacetCount        []FacetCountField
+	FacetCount        map[string]FacetCountField
 }
 
 type Server struct {

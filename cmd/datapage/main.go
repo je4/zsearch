@@ -49,7 +49,7 @@ http://localhost:82/public/zotero-2180340.TPS2WVNX
 https://mediathek.hgk.fhnw.ch/amp/detail/zotero-1624911.27CDTZ4B
 -->
 https://mediathek-hgk-fhnw-ch.cdn.ampproject.org/c/s/mediathek.hgk.fhnw.ch/amp/detail/zotero-1624911.27CDTZ4B
- */
+*/
 
 func main() {
 
@@ -84,9 +84,9 @@ func main() {
 		return
 	}
 	/*
-	if err := os.RemoveAll(config.CacheDir); err != nil {
-		log.Errorf("cannot remove %s: %v", config.CacheDir, err)
-	}
+		if err := os.RemoveAll(config.CacheDir); err != nil {
+			log.Errorf("cannot remove %s: %v", config.CacheDir, err)
+		}
 	*/
 	bconfig := badger.DefaultOptions(config.CacheDir)
 	if runtime.GOOS == "windows" {
@@ -99,7 +99,6 @@ func main() {
 		return
 	}
 	defer db.Close()
-
 
 	mts, err := source.NewMTSolr(
 		config.Solr.Url,

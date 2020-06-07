@@ -1326,7 +1326,8 @@
     body {
         background: #fff;
         color: #222;
-        font-family: Cardo,serif;
+        #font-family: Cardo,serif;
+        font-font: Open Sans Condensed,sans-serif;
         min-width: 315px;
         overflow-x: hidden;
         font-smooth: always;
@@ -1460,6 +1461,26 @@
 
     .ampstart-btn:visited {
         color: #fff
+    }
+
+    .ampstart-btn-inv {
+        font-family: inherit;
+        font-weight: inherit;
+        font-size: 1rem;
+        line-height: 1.125rem;
+        padding: .7em .8em;
+        text-decoration: none;
+        white-space: nowrap;
+        word-wrap: normal;
+        vertical-align: middle;
+        cursor: pointer;
+        background-color: #fff;
+        color: #222;
+        border: 1px solid #fff;
+    }
+
+    .ampstart-btn-inv:visited {
+        color: #aaa;
     }
 
     .ampstart-btn-secondary {
@@ -3931,6 +3952,31 @@
 
     .blur5 {
         filter: blur(5px);
+    }
+
+
+    .ampstart-btn-facet {
+        background-color: #fff;
+        color: #222;
+        padding: .2rem .5rem;
+        margin-top: 1px;
+    }
+
+    .ampstart-btn-facet-inv {
+        background-color: #222;
+        color: #fff;
+        padding: .2rem .5rem;
+        margin-top: 1px;
+    }
+
+    .amp-mode-mouse .ampstart-btn-facet:hover {
+        background-color: #222;
+        color: #fff;
+    }
+
+    .amp-mode-mouse .ampstart-btn-facet-inv:hover {
+        background-color: #fff;
+        color: #222;
     }
 
 </style>

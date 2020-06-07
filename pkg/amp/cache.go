@@ -38,7 +38,7 @@ thirdPartyFrameDomainSuffix: "www.bing-amp.net"
 }
 ]
 }
- */
+*/
 
 type URLType rune
 
@@ -117,9 +117,9 @@ func (c *Cache) BuildUpdateUrl(u string, ampApiKey *rsa.PrivateKey) (string, err
 	}
 	// build the url
 	updateUrl := fmt.Sprintf("/update-cache/c/s/%s?amp_action=flush&amp_ts=%d",
-		strings.TrimRight(url.Host + "/" + strings.TrimLeft(url.Path, "/"), "/"),
+		strings.TrimRight(url.Host+"/"+strings.TrimLeft(url.Path, "/"), "/"),
 		time.Now().Unix(),
-		)
+	)
 
 	// create sha256 for url
 	msgHash := sha256.New()
@@ -140,7 +140,6 @@ func (c *Cache) BuildUpdateUrl(u string, ampApiKey *rsa.PrivateKey) (string, err
 
 	return fmt.Sprintf("%s/%s&amp_url_signature=%s", baseurl, strings.TrimLeft(updateUrl, "/"), sEnc), nil
 }
-
 
 func (c *Cache) BuildUrl(u string, urltype URLType) (string, error) {
 	if urltype != PAGE && urltype != IMAGE {

@@ -1,3 +1,5 @@
 .idea
 configs/search.toml
 *.pem
+web/static/ionicons/*
+

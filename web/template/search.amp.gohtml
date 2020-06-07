@@ -45,6 +45,9 @@ limitations under the License.
 </head>
 
 <body>
+<a class="target-anchor"
+   id="top"></a>
+
 <!-- Start Header -->
 {{template "header.inc.gohtml" . }}
 <!-- End Header -->
@@ -55,6 +58,7 @@ limitations under the License.
 
 <main id="content" role="main" class="main">
     <!-- collection of SVG -->
+    {{template "ionicons.inc.gohtml" . }}
     <svg width="0" height="0" class="hidden">
         <symbol id="imgpageright">
             <defs id="defs10" />
@@ -92,8 +96,6 @@ limitations under the License.
     </svg>
 
 
-    <a class="target-anchor"
-       id="top"></a>
     {{range $key, $notification := .Notifications}}
         <amp-user-notification
                 layout="nodisplay"
@@ -138,6 +140,7 @@ limitations under the License.
                     <h2 class="h5 mb2">Media</h2>
                     {{range .FacetCount}}
                             <div class="ampstart-w100 ampstart-input ampstart-input-radio inline-block relative m0 p0 mb3">
+                                <!--
                                 <input
                                         type="checkbox"
                                         value=""
@@ -147,6 +150,15 @@ limitations under the License.
                                         {{if .Selected}}checked="true"{{end}}
                                         on="change:AMP.setState({SearchResult: { facetfieldcount: { {{.Id}}: event.checked?'true':'false'}}}),search.submit,resultList.refresh">
                                 <label for="v{{.Id}}" class="" aria-hidden="true">{{.Name}}</label>
+                                -->
+                                <button
+                                        style="width:100%;"
+                                        [class]="(SearchResult.facetfieldcount.{{.Id}}.selected?'ampstart-btn-facet-inv':'ampstart-btn-facet')+' ampstart-btn caps'"
+                                        class="ampstart-btn-facet{{if .Selected}}-inv{{end}} ampstart-btn caps"
+                                        [text]="SearchResult.facetfieldcount.{{.Id}}.name"
+                                        on="tap:AMP.setState({SearchResultStart:0, SearchResult: { facetfieldcount: { {{.Id}}: (SearchResult.facetfieldcount.{{js .Id}}.selected?'false':'true')}}}),search.submit,resultList.refresh">
+                                    {{.Name}}
+                                </button>
                             </div>
                     {{end}}
                 </div>
@@ -212,16 +224,25 @@ limitations under the License.
                         <div class="commerce-select-wrapper inline-block md-mr1 pl2 md-hide lg-hide">
                             <h2 class="h5 mb2">Media</h2>
                             {{range .FacetCount}}
+                                <!--
                                 <div class="ampstart-input ampstart-input-radio inline-block relative m0 p0 mb3 " on="change: AMP.setState({FacetSelect:{ {{.Id}}: event.value}})">
                                     <input type="checkbox" value="" name="h{{.Id}}" id="h{{.Id}}" class="relative" {{if .Selected}}checked="true"{{end}}>
                                     <label for="h{{.Id}}" class="" aria-hidden="true">{{.Name}}</label>
                                 </div>
+                                    -->
+                                <button
+                                        [class]="(SearchResult.facetfieldcount.{{.Id}}.selected?'ampstart-btn-facet-inv':'ampstart-btn-facet')+' ampstart-btn caps'"
+                                        class="ampstart-btn-facet{{if .Selected}}-inv{{end}} ampstart-btn caps"
+                                        [text]="SearchResult.facetfieldcount.{{.Id}}.name"
+                                        on="tap:AMP.setState({SearchResultStart:0, SearchResult: { facetfieldcount: { {{.Id}}: (SearchResult.facetfieldcount.{{js .Id}}.selected?'false':'true')}}}),search.submit,resultList.refresh">
+                                    {{.Name}}
+                                </button>
                             {{end}}
                         </div>
                     </div>
                 </div>
                 <div>
-                    <h2 class="commerce-listing-product-name h6">
+                    <h2 style="padding-left:16px;" class="commerce-listing-product-name h6">
                         <div class="inline"  [text]="SearchResult.total">{{.SearchResultTotal}}</div> items.
                         <div class="inline" [text]="SearchResultStart+1">{{add .SearchResultStart 1}}</div> -
                         <div class="inline" [text]="SearchResultStart+SearchResultRows">{{add .SearchResultStart .SearchResultRows}}</div>
@@ -285,20 +306,60 @@ limitations under the License.
                         src="amp-state:SearchResult"
                         layout="responsive"
                         width="800px"
-                        height="350px"
-                        [height]="items.length * 35"
+                        height="770px"
+
                 >
                     <template type="amp-mustache">
-                        <div class="md-result-list relative md-flex flex-wrap items-center md-mx0">
-                            <div>
-                                <h2 class="commerce-listing-product-name h6">
-                                    {{html `<a href="{{link}}" target="_blank">`}}{{`{{title}}`}}</a>
-                                </h2>
-                                {{`{{#collection}}`}}<b>{{`{{collection}}`}}</b><br />{{`{{/collection}}`}}
-                                {{`{{#authors}}`}}{{`{{.}}`}} {{`{{/authors}}`}}
+                        <div style="padding-left:16px; height:70px; overflow:hidden; margin-bottom: 2px;" class="md-result-list relative md-flex flex-wrap items-center md-mx0">
+                            {{html `<a style="text-decoration: none;" href="{{link}}" target="_blank">`}}
+                            <div class="xs-hide sm-hide">
+                                <div style="display:table;">
+                                    <div style="display:table-row; width:100%;">
+                                        <div style="display:table-cell; width:130px; vertical-align: top;">
+                                            <b>{{`{{authortext}}`}}</b>
+                                        </div>
+                                        <div style="display:table-cell; width:24px; vertical-align: top; padding-left: 5px; padding-right: 15px;">
+                                            <svg
+                                                    id="svg12"
+                                                    version="1.1"
+                                                    viewBox="0 0 512 512"
+                                                    height="24"
+                                                    width="24">
+                                                <use href="#ion-cloud-done"></use>
+                                            </svg>
+                                        </div>
+                                        <div style="display:table-cell; vertical-align: top;">
+                                            <div style="height:18px; overflow:hidden;">
+                                                <b>{{`{{title}}`}}</b>
+                                            </div>
+                                            {{`{{#date}}`}}{{`{{date}}`}}<br />{{`{{/date}}`}}
+                                            {{`{{#collection}}`}}{{`{{collection}}`}}<br />{{`{{/collection}}`}}
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
+                            <div class="md-hide lg-hide">
+                                <div style="display:table;" class="md-hide lg-hide">
+                                    <div style="display:table-row;">
+                                        <div style="display:table-cell;">
+                                            <h2 style="height:18px; overflow:hidden;" class="commerce-listing-product-name h6">
+                                                {{`{{title}}`}}
+                                            </h2>
+                                        </div>
+                                        <div style="display:table-cell;">
+                                        {{`{{#collection}}`}}<b>{{`{{collection}}`}}</b><br />{{`{{/collection}}`}}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            </a>
                         </div>
                     </template>
+                    <!--
+                    <div overflow class="list-overflow" style="background-color:red;">
+                        See more
+                    </div>
+                    -->
                 </amp-list><br />
                 <table>
                     <tr>
