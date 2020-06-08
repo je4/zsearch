@@ -148,7 +148,7 @@ limitations under the License.
                                         id="v{{.Id}}"
                                         class="relative"
                                         {{if .Selected}}checked="true"{{end}}
-                                        on="change:AMP.setState({SearchResult: { facetfieldcount: { {{.Id}}: event.checked?'true':'false'}}}),search.submit,resultList.refresh">
+                                        on="change:AMP.setState({SearchResult: { facetfieldcount: { {{.Id}}: event.checked?'true':'false'}}}),search.submit,resultListSmall.refresh,resultListWide.refresh">
                                 <label for="v{{.Id}}" class="" aria-hidden="true">{{.Name}}</label>
                                 -->
                                 <button
@@ -156,14 +156,14 @@ limitations under the License.
                                         [class]="(SearchResult.facetfieldcount.{{.Id}}.selected?'ampstart-btn-facet-inv':'ampstart-btn-facet')+' ampstart-btn caps'"
                                         class="ampstart-btn-facet{{if .Selected}}-inv{{end}} ampstart-btn caps"
                                         [text]="SearchResult.facetfieldcount.{{.Id}}.name"
-                                        on="tap:AMP.setState({SearchResultStart:0, SearchResult: { facetfieldcount: { {{.Id}}: (SearchResult.facetfieldcount.{{js .Id}}.selected?'false':'true')}}}),search.submit,resultList.refresh">
+                                        on="tap:AMP.setState({SearchResultStart:0, SearchResult: { facetfieldcount: { {{.Id}}: (SearchResult.facetfieldcount.{{js .Id}}.selected?'false':'true')}}}),search.submit,resultListSmall.refresh,resultListWide.refresh">
                                     {{.Name}}
                                 </button>
                             </div>
                     {{end}}
                 </div>
             </div>
-            <div class="col-12 md-col-7 pt2 pb3 md-px4 md-pt1 md-pb7">
+            <div class="col-12 md-col-9 pt2 pb3 md-px4 md-pt1 md-pb7">
                 <div class="md-commerce-header relative md-flex flex-wrap items-center md-mx0 md-mb2">
                     <form method="POST"
                           id="search"
@@ -174,7 +174,7 @@ limitations under the License.
                                 SearchResultStart:event.response.start,
                                 SearchResultRows:event.response.rows,
                                 SearchResultSearch:event.response.search
-                            }),resultList.refresh"
+                            }),resultListSmall.refresh,resultListWide.refresh"
                           target="_top">
                         <input type="hidden" name="start" value="0" [value]="SearchResultStart"/>
                         <input type="hidden" name="lastsearch" value="" [value]="SearchResultSearch"/>
@@ -197,7 +197,7 @@ limitations under the License.
                                         role="button"
                                         style="vertical-align: middle;"
                                         tabindex="1"
-                                        on="tap:AMP.setState({SearchResult:{items: []},SearchResultStart:0}),resultList.refresh,search.submit"
+                                        on="tap:AMP.setState({SearchResult:{items: []},SearchResultStart:0}),resultListresultListSmall.refresh,resultListWide.refresh,search.submit"
                                         viewBox="0 0 24 24">
                                 <use href="#imgsearch"></use>
                             </svg>
@@ -234,7 +234,7 @@ limitations under the License.
                                         [class]="(SearchResult.facetfieldcount.{{.Id}}.selected?'ampstart-btn-facet-inv':'ampstart-btn-facet')+' ampstart-btn caps'"
                                         class="ampstart-btn-facet{{if .Selected}}-inv{{end}} ampstart-btn caps"
                                         [text]="SearchResult.facetfieldcount.{{.Id}}.name"
-                                        on="tap:AMP.setState({SearchResultStart:0, SearchResult: { facetfieldcount: { {{.Id}}: (SearchResult.facetfieldcount.{{js .Id}}.selected?'false':'true')}}}),search.submit,resultList.refresh">
+                                        on="tap:AMP.setState({SearchResultStart:0, SearchResult: { facetfieldcount: { {{.Id}}: (SearchResult.facetfieldcount.{{js .Id}}.selected?'false':'true')}}}),search.submit,resultListSmall.refresh,resultListWide.refresh">
                                     {{.Name}}
                                 </button>
                             {{end}}
@@ -243,9 +243,9 @@ limitations under the License.
                 </div>
                 <div>
                     <h2 style="padding-left:16px;" class="commerce-listing-product-name h6">
-                        <div class="inline"  [text]="SearchResult.total">{{.SearchResultTotal}}</div> items.
-                        <div class="inline" [text]="SearchResultStart+1">{{add .SearchResultStart 1}}</div> -
-                        <div class="inline" [text]="SearchResultStart+SearchResultRows">{{add .SearchResultStart .SearchResultRows}}</div>
+                        <div class="inline"  [text]="SearchResult.total">{{.SearchResultTotal}}</div> items
+                        [<div class="inline" [text]="SearchResultStart+1">{{add .SearchResultStart 1}}</div> -
+                        <div class="inline" [text]="SearchResultStart+SearchResultRows">{{add .SearchResultStart .SearchResultRows}}</div>]
                     </h2>
                     <p>&nbsp;</p>
                     <table>
@@ -261,7 +261,7 @@ limitations under the License.
                                         version="1.1"
                                         role="button"
                                         tabindex="2"
-                                        on="tap:AMP.setState({SearchResultStart:0}),resultList.refresh,search.submit,top.scrollTo(duration=200)">
+                                        on="tap:AMP.setState({SearchResultStart:0}),resultListSmall.refresh,resultListWide.refresh,search.submit,top.scrollTo(duration=200)">
                                     <use href="#imgpagefirst"></use>
                                 </svg>
                             </td>
@@ -276,7 +276,7 @@ limitations under the License.
                                         viewBox="0 0 24 24"
                                         role="button"
                                         tabindex="3"
-                                        on="tap:AMP.setState({SearchResultStart:(SearchResultStart-10)}),resultList.refresh,search.submit,top.scrollTo(duration=200)"
+                                        on="tap:AMP.setState({SearchResultStart:(SearchResultStart-10)}),resultListSmall.refresh,resultListWide.refresh,search.submit,top.scrollTo(duration=200)"
                                 >
                                     <use href="#imgpageleft"></use>
                                 </svg>
@@ -292,7 +292,7 @@ limitations under the License.
                                         viewBox="0 0 24 24"
                                         role="button"
                                         tabindex="4"
-                                        on="tap:AMP.setState({SearchResultStart:(SearchResultStart+10)}),resultList.refresh,search.submit,top.scrollTo(duration=200)"
+                                        on="tap:AMP.setState({SearchResultStart:(SearchResultStart+10)}),resultListSmall.refresh,resultListWide.refresh,search.submit,top.scrollTo(duration=200)"
                                 >
                                     <use href="#imgpageright"></use>
                                 </svg>
@@ -301,18 +301,20 @@ limitations under the License.
                     </table>
                     <p>&nbsp;</p>
                 </div>
-                <amp-list
-                        id="resultList"
-                        src="amp-state:SearchResult"
-                        layout="responsive"
-                        width="800px"
-                        height="770px"
-
-                >
-                    <template type="amp-mustache">
-                        <div style="padding-left:16px; height:70px; overflow:hidden; margin-bottom: 2px;" class="md-result-list relative md-flex flex-wrap items-center md-mx0">
-                            {{html `<a style="text-decoration: none;" href="{{link}}" target="_blank">`}}
-                            <div class="xs-hide sm-hide">
+                <!-- --------------------------------
+                    large screen
+                -------------------------------- -->
+                <div class="xs-hide sm-hide">
+                    <amp-list
+                            id="resultListWide"
+                            src="amp-state:SearchResult"
+                            layout="responsive"
+                            width="800px"
+                            height="770px"
+                    >
+                        <template type="amp-mustache">
+                            <div style="padding-left:16px; height:70px; overflow:hidden; margin-bottom: 2px;" class="md-result-list relative md-flex flex-wrap items-center md-mx0">
+                                {{html `<a style="text-decoration: none;" href="{{link}}" target="_blank">`}}
                                 <div style="display:table;">
                                     <div style="display:table-row; width:100%;">
                                         <div style="display:table-cell; width:130px; vertical-align: top;">
@@ -325,7 +327,7 @@ limitations under the License.
                                                     viewBox="0 0 512 512"
                                                     height="24"
                                                     width="24">
-                                                <use href="#ion-cloud-done"></use>
+                                                <use href="#ion-mic-outline"></use>
                                             </svg>
                                         </div>
                                         <div style="display:table-cell; vertical-align: top;">
@@ -337,30 +339,70 @@ limitations under the License.
                                         </div>
                                     </div>
                                 </div>
+                                </a>
                             </div>
-                            <div class="md-hide lg-hide">
-                                <div style="display:table;" class="md-hide lg-hide">
+                        </template>
+                        <!--
+                        <div overflow class="list-overflow" style="background-color:red;">
+                            See more
+                        </div>
+                        -->
+                    </amp-list>
+                </div>
+                <!-- --------------------------------
+                    END large screen
+                -------------------------------- -->
+                <!-- --------------------------------
+                    small screen
+                -------------------------------- -->
+                <div class="md-hide lg-hide">
+                    <amp-list
+                            id="resultListSmall"
+                            src="amp-state:SearchResult"
+                            layout="responsive"
+                            width="800px"
+                            height="770px"
+                    >
+                        <template type="amp-mustache">
+                            <div style="padding-left:16px; height:75px; overflow:hidden; margin-bottom: 2px;" class="md-result-list relative md-flex flex-wrap items-center md-mx0">
+                                {{html `<a style="text-decoration: none;" href="{{link}}" target="_blank">`}}
+                                <div style="display:table;">
                                     <div style="display:table-row;">
+                                        <div style="display:table-cell; width:24px; vertical-align: top; padding-left: 5px; padding-right: 15px;">
+                                            <svg
+                                                    id="svg12"
+                                                    version="1.1"
+                                                    viewBox="0 0 512 512"
+                                                    height="24"
+                                                    width="24">
+                                                <use href="#ion-mic-outline"></use>
+                                            </svg>
+                                        </div>
                                         <div style="display:table-cell;">
                                             <h2 style="height:18px; overflow:hidden;" class="commerce-listing-product-name h6">
                                                 {{`{{title}}`}}
                                             </h2>
-                                        </div>
-                                        <div style="display:table-cell;">
-                                        {{`{{#collection}}`}}<b>{{`{{collection}}`}}</b><br />{{`{{/collection}}`}}
+                                            {{`{{#date}}`}}{{`{{date}}`}}<br />{{`{{/date}}`}}
+                                            {{`{{authortext}}`}}<br />
+                                            {{`{{#collection}}`}}[{{`{{collection}}`}}]<br />{{`{{/collection}}`}}
                                         </div>
                                     </div>
                                 </div>
+                                </a>
                             </div>
-                            </a>
+                        </template>
+                        <!--
+                        <div overflow class="list-overflow" style="background-color:red;">
+                            See more
                         </div>
-                    </template>
-                    <!--
-                    <div overflow class="list-overflow" style="background-color:red;">
-                        See more
-                    </div>
-                    -->
-                </amp-list><br />
+                        -->
+                    </amp-list>
+                </div>
+                <!-- --------------------------------
+                    END small screen
+                -------------------------------- -->
+
+                <br />
                 <table>
                     <tr>
                         <td>
@@ -374,7 +416,7 @@ limitations under the License.
                                     version="1.1"
                                     role="button"
                                     tabindex="2"
-                                    on="tap:AMP.setState({SearchResultStart:0}),resultList.refresh,search.submit,top.scrollTo(duration=200)">
+                                    on="tap:AMP.setState({SearchResultStart:0}),resultListSmall.refresh,resultListWide.refresh,search.submit,top.scrollTo(duration=200)">
                                 <use href="#imgpagefirst"></use>
                             </svg>
                         </td>
@@ -389,7 +431,7 @@ limitations under the License.
                                     viewBox="0 0 24 24"
                                     role="button"
                                     tabindex="3"
-                                    on="tap:AMP.setState({SearchResultStart:(SearchResultStart-10)}),resultList.refresh,search.submit,top.scrollTo(duration=200)"
+                                    on="tap:AMP.setState({SearchResultStart:(SearchResultStart-10)}),resultListSmall.refresh,resultListWide.refresh,search.submit,top.scrollTo(duration=200)"
                             >
                                 <use href="#imgpageleft"></use>
                             </svg>
@@ -405,7 +447,7 @@ limitations under the License.
                                     viewBox="0 0 24 24"
                                     role="button"
                                     tabindex="4"
-                                    on="tap:AMP.setState({SearchResultStart:(SearchResultStart+10)}),resultList.refresh,search.submit,top.scrollTo(duration=200)"
+                                    on="tap:AMP.setState({SearchResultStart:(SearchResultStart+10)}),resultListSmall.refresh,resultListWide.refresh,search.submit,top.scrollTo(duration=200)"
                             >
                                 <use href="#imgpageright"></use>
                             </svg>

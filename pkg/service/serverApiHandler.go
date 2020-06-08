@@ -98,7 +98,7 @@ func doc2json(search string, query string, docs []*source.Document, total int64,
 		}
 		for _, p := range doc.Content.Persons {
 			name := p.Name
-			if p.Role != "author" && p.Role != "director" {
+			if p.Role != "author" && p.Role != "director" && p.Role != "artist" {
 				name += fmt.Sprintf(" (%s)", p.Role)
 			}
 			item.Authors = append(item.Authors, name)
