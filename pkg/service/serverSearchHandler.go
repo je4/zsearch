@@ -19,6 +19,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		Title:         "search",
 		QueryApi:      "api/search",
 		FacetCount:    make(map[string]FacetCountField),
+		Facets:        s.facets,
 	}
 
 	jwt, ok := req.URL.Query()["token"]
@@ -62,6 +63,12 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		status.QueryApi = template.URL(fmt.Sprintf("%s/%s?token=%s", s.addrExt, "api/search", jwt))
 	}
 
+	search := ""
+	searchs := req.URL.Query()["search"]
+	if len(searchs) == 1 {
+		search = searchs[0]
+	}
+
 	facets := map[string][]string{"mediatype": []string{}}
 	for name, vals := range req.URL.Query() {
 		for key, _ := range facets {
@@ -73,7 +80,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	docs, total, facetFieldCount, err := s.mts.Search("", []string{"zotero"}, map[string][]string{"mediatype": []string{}}, status.User.Groups, false, 0, 10)
+	docs, total, facetFieldCount, err := s.mts.Search(search, []string{"zotero"}, facets, status.User.Groups, false, 0, 10)
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot execute solr query: %v", false, err)
 		return
@@ -91,12 +98,21 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 	status.SearchResultRows = len(docs)
 	status.SearchResultTotal = int(total)
 	status.SearchResultStart = 0
-	for facet, vals := range facetFieldCount {
-		for val, count := range vals {
+	for facet, vals := range s.facets {
+		for _, val := range vals {
 			id := fmt.Sprintf("%s_%s", facet, val)
+			count := 0
+			if _, ok := facetFieldCount[facet]; ok {
+				for v, c := range facetFieldCount[facet] {
+					if val == v {
+						count = c
+					}
+				}
+			}
 			status.FacetCount[id] = FacetCountField{
 				Id:       id,
 				Name:     fmt.Sprintf("%s (%d)", val, count),
+				ShortName: val,
 				Selected: false,
 			}
 		}

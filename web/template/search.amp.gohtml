@@ -155,7 +155,7 @@ limitations under the License.
                                         style="width:100%;"
                                         [class]="(SearchResult.facetfieldcount.{{.Id}}.selected?'ampstart-btn-facet-inv':'ampstart-btn-facet')+' ampstart-btn caps'"
                                         class="ampstart-btn-facet{{if .Selected}}-inv{{end}} ampstart-btn caps"
-                                        [text]="SearchResult.facetfieldcount.{{.Id}}.name"
+                                        [text]="SearchResult.facetfieldcount.{{.Id}}.name?SearchResult.facetfieldcount.{{.Id}}.name:'{{.ShortName}}'"
                                         on="tap:AMP.setState({SearchResultStart:0, SearchResult: { facetfieldcount: { {{.Id}}: (SearchResult.facetfieldcount.{{js .Id}}.selected?'false':'true')}}}),search.submit,resultListSmall.refresh,resultListWide.refresh">
                                     {{.Name}}
                                 </button>
@@ -174,14 +174,26 @@ limitations under the License.
                                 SearchResultStart:event.response.start,
                                 SearchResultRows:event.response.rows,
                                 SearchResultSearch:event.response.search
-                            }),resultListSmall.refresh,resultListWide.refresh"
+                            }),
+                            resultListSmall.refresh,
+                            resultListWide.refresh;
+                            submit-error:AMP.setState({
+                                SearchResult: null,
+                                SearchResultTotal:0,
+                                SearchResultStart:0,
+                                SearchResultRows:0,
+                                SearchResultSearch:null
+                            }),
+                            resultListSmall.refresh,
+                            resultListWide.refresh"
                           target="_top">
                         <input type="hidden" name="start" value="0" [value]="SearchResultStart"/>
                         <input type="hidden" name="lastsearch" value="" [value]="SearchResultSearch"/>
-                        {{range .FacetCount}}
-                            <input type="hidden" name="{{.Id}}" id="{{.Id}}" value="" [value]="SearchResult.facetfieldcount.{{.Id}}"/>
+                        {{range $facet,$vals := .Facets}}
+                            {{range $vals}}
+                                <input type="hidden" name="{{$facet}}_{{.}}" id="{{$facet}}_{{.}}" value="" [value]="SearchResult.facetfieldcount.{{$facet}}_{{.}}"/>
+                            {{end}}
                         {{end}}
-
                         <h1 class="h3 mb2 md-mt2 md-mb2 md-ml0 flex-auto px2">
                             <input
                                     type="text"
@@ -197,7 +209,7 @@ limitations under the License.
                                         role="button"
                                         style="vertical-align: middle;"
                                         tabindex="1"
-                                        on="tap:AMP.setState({SearchResult:{items: []},SearchResultStart:0}),resultListresultListSmall.refresh,resultListWide.refresh,search.submit"
+                                        on="tap:AMP.setState({SearchResult:{items: []},SearchResultStart:0}),resultListSmall.refresh,resultListWide.refresh,search.submit"
                                         viewBox="0 0 24 24">
                                 <use href="#imgsearch"></use>
                             </svg>
@@ -327,7 +339,7 @@ limitations under the License.
                                                     viewBox="0 0 512 512"
                                                     height="24"
                                                     width="24">
-                                                <use href="#ion-mic-outline"></use>
+                                                <use href="#ion-open-outline"></use>
                                             </svg>
                                         </div>
                                         <div style="display:table-cell; vertical-align: top;">
@@ -375,7 +387,7 @@ limitations under the License.
                                                     viewBox="0 0 512 512"
                                                     height="24"
                                                     width="24">
-                                                <use href="#ion-mic-outline"></use>
+                                                <use href="#ion-open-outline"></use>
                                             </svg>
                                         </div>
                                         <div style="display:table-cell;">

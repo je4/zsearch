@@ -295,11 +295,6 @@ func (s *Server) apiSearchHandler(w http.ResponseWriter, req *http.Request) {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot execute solr query: %v", true, err)
 		return
 	}
-	if total == 0 {
-		s.DoPanicf(w, http.StatusNotFound, "no results found", true)
-		return
-	}
-
 	next := ""
 	if total > start+rows {
 		next = fmt.Sprintf("%s/%s?search=%s&start=%d&rows=%d", s.addrExt, "api/search", url.QueryEscape(search), start+rows, rows)
