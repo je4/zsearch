@@ -1,3 +1,19 @@
+/*
+Copyright 2020 Center for Digital Matter HGK FHNW, Basel.
+Copyright 2020 info-age GmbH, Basel.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS-IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 package service
 
 import (
@@ -69,6 +85,9 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		search = searchs[0]
 	}
 
+	qstr := s.string2Query(search)
+	s.log.Infof("Query: %s", qstr)
+
 	facets := map[string][]string{"mediatype": []string{}}
 	for name, vals := range req.URL.Query() {
 		for key, _ := range facets {
@@ -80,15 +99,17 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	docs, total, facetFieldCount, err := s.mts.Search(search, []string{"zotero"}, facets, status.User.Groups, false, 0, 10)
+	docs, total, facetFieldCount, err := s.mts.Search(qstr, []string{"zotero"}, facets, status.User.Groups, false, 0, 10)
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot execute solr query: %v", false, err)
 		return
 	}
+	/*
 	if total == 0 {
 		s.DoPanicf(w, http.StatusNoContent, "no results found", false)
 		return
 	}
+	 */
 	json, err := doc2json("", "", docs, total, facetFieldCount, facets, 0, status.User, "")
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal result: %v", false, err)
@@ -98,6 +119,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 	status.SearchResultRows = len(docs)
 	status.SearchResultTotal = int(total)
 	status.SearchResultStart = 0
+	status.SearchString = search
 	for facet, vals := range s.facets {
 		for _, val := range vals {
 			id := fmt.Sprintf("%s_%s", facet, val)

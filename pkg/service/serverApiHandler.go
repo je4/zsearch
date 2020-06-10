@@ -1,15 +1,30 @@
+/*
+Copyright 2020 Center for Digital Matter HGK FHNW, Basel.
+Copyright 2020 info-age GmbH, Basel.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS-IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package service
 
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/drgrib/maps"
 	"github.com/goph/emperror"
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/generic"
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/source"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
 )
@@ -33,6 +48,7 @@ type searchResult struct {
 
 type searchResultItem struct {
 	Id         string   `json:"Id"`
+	Type       string   `json:"type"`
 	Title      string   `json:"title"`
 	Text       string   `json:"text"`
 	Collection string   `json:"collection"`
@@ -85,6 +101,7 @@ func doc2json(search string, query string, docs []*source.Document, total int64,
 		}
 		item := searchResultItem{
 			Id:         doc.Id,
+			Type:       doc.Content.Type,
 			Title:      doc.Content.Title,
 			Text:       "",
 			Collection: doc.Content.CollectionTitle,
@@ -117,30 +134,6 @@ func doc2json(search string, query string, docs []*source.Document, total int64,
 		return nil, emperror.Wrapf(err, "cannot marshal result")
 	}
 	return r, nil
-}
-
-func solrOr(field string, values []string, weight1, weight2 int) string {
-	result := ""
-	for _, val := range values {
-		trimmed := strings.Trim(val, `"`)
-		withQuotes := val != trimmed
-		if withQuotes {
-			val = trimmed
-		}
-		if weight1 > 0 {
-			if result != "" {
-				result += " OR "
-			}
-			result += fmt.Sprintf(`%s:%s^%d`, field, source.EscapeSolrString(val), weight1)
-		}
-		if weight2 > 0 && !withQuotes {
-			if result != "" {
-				result += " OR "
-			}
-			result += fmt.Sprintf(`%s:%s*^%d`, field, source.EscapeSolrString(val), weight2)
-		}
-	}
-	return result
 }
 
 func (s *Server) apiSearchHandler(w http.ResponseWriter, req *http.Request) {
@@ -210,71 +203,7 @@ func (s *Server) apiSearchHandler(w http.ResponseWriter, req *http.Request) {
 		start = 0
 	}
 
-	var qstr string
-
-	rexp := regexp.MustCompile(`([a-zA-Z0-9]+:([^ "]+|"[^"]+"))|([^ "]+)|"([^"]+)"`)
-	slice := rexp.FindAllString(search, -1)
-	if slice == nil {
-		slice = []string{}
-	}
-
-	// expand to field an generic search
-	rexp2 := regexp.MustCompile(`^(` + strings.Join(maps.GetKeysStringString(s.searchFields), `|`) + `):(.+)$`)
-	fields := make(map[string][]string)
-	gen := []string{}
-
-	for _, f := range slice {
-		fldq := rexp2.FindStringSubmatch(f)
-		if fldq != nil {
-			fldname, ok := s.searchFields[fldq[1]]
-			if !ok {
-				continue
-			}
-			if _, ok := fields[fldname]; !ok {
-				fields[fldname] = []string{}
-			}
-			fields[fldname] = append(fields[fldname], fldq[2])
-		} else {
-			gen = append(gen, f)
-		}
-	}
-
-	/*
-	      (
-	   		(title:"fell"^10 OR title:"down"^10 OR title:"the"^10 OR title:"mountains"^10 OR title:"fell down the mountains"^20 )
-	   	OR (author:fell^10 OR author:down^10 OR author:the^10 OR author:mountains^10 OR author:fell down the mountains^20 )
-	   	OR (publisher:fell^8 OR publisher:down^8 OR publisher:the^8 OR publisher:mountains^8 OR publisher:fell down the mountains^18 )
-	   	OR (content:fell*^6 AND content:down*^6 AND content:the*^6 AND content:mountains*^6 OR content:fell down the mountains*^12 )
-	   	OR (abstract:fell*^8 AND abstract:down*^8 AND abstract:the*^8 AND abstract:mountains*^8 OR abstract:fell down the mountains*^15 )
-	   	OR ( signature:"fell down the mountains"^25 )
-	       )
-	*/
-	if len(gen) > 0 {
-		qstr = fmt.Sprintf("%s OR %s OR %s OR %s OR %s OR %s",
-			solrOr("title", gen, 10, 10),
-			solrOr("author", gen, 10, 10),
-			solrOr("publisher", gen, 8, 10),
-			solrOr("content", gen, 0, 6),
-			solrOr("abstract", gen, 0, 8),
-			solrOr("signature", gen, 20, 10),
-		)
-	}
-	qstr2 := ""
-	if len(fields) > 0 {
-		for field, val := range fields {
-			if qstr2 != "" {
-				qstr2 += " OR "
-			}
-			qstr2 += solrOr(field, val, 30, 15)
-		}
-	}
-	if qstr2 != "" {
-		if qstr != "" {
-			qstr = fmt.Sprintf("(%s) AND (%s)", qstr, qstr2)
-		} else {
-			qstr = qstr2
-		}
-	}
+	qstr := s.string2Query(search)
 
 	s.log.Infof("Query: %s", qstr)
 

@@ -1,5 +1,7 @@
 <!---
-Copyright 2017 The AMP Start Authors. All Rights Reserved.
+Copyright 2020 Center for Digital Matter HGK FHNW, Basel.
+Copyright 2020 info-age GmbH, Basel.
+Copyright 2017 The AMP Start Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -199,6 +201,7 @@ limitations under the License.
                                     type="text"
                                     name="search"
                                     placeholder=""
+                                    value="{{.SearchString}}"
                             >
                             <svg
                                         id="svg6"
@@ -333,7 +336,9 @@ limitations under the License.
                                             <b>{{`{{authortext}}`}}</b>
                                         </div>
                                         <div style="display:table-cell; width:24px; vertical-align: top; padding-left: 5px; padding-right: 15px;">
+                                            {{`{{type}}`}}
                                             <svg
+                                                    alt="{{`{{type}}`}}"
                                                     id="svg12"
                                                     version="1.1"
                                                     viewBox="0 0 512 512"
@@ -381,6 +386,7 @@ limitations under the License.
                                 <div style="display:table;">
                                     <div style="display:table-row;">
                                         <div style="display:table-cell; width:24px; vertical-align: top; padding-left: 5px; padding-right: 15px;">
+                                            {{`{{type}}`}}
                                             <svg
                                                     id="svg12"
                                                     version="1.1"

@@ -1,5 +1,6 @@
 <!---
-Copyright 2020 Center for Digital Matter HGK FHNW, Basel. All Rights Reserved.
+Copyright 2020 Center for Digital Matter HGK FHNW, Basel.
+Copyright 2020 info-age GmbH, Basel.
 Copyright 2017 The AMP Start Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -89,7 +90,7 @@ limitations under the License.
         <div class="col-12 md-col-6 flex flex-wrap content-start px2 md-pl5 md-pr7 md-pt4">
             <div class="col-12 self-start pb2">
                 <h1 class="h3 md-h2">{{.Doc.Content.Title}}</h1>
-                <div class="h4 md-h3">{{range $key, $person := .Doc.Content.Persons}}{{ if $key }}; {{ end }}<span class="nobreak">{{$person.Name}}</span>{{end}}</div>
+                <div class="h4 md-h3">{{range $key, $person := .Doc.Content.Persons}}{{ if $key }}; {{ end }}<a class="nobreak"href="../search?search=author:%22{{$person.Name}}%22">{{$person.Name}}</a>{{end}}</div>
             </div>
             <div class="col-12 self-start pb4">
                 {{if len .Doc.Content.Abstract}}
@@ -120,7 +121,7 @@ limitations under the License.
                         <h2 class="h5 md-h4">Tags</h2>
                             <p class="mt2 mb3">
                             {{range $key,$tag := .Doc.Content.Tags}}
-                                <a href="../search?search=tag:{{$tag}}"><span class="ampstart-btn ampstart-btn-seemore caps">{{$tag}}</span></a>
+                                <a href="../search?search=tag:%22{{$tag}}%22"><span class="ampstart-btn ampstart-btn-seemore caps">{{$tag}}</span></a>
                             {{end}}
                             </p>
                     </section>
