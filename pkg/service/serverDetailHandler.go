@@ -113,7 +113,7 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 	for key, ref := range status.Doc.Content.References {
 		if ref.Title == "" {
 			doc, err := s.mts.LoadEntity(ref.Signature)
-			if err == nil {
+			if err == nil && doc != nil {
 				acl_meta, ok := status.Doc.ACL["meta"]
 				if ok && len(intersect.Simple(status.User.Groups, acl_meta)) > 0 {
 					status.Doc.Content.References[key].Title = doc.Content.Title

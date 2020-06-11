@@ -344,6 +344,7 @@ func (mts *MTSolr) LoadEntities(ids []string) (map[string]*Document, error) {
 			References:      content.GetReferences(),
 			Meta:            content.GetMeta(),
 			Type:            content.GetType(),
+			Queries:         content.GetQueries(),
 		}
 		sourceData.HasMedia = len(sourceData.Media) > 0
 
@@ -418,10 +419,10 @@ func (mts *MTSolr) Search(text string, sources []string, facets map[string][]str
 		return nil, 0, nil, errors.New(fmt.Sprintf("no results for query %s - %v", qstr, facets))
 	}
 	/*
-	if r.Results.NumFound == 0 {
-		return []*Document{}, 0, nil, nil
-	}
-	 */
+		if r.Results.NumFound == 0 {
+			return []*Document{}, 0, nil, nil
+		}
+	*/
 	mts.log.Infof("%v document(s) found", len(r.Results.Docs))
 
 	ids := []string{}
@@ -496,6 +497,7 @@ func (mts *MTSolr) Search(text string, sources []string, facets map[string][]str
 					References:      content.GetReferences(),
 					Meta:            content.GetMeta(),
 					Type:            content.GetType(),
+					Queries:         content.GetQueries(),
 				}
 				sourceData.HasMedia = len(sourceData.Media) > 0
 

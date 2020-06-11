@@ -77,6 +77,15 @@ type ZoteroCollection struct {
 	Links   interface{}          `json:"links,omitempty"`
 	Meta    ZoteroCollectionMeta `json:"meta,omitempty"`
 	Data    ZoteroCollectionData `json:"data,omitempty"`
+	Parent  *ZoteroCollection     `json:"parent,omitempty"`
+}
+
+func (zc *ZoteroCollection) GetParents() []string {
+	if zc.Parent == nil {
+		return []string{}
+	}
+	result := zc.Parent.GetParents()
+	return append(result, zc.Data.Name)
 }
 
 type ItemTag struct {

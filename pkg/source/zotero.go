@@ -275,3 +275,24 @@ func (zot *Zotero) GetMedia() map[string]MediaList {
 	}
 	return medias
 }
+
+func (zot *Zotero) GetQueries() []Query {
+	queries := []Query{}
+	catBase := `fhnw!!hgk!!pub`
+	catGroup := catBase + `!!` + zot.ZData.Group.Data.Name
+	for _, coll := range zot.ZData.Collections {
+		parents := coll.GetParents()
+		for i := len(parents); i > 0; i-- {
+			elements := parents[0:i]
+			queries = append(queries, Query{
+				Label:  fmt.Sprintf("%s - %s", zot.ZData.Group.Data.Name, strings.Join(elements, `-`)),
+				Search: fmt.Sprintf("%d!!%s!!%s", 3+len(elements), catGroup, strings.Join(elements, `!!`)),
+			})
+		}
+	}
+	queries = append(queries, Query{
+		Label:  fmt.Sprintf("%s", zot.ZData.Group.Data.Name),
+		Search: fmt.Sprintf("%d!!%s", 3, catGroup),
+	})
+	return queries
+}

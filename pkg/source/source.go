@@ -57,6 +57,11 @@ type Media struct {
 	Duration int64  `json:"duration"`
 }
 
+type Query struct {
+	Label  string
+	Search string
+}
+
 type MediaList []Media
 
 func (ml MediaList) Len() int           { return len(ml) }
@@ -89,6 +94,7 @@ type Source interface {
 	GetReferences() []Reference
 	GetMeta() map[string]string
 	GetType() string
+	GetQueries() []Query
 }
 
 type SourceData struct {
@@ -106,4 +112,5 @@ type SourceData struct {
 	References      []Reference          `json:"references"`
 	Meta            map[string]string    `json:"meta"`
 	Type            string               `json:"type"`
+	Queries         []Query              `json:"queries"`
 }
