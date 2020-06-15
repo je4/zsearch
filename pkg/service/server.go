@@ -124,7 +124,7 @@ type Server struct {
 	ampApiKey         *rsa.PrivateKey
 	ampCache          *amp.Cache
 	searchFields      map[string]string
-	facets            map[string][]string
+	facets            []source.SolrFacet
 }
 
 func NewServer(
@@ -157,7 +157,7 @@ func NewServer(
 	AmpCache string,
 	ampApiKeyFile string,
 	searchFields map[string]string,
-	facets map[string][]string,
+	facets []source.SolrFacet,
 ) (*Server, error) {
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {

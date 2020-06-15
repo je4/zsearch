@@ -56,39 +56,49 @@ type AccessGroup struct {
 	Guest string `toml:"guest"`
 }
 
+type Facet struct {
+	Name     string   `toml:"name"`
+	Field    string   `toml:"field"`
+	Query    string   `toml:"query"`
+	Prefix   string   `toml:"prefix"`
+	Restrict []string `toml:"restrict"`
+	Type     string   `toml:"type"`
+}
+
 type Config struct {
-	Logfile        string              `toml:"logfile"`
-	Loglevel       string              `toml:"loglevel"`
-	AccessLog      string              `toml:"accesslog"`
-	Addr           string              `toml:"addr"`
-	AddrExt        string              `toml:"addrext"`
-	CertPEM        string              `toml:"certpem"`
-	KeyPEM         string              `toml:"keypem"`
-	StaticDir      string              `toml:"staticdir"`
-	StaticPrefix   string              `toml:"staticprefix"`
-	DetailPrefix   string              `toml:"detailprefix"`
-	UpdatePrefix   string              `toml:"updateprefix"`
-	SearchPrefix   string              `toml:"searchprefix"`
-	ApiPrefix      string              `toml:"apiprefix"`
-	JWTKey         string              `toml:"jwtkey"`
-	JWTAlg         []string            `toml:"jwtalg"`
-	LinkTokenExp   duration            `toml:"linktokenexp"`
-	LoginUrl       string              `toml:"loginurl"`
-	LoginIssuer    string              `toml:"loginissuer"`
-	IdleTimeout    duration            `toml:"idletimeout"`
-	UserCacheSize  int                 `toml:"usercachesize"`
-	Google         Google              `toml:"google"`
-	Template       Template            `toml:"template"`
-	Solr           Solr                `toml:"solr"`
-	AccessGroup    AccessGroup         `toml:"access"`
-	Mediaserver    string              `toml:"mediaserver"`
-	MediaserverKey string              `toml:"mediaserverkey"`
-	MediaserverExp duration            `toml:"mediaserverexp"`
-	AmpCache       string              `toml:"ampcache"`
-	AmpApiKey      string              `toml:"ampapikey"`
-	CacheDir       string              `toml:"cachedir"`
-	SearchFields   map[string]string   `toml:"searchfields"`
-	Facets         map[string][]string `toml:"facets"`
+	Logfile             string            `toml:"logfile"`
+	Loglevel            string            `toml:"loglevel"`
+	AccessLog           string            `toml:"accesslog"`
+	Addr                string            `toml:"addr"`
+	AddrExt             string            `toml:"addrext"`
+	CertPEM             string            `toml:"certpem"`
+	KeyPEM              string            `toml:"keypem"`
+	StaticDir           string            `toml:"staticdir"`
+	StaticPrefix        string            `toml:"staticprefix"`
+	DetailPrefix        string            `toml:"detailprefix"`
+	UpdatePrefix        string            `toml:"updateprefix"`
+	SearchPrefix        string            `toml:"searchprefix"`
+	ApiPrefix           string            `toml:"apiprefix"`
+	JWTKey              string            `toml:"jwtkey"`
+	JWTAlg              []string          `toml:"jwtalg"`
+	LinkTokenExp        duration          `toml:"linktokenexp"`
+	LoginUrl            string            `toml:"loginurl"`
+	LoginIssuer         string            `toml:"loginissuer"`
+	IdleTimeout         duration          `toml:"idletimeout"`
+	UserCacheSize       int               `toml:"usercachesize"`
+	Google              Google            `toml:"google"`
+	Template            Template          `toml:"template"`
+	Solr                Solr              `toml:"solr"`
+	AccessGroup         AccessGroup       `toml:"access"`
+	Mediaserver         string            `toml:"mediaserver"`
+	MediaserverKey      string            `toml:"mediaserverkey"`
+	MediaserverExp      duration          `toml:"mediaserverexp"`
+	AmpCache            string            `toml:"ampcache"`
+	AmpApiKey           string            `toml:"ampapikey"`
+	CacheDir            string            `toml:"cachedir"`
+	ClearCacheOnStartup bool              `toml:"clearcacheonstartup"`
+	SearchFields        map[string]string `toml:"searchfields"`
+	Facets              []Facet           `toml:"facets"`
 }
 
 func LoadConfig(filepath string) Config {

@@ -285,7 +285,7 @@ func (zot *Zotero) GetQueries() []Query {
 		for i := len(parents); i > 0; i-- {
 			elements := parents[0:i]
 			queries = append(queries, Query{
-				Label:  fmt.Sprintf("%s - %s", zot.ZData.Group.Data.Name, strings.Join(elements, `-`)),
+				Label:  fmt.Sprintf("%s - %s", zot.ZData.Group.Data.Name, strings.Join(elements, ` - `)),
 				Search: fmt.Sprintf("%d!!%s!!%s", 3+len(elements), catGroup, strings.Join(elements, `!!`)),
 			})
 		}

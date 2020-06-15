@@ -82,7 +82,7 @@ type ZoteroCollection struct {
 
 func (zc *ZoteroCollection) GetParents() []string {
 	if zc.Parent == nil {
-		return []string{}
+		return []string{zc.Data.Name}
 	}
 	result := zc.Parent.GetParents()
 	return append(result, zc.Data.Name)

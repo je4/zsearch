@@ -25,6 +25,7 @@ import (
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/source"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -74,7 +75,7 @@ func doc2json(search string, query string, docs []*source.Document, total int64,
 
 	for facet, vals := range facetFieldCount {
 		for val, count := range vals {
-			id := fmt.Sprintf("%s_%s", facet, val)
+			id := fmt.Sprintf("facet_%s_%s", facet, val)
 			result.FacetFieldCount[id] = facetField{
 				Id:   id,
 				Name: fmt.Sprintf("%s (%d)", val, count),
@@ -207,14 +208,25 @@ func (s *Server) apiSearchHandler(w http.ResponseWriter, req *http.Request) {
 
 	s.log.Infof("Query: %s", qstr)
 
-	facets := map[string][]string{"mediatype": []string{}}
-	for name, vals := range req.Form {
-		for key, _ := range facets {
-			if strings.HasPrefix(name, key+"_") && len(vals) > 0 {
-				val := vals[0]
-				if fmt.Sprintf("%v", val) == "true" {
-					facets[key] = append(facets[key], strings.TrimPrefix(name, key+"_"))
+	facets := map[string]map[string]bool{}
+	r := regexp.MustCompile(`^facet_([^_]+)_(.+)$`)
+	for name, states := range req.Form {
+		matches := r.FindStringSubmatch(name)
+		if matches != nil {
+			field := matches[1]
+			val := matches[2]
+			fmt.Sprintf("%v, %v", field, val)
+			if _, ok := facets[field]; !ok {
+				facets[field] = make(map[string]bool)
+			}
+			for _, state := range states {
+				if _, ok := facets[field][val]; !ok {
+					facets[field][val] = false
 				}
+				if fmt.Sprintf("%v", state) == "true" {
+					facets[field][val] = true
+				}
+
 			}
 		}
 	}
@@ -223,6 +235,18 @@ func (s *Server) apiSearchHandler(w http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot execute solr query: %v", true, err)
 		return
+	}
+
+	// set zero-facets to zero
+	for field, vals := range facets {
+		if _, ok := facetFields[field]; !ok {
+			facetFields[field] = make(map[string]int)
+		}
+		for val, _ := range vals {
+			if _, ok := facetFields[field][val]; !ok {
+				facetFields[field][val] = 0
+			}
+		}
 	}
 	next := ""
 	if total > start+rows {

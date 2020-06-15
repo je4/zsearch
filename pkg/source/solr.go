@@ -368,7 +368,7 @@ func (mts *MTSolr) LoadEntities(ids []string) (map[string]*Document, error) {
 	return result, nil
 }
 
-func (mts *MTSolr) Search(text string, sources []string, facets map[string][]string, groups []string, contentVisible bool, start, rows int) ([]*Document, int64, FacetCountResult, error) {
+func (mts *MTSolr) Search(text string, sources []string, facets map[string]map[string]bool, groups []string, contentVisible bool, start, rows int) ([]*Document, int64, FacetCountResult, error) {
 	//qstr := EscapeSolrString(text)
 	qstr := text
 	if qstr == "" {
@@ -384,14 +384,35 @@ func (mts *MTSolr) Search(text string, sources []string, facets map[string][]str
 		query.FilterQuery(contentacl)
 	}
 
+	filterQuery := ""
 	// build facets with filter exclusion
-	for facet, selected := range facets {
-		query.AddFacet(fmt.Sprintf("{!ex=%s}%s", facet, facet))
-		// filterquery only needed if selections available
-		if len(selected) > 0 {
-			q := orQuery("mediatype", selected)
-			query.FilterQuery(fmt.Sprintf("{!tag=%s}%s", facet, q))
+	for field, vals := range facets {
+		solrJSONTermsFacet := CreateJSONTermsFacetMap(field)
+		solrJSONDomainMap := CreateJSONDomainMap().WithTagsToExclude("facet")
+		solrJSONTermsFacet.JSONFacetMap().withDomain(solrJSONDomainMap)
+		json, err := json.Marshal(map[string]*JSONFacetMap{field: solrJSONTermsFacet.JSONFacetMap()})
+		if err != nil {
+			return nil, 0, nil, emperror.Wrapf(err, "cannot marshal facet %v", field)
 		}
+		query.AddJsonFacet(string(json))
+//		query.AddFacet(fmt.Sprintf("{!ex=%s}%s", facet, facet))
+		// filterquery only needed if selections available
+		selected := []string{}
+		for val, sel := range vals {
+			if sel {
+				selected = append(selected, val)
+			}
+		}
+		if len(selected) > 0 {
+			q := orQuery(field, selected)
+			if filterQuery != "" {
+				filterQuery += " AND "
+			}
+			filterQuery += fmt.Sprintf("(%s)", q)
+		}
+	}
+	if filterQuery != "" {
+		query.FilterQuery(fmt.Sprintf("{!tag=%s}%s", "facet", filterQuery))
 	}
 
 	// source query
@@ -411,7 +432,7 @@ func (mts *MTSolr) Search(text string, sources []string, facets map[string][]str
 
 	mts.log.Infof("solr query: %s - %v", query.String(), facets)
 	s := mts.si.Search(query)
-	r, err := s.Result(nil)
+	r, err := s.Result(&solr.ExtensiveResultParser{})
 	if err != nil {
 		return nil, 0, nil, emperror.Wrapf(err, "search error for query %s - %v", query.String(), facets)
 	}
@@ -428,6 +449,7 @@ func (mts *MTSolr) Search(text string, sources []string, facets map[string][]str
 	ids := []string{}
 	result := []*Document{}
 	facetFields := make(FacetCountResult)
+/*
 	_fff, ok := r.FacetCounts["facet_fields"]
 	if ok {
 		fff, ok := _fff.(map[string]interface{})
@@ -456,6 +478,26 @@ func (mts *MTSolr) Search(text string, sources []string, facets map[string][]str
 			}
 		}
 	}
+ */
+	var jsonFacets *SolrResultJSONFacets
+	if r.JsonFacets != nil {
+		jsonFacets, err = NewSolrResultJSONFacets()
+		if err != nil {
+			return nil, 0, nil, emperror.Wrap(err, "cannot create solr json facets")
+		}
+		if err := jsonFacets.Init(r.JsonFacets); err != nil {
+			return nil, 0, nil, emperror.Wrapf(err, "cannot init json facets with %v", r.JsonFacets)
+		}
+		for name, elem := range jsonFacets.Elements {
+			if _, ok := facetFields[name]; !ok {
+				facetFields[name] = make(map[string]int)
+			}
+			for _, bucket := range elem.Buckets {
+				facetFields[name][bucket.Val] = int(bucket.Count)
+			}
+		}
+	}
+	fmt.Sprintf("%v", jsonFacets)
 
 	for _, doc := range r.Results.Docs {
 		if !doc.Has("id") {

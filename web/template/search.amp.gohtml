@@ -142,23 +142,19 @@ limitations under the License.
                     <h2 class="h5 mb2">Media</h2>
                     {{range .FacetCount}}
                             <div class="ampstart-w100 ampstart-input ampstart-input-radio inline-block relative m0 p0 mb3">
-                                <!--
-                                <input
-                                        type="checkbox"
-                                        value=""
-                                        name="v{{.Id}}"
-                                        id="v{{.Id}}"
-                                        class="relative"
-                                        {{if .Selected}}checked="true"{{end}}
-                                        on="change:AMP.setState({SearchResult: { facetfieldcount: { {{.Id}}: event.checked?'true':'false'}}}),search.submit,resultListSmall.refresh,resultListWide.refresh">
-                                <label for="v{{.Id}}" class="" aria-hidden="true">{{.Name}}</label>
-                                -->
                                 <button
                                         style="width:100%;"
                                         [class]="(SearchResult.facetfieldcount.{{.Id}}.selected?'ampstart-btn-facet-inv':'ampstart-btn-facet')+' ampstart-btn caps'"
                                         class="ampstart-btn-facet{{if .Selected}}-inv{{end}} ampstart-btn caps"
                                         [text]="SearchResult.facetfieldcount.{{.Id}}.name?SearchResult.facetfieldcount.{{.Id}}.name:'{{.ShortName}}'"
-                                        on="tap:AMP.setState({SearchResultStart:0, SearchResult: { facetfieldcount: { {{.Id}}: (SearchResult.facetfieldcount.{{js .Id}}.selected?'false':'true')}}}),search.submit,resultListSmall.refresh,resultListWide.refresh">
+                                        on="tap:AMP.setState({
+                                                SearchResultStart:0,
+                                                SearchResult: {
+                                                    facetfieldcount: {
+                                                        {{.Id}}: (SearchResult.facetfieldcount.{{js .Id}}.selected?'false':'true')
+                                                    }
+                                                }
+                                            }),search.submit,resultListSmall.refresh,resultListWide.refresh">
                                     {{.Name}}
                                 </button>
                             </div>

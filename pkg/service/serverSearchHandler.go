@@ -35,7 +35,11 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		Title:         "search",
 		QueryApi:      "api/search",
 		FacetCount:    make(map[string]FacetCountField),
-		Facets:        s.facets,
+		Facets:        make(map[string][]string),
+	}
+
+	for _, facet := range s.facets {
+		status.Facets["facet_"+facet.Field] = facet.Restrict
 	}
 
 	jwt, ok := req.URL.Query()["token"]
@@ -120,9 +124,11 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 	status.SearchResultTotal = int(total)
 	status.SearchResultStart = 0
 	status.SearchString = search
-	for facet, vals := range s.facets {
+	for _, f := range s.facets {
+		vals := f.Restrict
+		facet := f.Field
 		for _, val := range vals {
-			id := fmt.Sprintf("%s_%s", facet, val)
+			id := fmt.Sprintf("facet_%s_%s", facet, val)
 			count := 0
 			if _, ok := facetFieldCount[facet]; ok {
 				for v, c := range facetFieldCount[facet] {

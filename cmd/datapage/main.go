@@ -26,6 +26,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"runtime"
 	"syscall"
 	"time"
@@ -99,6 +100,33 @@ func main() {
 		log.Panicf("%s not a director", config.CacheDir)
 		return
 	}
+	if config.ClearCacheOnStartup {
+		log.Infof("deleting cache files in %s", config.CacheDir)
+		if len(config.CacheDir) < 4 {
+			log.Panicf("%s too short. will not clear cache", config.CacheDir)
+			return
+		}
+		d, err := os.Open(config.CacheDir)
+		if err != nil {
+			log.Panicf("cannot open directory %s", config.CacheDir)
+			return
+		}
+		names, err := d.Readdirnames(-1)
+		if err != nil {
+			d.Close()
+			log.Panicf("cannot read %s", config.CacheDir)
+			return
+		}
+		d.Close()
+		for  _, name := range names {
+			fullpath := filepath.Join(config.CacheDir, name)
+			log.Infof("delete %s", fullpath)
+			if err := os.Remove(fullpath); err != nil {
+				log.Panicf("cannot delete %s", fullpath)
+				return
+			}
+		}
+	}
 	/*
 		if err := os.RemoveAll(config.CacheDir); err != nil {
 			log.Errorf("cannot remove %s: %v", config.CacheDir, err)
@@ -132,6 +160,17 @@ func main() {
 		log.Panic(err)
 	}
 
+	facets := []source.SolrFacet{}
+	for _, facet := range config.Facets {
+		facets = append(facets, source.SolrFacet{
+			Label:    facet.Name,
+			Name:     facet.Name,
+			Field:    facet.Field,
+			Query:    "",
+			Prefix:   facet.Prefix,
+			Restrict: facet.Restrict,
+		})
+	}
 	srv, err := service.NewServer(
 		mts,
 		uc,
@@ -162,7 +201,7 @@ func main() {
 		config.AmpCache,
 		config.AmpApiKey,
 		config.SearchFields,
-		config.Facets,
+		facets,
 	)
 
 	if err != nil {
