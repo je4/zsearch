@@ -127,7 +127,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 	for _, f := range s.facets {
 		vals := f.Restrict
 		facet := f.Field
-		for _, val := range vals {
+		for val, _ := range vals {
 			id := fmt.Sprintf("facet_%s_%s", facet, val)
 			count := 0
 			if _, ok := facetFieldCount[facet]; ok {

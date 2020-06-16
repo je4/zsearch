@@ -160,16 +160,15 @@ func main() {
 		log.Panic(err)
 	}
 
-	facets := []source.SolrFacet{}
+	facets := source.SolrFacetList{}
 	for _, facet := range config.Facets {
-		facets = append(facets, source.SolrFacet{
+		facets[facet.Name] = source.SolrFacet{
 			Label:    facet.Name,
 			Name:     facet.Name,
 			Field:    facet.Field,
-			Query:    "",
 			Prefix:   facet.Prefix,
 			Restrict: facet.Restrict,
-		})
+		}
 	}
 	srv, err := service.NewServer(
 		mts,

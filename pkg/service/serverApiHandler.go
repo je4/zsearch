@@ -208,6 +208,7 @@ func (s *Server) apiSearchHandler(w http.ResponseWriter, req *http.Request) {
 
 	s.log.Infof("Query: %s", qstr)
 
+	fm := source.NewFacetManager(s.facets)
 	facets := map[string]map[string]bool{}
 	r := regexp.MustCompile(`^facet_([^_]+)_(.+)$`)
 	for name, states := range req.Form {

@@ -57,12 +57,12 @@ type AccessGroup struct {
 }
 
 type Facet struct {
-	Name     string   `toml:"name"`
-	Field    string   `toml:"field"`
-	Query    string   `toml:"query"`
-	Prefix   string   `toml:"prefix"`
-	Restrict []string `toml:"restrict"`
-	Type     string   `toml:"type"`
+	Name     string          `toml:"name"`
+	Field    string          `toml:"field"`
+	Query    string          `toml:"query"`
+	Prefix   string          `toml:"prefix"`
+	Restrict map[string]bool `toml:"restrict"`
+	Type     string          `toml:"type"`
 }
 
 type Config struct {
