@@ -395,7 +395,7 @@ func (mts *MTSolr) Search(text string, sources []string, facets map[string]map[s
 			return nil, 0, nil, emperror.Wrapf(err, "cannot marshal facet %v", field)
 		}
 		query.AddJsonFacet(string(json))
-//		query.AddFacet(fmt.Sprintf("{!ex=%s}%s", facet, facet))
+		//		query.AddFacet(fmt.Sprintf("{!ex=%s}%s", facet, facet))
 		// filterquery only needed if selections available
 		selected := []string{}
 		for val, sel := range vals {
@@ -449,36 +449,36 @@ func (mts *MTSolr) Search(text string, sources []string, facets map[string]map[s
 	ids := []string{}
 	result := []*Document{}
 	facetFields := make(FacetCountResult)
-/*
-	_fff, ok := r.FacetCounts["facet_fields"]
-	if ok {
-		fff, ok := _fff.(map[string]interface{})
+	/*
+		_fff, ok := r.FacetCounts["facet_fields"]
 		if ok {
-			for facetField, _val := range fff {
-				if _, ok := facetFields[facetField]; !ok {
-					facetFields[facetField] = make(map[string]int)
-				}
-				val, ok := _val.([]interface{})
-				if ok {
-					fld := ""
-					for _, _v := range val {
-						switch v := _v.(type) {
-						case string:
-							if v != "default" {
-								fld = v
+			fff, ok := _fff.(map[string]interface{})
+			if ok {
+				for facetField, _val := range fff {
+					if _, ok := facetFields[facetField]; !ok {
+						facetFields[facetField] = make(map[string]int)
+					}
+					val, ok := _val.([]interface{})
+					if ok {
+						fld := ""
+						for _, _v := range val {
+							switch v := _v.(type) {
+							case string:
+								if v != "default" {
+									fld = v
+								}
+							case float64:
+								if fld != "" {
+									facetFields[facetField][fld] = int(v)
+								}
+								fld = ""
 							}
-						case float64:
-							if fld != "" {
-								facetFields[facetField][fld] = int(v)
-							}
-							fld = ""
 						}
 					}
 				}
 			}
 		}
-	}
- */
+	*/
 	var jsonFacets *SolrResultJSONFacets
 	if r.JsonFacets != nil {
 		jsonFacets, err = NewSolrResultJSONFacets()

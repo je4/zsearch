@@ -43,4 +43,3 @@ func (jfm *JSONFacetMap) withStatSubFacet(facetName string, m string) *JSONFacet
 	facetList[facetName] = m
 	return jfm
 }
-

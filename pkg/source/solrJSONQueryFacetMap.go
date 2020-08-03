@@ -6,5 +6,3 @@ func CreateJSONQueryFacetMap() *JSONQueryFacetMap {
 	jfm := CreateJSONFacetMap("query")
 	return (*JSONQueryFacetMap)(jfm)
 }
-
-

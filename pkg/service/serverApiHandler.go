@@ -61,7 +61,15 @@ type searchResultItem struct {
 	Date       string   `json:"date"`
 }
 
-func doc2json(search string, query string, docs []*source.Document, total int64, facetFieldCount source.FacetCountResult, facets map[string][]string, start int64, user *User, next string) ([]byte, error) {
+func doc2json(search string,
+	query string,
+	docs []*source.Document,
+	total int64,
+	facetFieldCount source.FacetCountResult,
+	facets map[string]map[string]bool,
+	start int64,
+	user *User,
+	next string) ([]byte, error) {
 	result := &searchResult{
 		Items:           []searchResultItem{},
 		Total:           total,
@@ -84,10 +92,8 @@ func doc2json(search string, query string, docs []*source.Document, total int64,
 					if !ok {
 						return false
 					}
-					for _, n := range res {
-						if n == val {
-							return true
-						}
+					if res[val] {
+						return true
 					}
 					return false
 				}(),
@@ -208,7 +214,7 @@ func (s *Server) apiSearchHandler(w http.ResponseWriter, req *http.Request) {
 
 	s.log.Infof("Query: %s", qstr)
 
-	fm := source.NewFacetManager(s.facets)
+	//fm := source.NewFacetManager(s.facets)
 	facets := map[string]map[string]bool{}
 	r := regexp.MustCompile(`^facet_([^_]+)_(.+)$`)
 	for name, states := range req.Form {

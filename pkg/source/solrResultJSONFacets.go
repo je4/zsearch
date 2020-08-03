@@ -78,7 +78,7 @@ func (fe *SolrResultJSONFacetElement) Init(data interface{}) error {
 }
 
 type SolrResultJSONFacets struct {
-	Count int64 `json:"count"`
+	Count    int64                                  `json:"count"`
 	Elements map[string]*SolrResultJSONFacetElement `json:"elements"`
 }
 
@@ -90,7 +90,7 @@ func NewSolrResultJSONFacets() (*SolrResultJSONFacets, error) {
 	return facets, nil
 }
 
-func (fa *SolrResultJSONFacets) Init( data interface{}) error {
+func (fa *SolrResultJSONFacets) Init(data interface{}) error {
 	eIntList, ok := data.(map[string]interface{})
 	if !ok {
 		return fmt.Errorf("invalid type for data: %T", data)

@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	apiKey = "AIzaSyDsNXE5m9mv9juuFQswIZfS_dTt-_TIH3k"
+	apiKey = "AIzaSyBfYHNyyspnojxDzqhpRuAMy5bQQ-iNwDE"
 	cx     = "013219768911029609903:u7pzivy74dt"
 	query  = "gestaltung"
 )

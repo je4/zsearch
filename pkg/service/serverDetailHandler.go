@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/juliangruber/go-intersect"
+	"net"
 	"net/http"
 	"strings"
 )
@@ -40,6 +41,7 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 		ContentOK:     false,
 		MetaOK:        false,
 		Self:          fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(req.URL.Path, "/")),
+		BaseUrl:       s.addrExt,
 		SelfPath:      req.URL.Path,
 		LoginUrl:      s.loginUrl,
 		Notifications: []Notification{},
@@ -78,6 +80,16 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 	if status.User == nil {
 		status.User = NewGuestUser(s)
 	}
+	ip := net.ParseIP(req.RemoteAddr)
+	for grp, nets := range s.locations {
+		for _, n := range nets {
+			if n.Contains(ip) {
+				status.User.Groups = append(status.User.Groups, grp)
+				break;
+			}
+		}
+	}
+
 	for acl, groups := range status.Doc.ACL {
 		for _, group := range groups {
 			for _, ugroup := range status.User.Groups {
@@ -110,18 +122,31 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 
 	// load all references
 	// title only if rights ok
+	removeRefs := []int{}
 	for key, ref := range status.Doc.Content.References {
 		if ref.Title == "" {
 			doc, err := s.mts.LoadEntity(ref.Signature)
-			if err == nil && doc != nil {
+			if err != nil {
+				removeRefs = append(removeRefs, key)
+			} else if doc != nil {
 				acl_meta, ok := status.Doc.ACL["meta"]
-				if ok && len(intersect.Simple(status.User.Groups, acl_meta)) > 0 {
+				if !ok {
+					acl_meta = []string{}
+				}
+				sect := intersect.Simple(status.User.Groups, acl_meta)
+				if ok && len([]interface{}{sect}) > 0 {
 					status.Doc.Content.References[key].Title = doc.Content.Title
 				} else {
 					status.Doc.Content.References[key].Title = doc.Id
+					// remove reference if no rights
+					// removeRefs = append(removeRefs, key)
 				}
 			}
 		}
+	}
+	// remove references, which failed on load
+	for _, key := range removeRefs {
+		status.Doc.Content.References = append(status.Doc.Content.References[:key], status.Doc.Content.References[key+1:]...)
 	}
 
 	if !status.MetaOK {

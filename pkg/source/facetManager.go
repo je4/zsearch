@@ -11,19 +11,20 @@ import (
 
 type FacetManager struct {
 	DefaultFacets SolrFacetList
-	Facets SolrFacetList
-	facetsOut map[string]map[string]int64
+	Facets        SolrFacetList
+	facetsOut     map[string]map[string]int64
 }
 
 func NewFacetManager(defaults SolrFacetList) *FacetManager {
 	return &FacetManager{
 		DefaultFacets: defaults,
-		Facets: SolrFacetList{},
-		facetsOut: map[string]map[string]int64{},
+		Facets:        SolrFacetList{},
+		facetsOut:     map[string]map[string]int64{},
 	}
 }
 
 var facetFormRegexp = regexp.MustCompile(`^facet_([^_]+)_(.+)$`)
+
 func (fm *FacetManager) fromRequest(req http.Request) error {
 	fm.Facets = fm.DefaultFacets
 

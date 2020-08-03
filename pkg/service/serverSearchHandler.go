@@ -30,12 +30,13 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		Type:          "search",
 		Notifications: []Notification{},
 		Self:          fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(req.URL.Path, "/")),
+		BaseUrl:       s.addrExt,
 		SelfPath:      req.URL.Path,
 		LoginUrl:      s.loginUrl,
 		Title:         "search",
 		QueryApi:      "api/search",
 		FacetCount:    make(map[string]FacetCountField),
-		Facets:        make(map[string][]string),
+		Facets:        make(map[string]map[string]bool),
 	}
 
 	for _, facet := range s.facets {
@@ -92,13 +93,16 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 	qstr := s.string2Query(search)
 	s.log.Infof("Query: %s", qstr)
 
-	facets := map[string][]string{"mediatype": []string{}}
+	facets := map[string]map[string]bool{"mediatype": map[string]bool{}}
 	for name, vals := range req.URL.Query() {
 		for key, _ := range facets {
 			if strings.HasPrefix(key+"_", name) && len(vals) > 0 {
 				val := vals[0]
 				fmt.Sprintf("%v", val)
-				facets[key] = append(facets[key], strings.TrimPrefix(key+"_", name))
+				if _, ok := facets[key]; !ok {
+					facets[key] = map[string]bool{}
+				}
+				facets[key][val] = true
 			}
 		}
 	}
@@ -109,11 +113,11 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	/*
-	if total == 0 {
-		s.DoPanicf(w, http.StatusNoContent, "no results found", false)
-		return
-	}
-	 */
+		if total == 0 {
+			s.DoPanicf(w, http.StatusNoContent, "no results found", false)
+			return
+		}
+	*/
 	json, err := doc2json("", "", docs, total, facetFieldCount, facets, 0, status.User, "")
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal result: %v", false, err)
@@ -138,10 +142,10 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 				}
 			}
 			status.FacetCount[id] = FacetCountField{
-				Id:       id,
-				Name:     fmt.Sprintf("%s (%d)", val, count),
+				Id:        id,
+				Name:      fmt.Sprintf("%s (%d)", val, count),
 				ShortName: val,
-				Selected: false,
+				Selected:  false,
 			}
 		}
 	}

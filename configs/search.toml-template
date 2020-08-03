@@ -2,22 +2,96 @@ logfile = "" # log file location
 loglevel = "DEBUG" # CRITICAL|ERROR|WARNING|NOTICE|INFO|DEBUG
 accesslog = "" # http access log file
 addr = "localhost:82"
+#addrext = "https://mediathek.hgk.fhnw.ch/amp/"
+addrext = "http://localhost:82/"
 certpem = "" # tls client certificate file in PEM format
 keypem = "" # tls client key file in PEM format
 staticdir = "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/static/"
 staticprefix = "/static"
-publicprefix = "/public"
-privateprefix = "/private"
+detailprefix = "/detail"
+updateprefix = "/update"
+searchprefix = "/search"
+apiprefix = "/api"
+jwtkey = "geheim"
+jwtalg = ["HS256","HS384","HS512"]
+linktokenexp = "1h"
+loginurl = "https://intern.hgk.fhnw.ch/ango/shib/auth/localhost"
+loginissuer = "auth.hgk.fhnw.ch/localhost"
+idletimeout = "30m"
+usercachesize = 200
+mediaserver = "https://ba14ns21403-sec1.fhnw.ch/mediasrv"
+mediaserverkey = "sdfsdafsdfsdfsd"
+mediaserverexp = "6h"
+ampcache = ""
+ampapikey = "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/configs/amp.private-key.pem"
+cachedir = "C:/temp/badger"
+clearcacheonstartup = true # remove badger files from cachedir
 
-[template]
-    mediaserver = "https://ba14ns21403-sec1.fhnw.ch/mediasrv"
-    mediaserverkey = "xxx"
-    detail = "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/details.amp.gohtml"
-    error = "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/error.gohtml"
+[[locations]]
+    group = "location/fhnw"
+    networks = ["10.0.0.0/8", "192.168.0.0/16", "147.86.0.0/16"]
+
+[[locations]]
+    group = "location/memoriav"
+    networks = ["62.2.199.158/32"]
+
+[searchfields]
+    author = "author"
+    tag = "cluster"
+    cat = "category"
+
+[access]
+    admin = "localhost/admin"
+    guest = "global/guest"
+
 
 [solr]
     url="http://localhost:8983/solr"
     core="cataloguecoll"
+    cacheexpiration = "12h"
+    cachesize = 500
+
 
 [google]
-    apikey = "AIzaSyDsNXE5m9mv9juuFQswIZfS_dTt-_TIH3k"
+    apikey = "AIzaSyBfYHNyyspnojxDzqhpRuAMy5bQQ-iNwDE"
+    apikey2 = "AIzaSyAnmvVQ-Z1GauSJiI17CqdJJ48Zsq3g9fY"
+
+[[facets]]
+	Name = "mediatype"
+	Field = "mediatype"
+	#Query = ""
+	Prefix = ""
+	[Restrict]
+	    video = false
+	    audio = false
+	    image = false
+	    pdf = false
+
+	Type = "terms"
+
+[template]
+    detail = [
+        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/css.inc.gohtml",
+        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/ionicons.inc.gohtml",
+        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/navbar.inc.gohtml",
+        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/header.inc.gohtml",
+        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/footer.inc.gohtml",
+        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/details.media.inc.gohtml",
+        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/details.amp.gohtml",
+        ]
+    error = ["C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/error.gohtml"]
+    forbidden = [
+        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/css.inc.gohtml",
+        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/navbar.inc.gohtml",
+        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/header.inc.gohtml",
+        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/footer.inc.gohtml",
+        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/forbidden.amp.gohtml",
+        ]
+    search = [
+        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/css.inc.gohtml",
+        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/ionicons.inc.gohtml",
+        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/navbar.inc.gohtml",
+        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/header.inc.gohtml",
+        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/footer.inc.gohtml",
+        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/search.amp.gohtml",
+        ]

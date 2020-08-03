@@ -24,6 +24,7 @@ import (
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/service"
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/source"
 	"io"
+	"net"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -70,7 +71,7 @@ https://mediathek-hgk-fhnw-ch.cdn.ampproject.org/c/s/mediathek.hgk.fhnw.ch/amp/d
 
 func main() {
 
-	cfgfile := flag.String("cfg", "./search.toml", "location of config file")
+	cfgfile := flag.String("cfg", "./search.toml", "locations of config file")
 	flag.Parse()
 	config := LoadConfig(*cfgfile)
 
@@ -118,7 +119,7 @@ func main() {
 			return
 		}
 		d.Close()
-		for  _, name := range names {
+		for _, name := range names {
 			fullpath := filepath.Join(config.CacheDir, name)
 			log.Infof("delete %s", fullpath)
 			if err := os.Remove(fullpath); err != nil {
@@ -170,6 +171,14 @@ func main() {
 			Restrict: facet.Restrict,
 		}
 	}
+
+	locations := map[string][]*net.IPNet{}
+	for _, loc := range config.Locations {
+		locations[loc.Group] = []*net.IPNet{}
+		for _, n := range loc.Networks {
+			locations[loc.Group] = append(locations[loc.Group], &n.IPNet)
+		}
+	}
 	srv, err := service.NewServer(
 		mts,
 		uc,
@@ -201,6 +210,7 @@ func main() {
 		config.AmpApiKey,
 		config.SearchFields,
 		facets,
+		locations,
 	)
 
 	if err != nil {

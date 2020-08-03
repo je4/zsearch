@@ -60,6 +60,7 @@ type DetailStatus struct {
 	ContentOK     bool
 	IsAmp         bool
 	Self          string
+	BaseUrl       string
 	SelfPath      string
 	AmpBase       string
 	LoginUrl      string
@@ -78,6 +79,7 @@ type SearchStatus struct {
 	Notifications     []Notification
 	User              *User
 	Self              string
+	BaseUrl           string
 	SelfPath          string
 	AmpBase           string
 	LoginUrl          string
@@ -89,7 +91,7 @@ type SearchStatus struct {
 	SearchResultTotal int
 	SearchString      string
 	FacetCount        map[string]FacetCountField
-	Facets            map[string][]string
+	Facets            map[string]map[string]bool
 }
 
 type Server struct {
@@ -125,6 +127,7 @@ type Server struct {
 	ampCache          *amp.Cache
 	searchFields      map[string]string
 	facets            source.SolrFacetList
+	locations         map[string][]*net.IPNet
 }
 
 func NewServer(
@@ -158,6 +161,7 @@ func NewServer(
 	ampApiKeyFile string,
 	searchFields map[string]string,
 	facets source.SolrFacetList,
+	locations map[string][]*net.IPNet,
 ) (*Server, error) {
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {

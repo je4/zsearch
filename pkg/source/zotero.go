@@ -48,6 +48,9 @@ var zoteroIgnoreMetaFields = []string{
 	"Extra",
 }
 
+// name:value
+var zoteroTagVariable = regexp.MustCompile(`^([^:]+):(.+)$`)
+
 func NewZotero(data string, mts *MTSolr) (*Zotero, error) {
 	zot := &Zotero{
 		ZData:    ZoteroData{},
@@ -165,7 +168,10 @@ func (zot *Zotero) getColl(key string) (*ZoteroCollection, error) {
 func (zot *Zotero) GetTags() []string {
 	var tags []string
 	for _, t := range zot.ZData.Data.Tags {
-		tags = generic.AppendIfMissing(tags, strings.ToLower(t.Tag))
+		// ignore variables (i.e. <name>:<value>
+		if !zoteroTagVariable.MatchString(t.Tag) {
+			tags = generic.AppendIfMissing(tags, strings.ToLower(t.Tag))
+		}
 	}
 	tags = generic.AppendIfMissing(tags, strings.ToLower(zot.ZData.Group.Data.Name))
 

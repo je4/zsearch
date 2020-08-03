@@ -17,8 +17,10 @@ limitations under the License.
 package main
 
 import (
+	"fmt"
 	"github.com/BurntSushi/toml"
 	"log"
+	"net"
 	"strings"
 	"time"
 )
@@ -31,6 +33,22 @@ func (d *duration) UnmarshalText(text []byte) error {
 	var err error
 	d.Duration, err = time.ParseDuration(string(text))
 	return err
+}
+
+type network struct {
+	net.IPNet
+}
+
+func (n *network) UnmarshalText(text []byte) error {
+	_, net, err := net.ParseCIDR(string(text))
+	if err != nil {
+		return err
+	}
+	if net == nil {
+		return fmt.Errorf("no network - %s", string(text))
+	}
+	n.IPNet = *net
+	return nil
 }
 
 type Google struct {
@@ -63,6 +81,11 @@ type Facet struct {
 	Prefix   string          `toml:"prefix"`
 	Restrict map[string]bool `toml:"restrict"`
 	Type     string          `toml:"type"`
+}
+
+type Network struct {
+	Group    string    `toml:"group"`
+	Networks []network `toml:"networks"`
 }
 
 type Config struct {
@@ -99,6 +122,7 @@ type Config struct {
 	ClearCacheOnStartup bool              `toml:"clearcacheonstartup"`
 	SearchFields        map[string]string `toml:"searchfields"`
 	Facets              []Facet           `toml:"facets"`
+	Locations            []Network         `toml:"locations"`
 }
 
 func LoadConfig(filepath string) Config {

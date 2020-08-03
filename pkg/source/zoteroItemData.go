@@ -77,7 +77,7 @@ type ZoteroCollection struct {
 	Links   interface{}          `json:"links,omitempty"`
 	Meta    ZoteroCollectionMeta `json:"meta,omitempty"`
 	Data    ZoteroCollectionData `json:"data,omitempty"`
-	Parent  *ZoteroCollection     `json:"parent,omitempty"`
+	Parent  *ZoteroCollection    `json:"parent,omitempty"`
 }
 
 func (zc *ZoteroCollection) GetParents() []string {
