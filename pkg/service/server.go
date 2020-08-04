@@ -91,7 +91,6 @@ type SearchStatus struct {
 	SearchResultTotal int
 	SearchString      string
 	FacetCount        map[string]FacetCountField
-	Facets            map[string]map[string]bool
 }
 
 type NetGroups map[string][]*net.IPNet
@@ -356,7 +355,7 @@ func (s *Server) InitTemplates(detailTemplate, errorTemplate, forbiddenTemplate,
 	if err != nil {
 		return emperror.Wrapf(err, "cannot parse forbidden template %v", forbiddenTemplate)
 	}
-	s.searchTemplate, err = template.New("search.amp.gohtml").Funcs(funcMap).ParseFiles(searchTemplate...)
+	s.searchTemplate, err = template.New("search2.amp.gohtml").Funcs(funcMap).ParseFiles(searchTemplate...)
 	if err != nil {
 		return emperror.Wrapf(err, "cannot parse forbidden template %v", forbiddenTemplate)
 	}

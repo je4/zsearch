@@ -497,7 +497,6 @@ func (mts *MTSolr) Search(text string, sources []string, facets map[string]map[s
 			}
 		}
 	}
-	fmt.Sprintf("%v", jsonFacets)
 
 	for _, doc := range r.Results.Docs {
 		if !doc.Has("id") {

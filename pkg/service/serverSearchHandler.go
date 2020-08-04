@@ -21,6 +21,7 @@ import (
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/generic"
 	"html/template"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -38,11 +39,6 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		Title:         "search",
 		QueryApi:      "api/search",
 		FacetCount:    make(map[string]FacetCountField),
-		Facets:        make(map[string]map[string]bool),
-	}
-
-	for _, facet := range s.facets {
-		status.Facets["facet_"+facet.Field] = facet.Restrict
 	}
 
 	jwt, ok := req.URL.Query()["token"]
@@ -86,24 +82,17 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		status.QueryApi = template.URL(fmt.Sprintf("%s/%s?token=%s", s.addrExt, "api/search", jwt))
 	}
 
-	search := ""
-	searchs := req.URL.Query()["search"]
-	if len(searchs) == 1 {
-		search = searchs[0]
-	}
-	var page int64 = 1
-	pages := req.URL.Query()["page"]
-	if len(pages) == 1 {
-		page, err = strconv.ParseInt(pages[0], 10, 64)
-		if err != nil {
-			page = 1
+
+	facets := map[string]map[string]bool{}
+	for _, val := range s.facets {
+		if _, ok := facets[val.Field]; !ok {
+			facets[val.Field] = map[string]bool{}
+		}
+		for v, sel := range val.Restrict {
+			facets[val.Field][v] = sel
 		}
 	}
-
-	qstr := s.string2Query(search)
-	s.log.Infof("Query: %s", qstr)
-
-	facets := map[string]map[string]bool{"mediatype": map[string]bool{}}
+/*
 	for name, vals := range req.URL.Query() {
 		for key, _ := range facets {
 			if strings.HasPrefix(key+"_", name) && len(vals) > 0 {
@@ -116,15 +105,67 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 			}
 		}
 	}
+ */
 
-	startRow := int((page-1)*10)
+	var start int64 = 0
+	var rows int64 = 10
+	var search, lastsearch string
+
+	facetRegex := regexp.MustCompile("^facet_([^_]+)_([^_]+)$")
+
+	for key,vals := range req.URL.Query() {
+		if len(vals) == 0 {
+			continue
+		}
+		val := vals[0]
+		switch key {
+		case "start":
+			start, _ = strconv.ParseInt(val, 10, 64)
+		case "rows":
+			rows, _ = strconv.ParseInt(val, 10, 64)
+		case "lastsearch":
+			lastsearch = val
+		case "search":
+			search = val
+		default:
+			found := facetRegex.FindAllStringSubmatch(key, -1)
+			if len(found) > 0 {
+				if len(found[0]) == 3 {
+					fld := found[0][1]
+					v := found[0][2]
+					if _, ok := facets[fld]; !ok {
+						facets[fld] = map[string]bool{}
+					}
+					if val == "true" {
+						facets[fld][v] = true
+					} else {
+						facets[fld][v] = false
+					}
+				}
+
+			}
+		}
+	}
+
+	if start < 0 {
+		start = 0
+	}
+	if search != lastsearch {
+		start = 0
+	}
+
+
+	qstr := s.string2Query(search)
+	s.log.Infof("Query: %s", qstr)
+
+
 	docs, total, facetFieldCount, err := s.mts.Search(qstr,
 		[]string{"zotero"},
 		facets,
 		status.User.Groups,
 		false,
-		startRow,
-		10)
+		int(start),
+		int(rows))
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot execute solr query: %v", false, err)
 		return
@@ -143,7 +184,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 	status.SearchResult = template.JS(json)
 	status.SearchResultRows = len(docs)
 	status.SearchResultTotal = int(total)
-	status.SearchResultStart = startRow
+	status.SearchResultStart = int(start)
 	status.SearchString = search
 	for _, f := range s.facets {
 		vals := f.Restrict
@@ -158,11 +199,15 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 					}
 				}
 			}
+			selected, ok := facets[facet][val]
+			if !ok {
+				selected = false
+			}
 			status.FacetCount[id] = FacetCountField{
 				Id:        id,
 				Name:      fmt.Sprintf("%s (%d)", val, count),
 				ShortName: val,
-				Selected:  false,
+				Selected:  selected,
 			}
 		}
 	}
