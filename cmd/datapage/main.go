@@ -172,7 +172,7 @@ func main() {
 		}
 	}
 
-	locations := map[string][]*net.IPNet{}
+	locations := service.NetGroups{}
 	for _, loc := range config.Locations {
 		locations[loc.Group] = []*net.IPNet{}
 		for _, n := range loc.Networks {

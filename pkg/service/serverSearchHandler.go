@@ -21,10 +21,12 @@ import (
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/generic"
 	"html/template"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
 func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
+	var err error
 
 	status := SearchStatus{
 		Type:          "search",
@@ -89,6 +91,14 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 	if len(searchs) == 1 {
 		search = searchs[0]
 	}
+	var page int64 = 1
+	pages := req.URL.Query()["page"]
+	if len(pages) == 1 {
+		page, err = strconv.ParseInt(pages[0], 10, 64)
+		if err != nil {
+			page = 1
+		}
+	}
 
 	qstr := s.string2Query(search)
 	s.log.Infof("Query: %s", qstr)
@@ -107,7 +117,14 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	docs, total, facetFieldCount, err := s.mts.Search(qstr, []string{"zotero"}, facets, status.User.Groups, false, 0, 10)
+	startRow := int((page-1)*10)
+	docs, total, facetFieldCount, err := s.mts.Search(qstr,
+		[]string{"zotero"},
+		facets,
+		status.User.Groups,
+		false,
+		startRow,
+		10)
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot execute solr query: %v", false, err)
 		return
@@ -126,7 +143,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 	status.SearchResult = template.JS(json)
 	status.SearchResultRows = len(docs)
 	status.SearchResultTotal = int(total)
-	status.SearchResultStart = 0
+	status.SearchResultStart = startRow
 	status.SearchString = search
 	for _, f := range s.facets {
 		vals := f.Restrict

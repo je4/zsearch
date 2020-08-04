@@ -94,6 +94,24 @@ type SearchStatus struct {
 	Facets            map[string]map[string]bool
 }
 
+type NetGroups map[string][]*net.IPNet
+
+func (ng NetGroups) Contains(str string) []string {
+	var groups []string
+
+	ip := net.ParseIP(str)
+	for grp, nets := range ng {
+		for _, n := range nets {
+			if n.Contains(ip) {
+				groups = append(groups, grp)
+				break;
+			}
+		}
+	}
+
+	return groups
+}
+
 type Server struct {
 	mts               *source.MTSolr
 	srv               *http.Server
@@ -127,7 +145,7 @@ type Server struct {
 	ampCache          *amp.Cache
 	searchFields      map[string]string
 	facets            source.SolrFacetList
-	locations         map[string][]*net.IPNet
+	locations         NetGroups
 }
 
 func NewServer(
@@ -161,7 +179,7 @@ func NewServer(
 	ampApiKeyFile string,
 	searchFields map[string]string,
 	facets source.SolrFacetList,
-	locations map[string][]*net.IPNet,
+	locations NetGroups,
 ) (*Server, error) {
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
@@ -228,6 +246,7 @@ func NewServer(
 		ampApiKey:      ampApiKey,
 		searchFields:   searchFields,
 		facets:         facets,
+		locations: locations,
 	}
 	if err := srv.InitTemplates(detailTemplate, errorTemplate, forbiddenTemplate, searchTemplate); err != nil {
 		return nil, emperror.Wrapf(err, "cannot initialize server")

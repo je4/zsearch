@@ -80,14 +80,9 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 	if status.User == nil {
 		status.User = NewGuestUser(s)
 	}
-	ip := net.ParseIP(req.RemoteAddr)
-	for grp, nets := range s.locations {
-		for _, n := range nets {
-			if n.Contains(ip) {
-				status.User.Groups = append(status.User.Groups, grp)
-				break;
-			}
-		}
+	ip, _, _ := net.SplitHostPort(req.RemoteAddr)
+	for _, grp := range s.locations.Contains(ip) {
+		status.User.Groups = append(status.User.Groups, grp)
 	}
 
 	for acl, groups := range status.Doc.ACL {
