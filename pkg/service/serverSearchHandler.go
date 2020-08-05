@@ -39,6 +39,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		Title:         "search",
 		QueryApi:      "api/search",
 		FacetCount:    make(map[string]FacetCountField),
+		Menu:          s.menu,
 	}
 
 	jwt, ok := req.URL.Query()["token"]
@@ -50,6 +51,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		}
 		tokenstring := jwt[0]
 		if tokenstring != "" {
+			status.Token = tokenstring
 			user, err := s.userFromToken(tokenstring, "search")
 			if err != nil {
 				status.Notifications = append(status.Notifications, Notification{
@@ -82,7 +84,6 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		status.QueryApi = template.URL(fmt.Sprintf("%s/%s?token=%s", s.addrExt, "api/search", jwt))
 	}
 
-
 	facets := map[string]map[string]bool{}
 	for _, val := range s.facets {
 		if _, ok := facets[val.Field]; !ok {
@@ -92,20 +93,20 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 			facets[val.Field][v] = sel
 		}
 	}
-/*
-	for name, vals := range req.URL.Query() {
-		for key, _ := range facets {
-			if strings.HasPrefix(key+"_", name) && len(vals) > 0 {
-				val := vals[0]
-				fmt.Sprintf("%v", val)
-				if _, ok := facets[key]; !ok {
-					facets[key] = map[string]bool{}
+	/*
+		for name, vals := range req.URL.Query() {
+			for key, _ := range facets {
+				if strings.HasPrefix(key+"_", name) && len(vals) > 0 {
+					val := vals[0]
+					fmt.Sprintf("%v", val)
+					if _, ok := facets[key]; !ok {
+						facets[key] = map[string]bool{}
+					}
+					facets[key][val] = true
 				}
-				facets[key][val] = true
 			}
 		}
-	}
- */
+	*/
 
 	var start int64 = 0
 	var rows int64 = 10
@@ -113,7 +114,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 
 	facetRegex := regexp.MustCompile("^facet_([^_]+)_([^_]+)$")
 
-	for key,vals := range req.URL.Query() {
+	for key, vals := range req.URL.Query() {
 		if len(vals) == 0 {
 			continue
 		}
@@ -154,10 +155,8 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		start = 0
 	}
 
-
 	qstr := s.string2Query(search)
 	s.log.Infof("Query: %s", qstr)
-
 
 	docs, total, facetFieldCount, err := s.mts.Search(qstr,
 		[]string{"zotero"},
@@ -176,7 +175,12 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	*/
-	json, err := doc2json("", "", docs, total, facetFieldCount, facets, 0, status.User, "")
+	json, err := s.doc2json("", "", docs, total, facetFieldCount, facets, 0, status.User, "")
+	if err != nil {
+		s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal result: %v", false, err)
+		return
+	}
+	status.Result, err = s.doc2result("", "", docs, total, facetFieldCount, facets, 0, status.User, "")
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal result: %v", false, err)
 		return

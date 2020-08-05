@@ -65,6 +65,7 @@ type DetailStatus struct {
 	AmpBase       string
 	LoginUrl      string
 	Title         string
+	Menu          []Menu
 }
 
 type FacetCountField struct {
@@ -79,21 +80,30 @@ type SearchStatus struct {
 	Notifications     []Notification
 	User              *User
 	Self              string
+	Token             string
 	BaseUrl           string
 	SelfPath          string
 	AmpBase           string
 	LoginUrl          string
 	Title             string
 	SearchResult      template.JS
+	Result            *SearchResult
 	QueryApi          template.URL
 	SearchResultStart int
 	SearchResultRows  int
 	SearchResultTotal int
 	SearchString      string
 	FacetCount        map[string]FacetCountField
+	Menu              []Menu
 }
 
 type NetGroups map[string][]*net.IPNet
+
+type Menu struct {
+	Label string
+	Url   string
+	Sub   map[string]string
+}
 
 func (ng NetGroups) Contains(str string) []string {
 	var groups []string
@@ -103,7 +113,7 @@ func (ng NetGroups) Contains(str string) []string {
 		for _, n := range nets {
 			if n.Contains(ip) {
 				groups = append(groups, grp)
-				break;
+				break
 			}
 		}
 	}
@@ -145,6 +155,8 @@ type Server struct {
 	searchFields      map[string]string
 	facets            source.SolrFacetList
 	locations         NetGroups
+	menu              []Menu
+	icons             map[string]string
 }
 
 func NewServer(
@@ -179,6 +191,8 @@ func NewServer(
 	searchFields map[string]string,
 	facets source.SolrFacetList,
 	locations NetGroups,
+	menu []Menu,
+	icons map[string]string,
 ) (*Server, error) {
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
@@ -245,7 +259,9 @@ func NewServer(
 		ampApiKey:      ampApiKey,
 		searchFields:   searchFields,
 		facets:         facets,
-		locations: locations,
+		locations:      locations,
+		menu:           menu,
+		icons:          icons,
 	}
 	if err := srv.InitTemplates(detailTemplate, errorTemplate, forbiddenTemplate, searchTemplate); err != nil {
 		return nil, emperror.Wrapf(err, "cannot initialize server")

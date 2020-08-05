@@ -179,6 +179,15 @@ func main() {
 			locations[loc.Group] = append(locations[loc.Group], &n.IPNet)
 		}
 	}
+	menu := []service.Menu{}
+	for _, m := range config.Menu {
+		menu = append(menu, service.Menu{
+			Label: m.Label,
+			Url:   m.Url,
+			Sub:   m.Sub,
+		})
+	}
+
 	srv, err := service.NewServer(
 		mts,
 		uc,
@@ -211,6 +220,8 @@ func main() {
 		config.SearchFields,
 		facets,
 		locations,
+		menu,
+		config.Icons,
 	)
 
 	if err != nil {

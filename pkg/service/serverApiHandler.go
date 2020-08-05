@@ -36,8 +36,8 @@ type facetField struct {
 	Selected bool   `json:"selected"`
 }
 
-type searchResult struct {
-	Items           []searchResultItem    `json:"items"`
+type SearchResult struct {
+	Items           []SearchResultItem    `json:"items"`
 	Total           int64                 `json:"total"`
 	Start           int64                 `json:"start"`
 	Rows            int64                 `json:"rows"`
@@ -47,7 +47,7 @@ type searchResult struct {
 	FacetFieldCount map[string]facetField `json:"facetfieldcount"`
 }
 
-type searchResultItem struct {
+type SearchResultItem struct {
 	Id         string   `json:"Id"`
 	Type       string   `json:"type"`
 	Title      string   `json:"title"`
@@ -59,9 +59,10 @@ type searchResultItem struct {
 	FirstItem  bool     `json:"firstitem"`
 	Total      int64    `json:"total,omitempty"`
 	Date       string   `json:"date"`
+	Icon       string   `json:"icon"`
 }
 
-func doc2json(search string,
+func (s *Server) doc2result(search string,
 	query string,
 	docs []*source.Document,
 	total int64,
@@ -69,9 +70,9 @@ func doc2json(search string,
 	facets map[string]map[string]bool,
 	start int64,
 	user *User,
-	next string) ([]byte, error) {
-	result := &searchResult{
-		Items:           []searchResultItem{},
+	next string) (*SearchResult, error) {
+	result := &SearchResult{
+		Items:           []SearchResultItem{},
 		Total:           total,
 		Start:           start,
 		Rows:            int64(len(docs)),
@@ -106,7 +107,11 @@ func doc2json(search string,
 		if !strings.HasPrefix(strings.ToLower(link), "http") {
 			link = "detail/" + link
 		}
-		item := searchResultItem{
+		icon, ok := s.icons[strings.ToLower(doc.Content.Type)]
+		if !ok {
+			icon = "#ion-open-outline"
+		}
+		item := SearchResultItem{
 			Id:         doc.Id,
 			Type:       doc.Content.Type,
 			Title:      doc.Content.Title,
@@ -115,6 +120,7 @@ func doc2json(search string,
 			Authors:    []string{},
 			Link:       link,
 			Date:       doc.Content.Date,
+			Icon:       icon,
 		}
 		if key == 0 {
 			item.FirstItem = true
@@ -135,6 +141,22 @@ func doc2json(search string,
 		}
 
 		result.Items = append(result.Items, item)
+	}
+	return result, nil
+}
+
+func (s *Server) doc2json(search string,
+	query string,
+	docs []*source.Document,
+	total int64,
+	facetFieldCount source.FacetCountResult,
+	facets map[string]map[string]bool,
+	start int64,
+	user *User,
+	next string) ([]byte, error) {
+	result, err := s.doc2result(search, query, docs, total, facetFieldCount, facets, start, user, next)
+	if err != nil {
+		return nil, emperror.Wrap(err, "cannot format result")
 	}
 	r, err := json.Marshal(result)
 	if err != nil {
@@ -275,7 +297,7 @@ func (s *Server) apiSearchHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	json, err := doc2json(search, qstr, docs, total, facetFields, facets, start, user, next)
+	json, err := s.doc2json(search, qstr, docs, total, facetFields, facets, start, user, next)
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal result: %v", true, err)
 		return

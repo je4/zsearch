@@ -208,6 +208,7 @@
                         <amp-img layout="fill" src="https://foo.com/foo.png" placeholder></amp-img>
                     </amp-iframe>
                 </div>
+                {{if gt $len 1}}
                 <amp-selector class="center" [selected]="pdf.selectedPdf" on="select:AMP.setState({pdf: {selectedPdf: event.targetOption}})">
                     <ul class="list-reset inline-block">
                     {{range $key, $pdf := .Doc.Content.Media.pdf}}
@@ -217,6 +218,7 @@
                     {{end}}
                     </ul>
                 </amp-selector>
+                {{end}}
             </div>
             </section>
     {{end}}

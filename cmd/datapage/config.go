@@ -88,6 +88,12 @@ type Network struct {
 	Networks []network `toml:"networks"`
 }
 
+type Menu struct {
+	Label string            `toml:"label"`
+	Url   string            `toml:"url"`
+	Sub   map[string]string `toml:"sub"`
+}
+
 type Config struct {
 	Logfile             string            `toml:"logfile"`
 	Loglevel            string            `toml:"loglevel"`
@@ -122,7 +128,9 @@ type Config struct {
 	ClearCacheOnStartup bool              `toml:"clearcacheonstartup"`
 	SearchFields        map[string]string `toml:"searchfields"`
 	Facets              []Facet           `toml:"facets"`
-	Locations            []Network         `toml:"locations"`
+	Locations           []Network         `toml:"locations"`
+	Menu                []Menu            `toml:"menu"`
+	Icons               map[string]string `toml:"icons"`
 }
 
 func LoadConfig(filepath string) Config {

@@ -45,6 +45,7 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 		SelfPath:      req.URL.Path,
 		LoginUrl:      s.loginUrl,
 		Notifications: []Notification{},
+		Menu:          s.menu,
 	}
 	var err error
 	status.Doc, err = s.mts.LoadEntity(signature)
