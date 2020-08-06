@@ -63,6 +63,7 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 		}
 		tokenstring := jwt[0]
 		if tokenstring != "" {
+			status.Token = tokenstring
 			user, err := s.userFromToken(tokenstring, "detail:"+signature)
 			if err != nil {
 				status.Notifications = append(status.Notifications, Notification{

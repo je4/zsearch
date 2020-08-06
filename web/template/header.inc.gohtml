@@ -21,7 +21,7 @@
                 </svg>
             </div>
             <div class="td center middle" style="width:calc(100%);">
-                <a href="{{.BaseUrl}}/search" class="text-decoration-none inline-block mx-auto ampstart-headerbar-home-link mb1 md-mb0">
+                <a href="{{.BaseUrl}}/search{{if not (eq .Token "")}}?token={{.Token}}{{end}}" class="text-decoration-none inline-block mx-auto ampstart-headerbar-home-link mb1 md-mb0">
                     <div class="table" style="height: 100%;">
                         <div class="td">
                             <div class="td align-middle"  style="height: 70px;">

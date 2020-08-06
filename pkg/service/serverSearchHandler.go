@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/generic"
 	"html/template"
+	"net"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -83,6 +84,10 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		}
 		status.QueryApi = template.URL(fmt.Sprintf("%s/%s?token=%s", s.addrExt, "api/search", jwt))
 	}
+	ip, _, _ := net.SplitHostPort(req.RemoteAddr)
+	for _, grp := range s.locations.Contains(ip) {
+		status.User.Groups = append(status.User.Groups, grp)
+	}
 
 	facets := map[string]map[string]bool{}
 	for _, val := range s.facets {
@@ -93,20 +98,6 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 			facets[val.Field][v] = sel
 		}
 	}
-	/*
-		for name, vals := range req.URL.Query() {
-			for key, _ := range facets {
-				if strings.HasPrefix(key+"_", name) && len(vals) > 0 {
-					val := vals[0]
-					fmt.Sprintf("%v", val)
-					if _, ok := facets[key]; !ok {
-						facets[key] = map[string]bool{}
-					}
-					facets[key][val] = true
-				}
-			}
-		}
-	*/
 
 	var start int64 = 0
 	var rows int64 = 10
@@ -175,17 +166,20 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	*/
+	/*
 	json, err := s.doc2json("", "", docs, total, facetFieldCount, facets, 0, status.User, "")
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal result: %v", false, err)
 		return
 	}
+	 */
 	status.Result, err = s.doc2result("", "", docs, total, facetFieldCount, facets, 0, status.User, "")
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal result: %v", false, err)
 		return
 	}
-	status.SearchResult = template.JS(json)
+
+	//status.SearchResult = template.JS(json)
 	status.SearchResultRows = len(docs)
 	status.SearchResultTotal = int(total)
 	status.SearchResultStart = int(start)

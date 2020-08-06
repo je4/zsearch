@@ -54,6 +54,7 @@ type DetailStatus struct {
 	Notifications []Notification
 	Doc           *source.Document
 	User          *User
+	Token         string
 	MetaPublic    bool
 	ContentPublic bool
 	MetaOK        bool

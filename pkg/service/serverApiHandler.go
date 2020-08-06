@@ -48,18 +48,23 @@ type SearchResult struct {
 }
 
 type SearchResultItem struct {
-	Id         string   `json:"Id"`
-	Type       string   `json:"type"`
-	Title      string   `json:"title"`
-	Text       string   `json:"text"`
-	Collection string   `json:"collection"`
-	Authors    []string `json:"authors"`
-	AuthorText string   `json:"authortext"`
-	Link       string   `json:"link"`
-	FirstItem  bool     `json:"firstitem"`
-	Total      int64    `json:"total,omitempty"`
-	Date       string   `json:"date"`
-	Icon       string   `json:"icon"`
+	Id            string         `json:"Id"`
+	Type          string         `json:"type"`
+	Title         string         `json:"title"`
+	Text          string         `json:"text"`
+	Collection    string         `json:"collection"`
+	Authors       []string       `json:"authors"`
+	AuthorText    string         `json:"authortext"`
+	Link          string         `json:"link"`
+	FirstItem     bool           `json:"firstitem"`
+	Total         int64          `json:"total,omitempty"`
+	Date          string         `json:"date"`
+	Icon          string         `json:"icon"`
+	Media         map[string]int `json:"media"`
+	MetaPublic    bool           `json:"metapublic"`
+	ContentPublic bool           `json:"contentpublic"`
+	MetaOK        bool           `json:"metaok"`
+	ContentOK     bool           `json:"contentok"`
 }
 
 func (s *Server) doc2result(search string,
@@ -121,6 +126,7 @@ func (s *Server) doc2result(search string,
 			Link:       link,
 			Date:       doc.Content.Date,
 			Icon:       icon,
+			Media:      map[string]int{},
 		}
 		if key == 0 {
 			item.FirstItem = true
@@ -138,6 +144,38 @@ func (s *Server) doc2result(search string,
 		}
 		if len(item.Authors) > 1 {
 			item.AuthorText += " et al."
+		}
+		for mtype, medialist := range doc.Content.Media {
+			if mtype == "default" {
+				continue
+			}
+			count := len(medialist)
+			if count == 0 {
+				break
+			}
+			item.Media[mtype] = count
+		}
+		for acl, groups := range doc.ACL {
+			for _, group := range groups {
+				for _, ugroup := range user.Groups {
+					if group == ugroup {
+						switch acl {
+						case "meta":
+							item.MetaOK = true
+						case "content":
+							item.ContentOK = true
+						}
+					}
+				}
+				if group == s.guestGroup {
+					switch acl {
+					case "meta":
+						item.MetaPublic = true
+					case "content":
+						item.ContentPublic = true
+					}
+				}
+			}
 		}
 
 		result.Items = append(result.Items, item)

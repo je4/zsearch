@@ -115,6 +115,7 @@ limitations under the License.
         </amp-user-notification>
     {{end}}
     <amp-img class="commerce-listing-banner xs-hide sm-hide" src="static/img/wide-mediathek-hero.jpg" width="2560" height="400" layout="responsive" alt="Mediathek Search" noloading=""><div placeholder="" class="commerce-loader"></div></amp-img>
+    <!-- BEGIN - virtual states for search interaction -->
     <amp-state id="SearchResultSearch">
         <script type="application/json">
             {{.SearchString}}
@@ -125,17 +126,21 @@ limitations under the License.
        {{.SearchResultStart}}
         </script>
     </amp-state>
+    <!--
     <amp-state id="SearchResult">
         <script type="application/json">
        {{.SearchResult}}
         </script>
     </amp-state>
+    -->
     <amp-state id="SearchFacets">
         <script type="application/json">
        {{.FacetCount}}
         </script>
     </amp-state>
+    <!-- END - virtual states for search interaction -->
     <section class="commerce-listing-content mx-auto flex flex-wrap pb4">
+            <!-- BEGIN - Facets wide -->
             <div class="col-3 xs-hide sm-hide flex flex-column">
                 <div class="commerce-side-panel pt4 pr4 self-center">
                     <h2 class="h5 mb2">Media</h2>
@@ -151,8 +156,10 @@ limitations under the License.
                     {{end}}
                 </div>
             </div>
+            <!-- END - Facets wide -->
             <div class="col-12 md-col-9 pt2 pb3 md-px4 md-pt1 md-pb7">
                 <div class="md-commerce-header relative md-flex flex-wrap items-center md-mx0 md-mb2">
+                    <!-- BEGIN - FORM -->
                     <form method="GET"
                           id="search"
                           action="#">
@@ -188,8 +195,9 @@ limitations under the License.
                             </svg>
                         </h1>
                     </form>
-
+                    <!-- END - Form -->
                     <div class="commerce-listing-filters pt2 pb2 mb3 md-mb0">
+                        <!-- BEGIN - Facets small -->
                         <div class="commerce-select-wrapper inline-block md-mr1 pl2 md-hide lg-hide">
                             <h2 class="h5 mb2">Media</h2>
                             {{range .FacetCount}}
@@ -206,6 +214,7 @@ limitations under the License.
                                 </button>
                             {{end}}
                         </div>
+                        <!-- END - Facets small -->
                     </div>
                 </div>
                 <div>
@@ -215,6 +224,7 @@ limitations under the License.
                         <div class="inline">{{add .SearchResultStart .SearchResultRows}}</div>]
                     </h2>
                     <p>&nbsp;</p>
+                    <!-- BEGIN - Navigation -->
                     <table>
                         <tr>
                             <td>
@@ -265,14 +275,15 @@ limitations under the License.
                             </td>
                         </tr>
                     </table>
+                    <!-- END - Navigation -->
                     <p>&nbsp;</p>
                 </div>
                 <!-- --------------------------------
-                    large screen
+                    BEGIN - Content wide
                 -------------------------------- -->
                 <div class="xs-hide sm-hide">
                     {{range $key, $field := .Result.Items}}
-                        <div style="padding-left:16px; height:70px; overflow:hidden; margin-bottom: 2px;" class="md-result-list relative md-flex flex-wrap items-center md-mx0">
+                        <div style="padding-left:16px; height:5em; overflow:hidden; margin-bottom: 2px;" class="md-result-list relative md-flex flex-wrap items-center md-mx0">
                             <a style="text-decoration: none;" href="{{$field.Link}}">
                             <div style="display:table;">
                                 <div style="display:table-row; width:100%;">
@@ -295,6 +306,30 @@ limitations under the License.
                                         </div>
                                         {{if not (eq $field.Date "")}}{{$field.Date}}<br />{{end}}
                                         {{if not (eq $field.Collection "")}}{{$field.Collection}}<br />{{end}}
+                                        {{if (gt (len $field.Media) 0)}}
+                                            {{if $field.ContentOK}}
+                                                <svg alt="content accessible"
+                                                     id="svg12"
+                                                     version="1.1"
+                                                     viewBox="0 0 512 512"
+                                                     height="16"
+                                                     width="16">
+                                                    <use href="#ion-lock-open-outline"></use>
+                                                </svg>
+                                            {{else}}
+                                                <svg alt="content closed"
+                                                     id="svg12"
+                                                     version="1.1"
+                                                     viewBox="0 0 512 512"
+                                                     height="16"
+                                                     width="16">
+                                                    <use href="#ion-lock-closed-outline"></use>
+                                                </svg>
+                                            {{end}}
+                                            {{range $type, $count := $field.Media}}
+                                                {{if gt $count 0}}{{$type}}:{{$count}}{{end}}
+                                            {{end}}
+                                        {{end}}
                                     </div>
                                 </div>
                             </div>
@@ -303,14 +338,14 @@ limitations under the License.
                     {{end}}
                 </div>
                 <!-- --------------------------------
-                    END large screen
+                    END - Content wide
                 -------------------------------- -->
                 <!-- --------------------------------
-                    small screen
+                    BEGIN - Content small
                 -------------------------------- -->
                 <div class="md-hide lg-hide">
                     {{range $key, $field := .Result.Items}}
-                            <div style="padding-left:16px; height:75px; overflow:hidden; margin-bottom: 2px;" class="md-result-list relative md-flex flex-wrap items-center md-mx0">
+                            <div style="padding-left:16px; height:6.5em; overflow:hidden; margin-bottom: 2px;" class="md-result-list relative md-flex flex-wrap items-center md-mx0">
                                 <a style="text-decoration: none;" href="{{$field.Link}}">
                                 <div style="display:table;">
                                     <div style="display:table-row;">
@@ -329,8 +364,32 @@ limitations under the License.
                                                 {{$field.Title}}
                                             </h2>
                                             {{if not (eq $field.Date "")}}{{$field.Date}}<br />{{end}}
-                                            <b>{{$field.AuthorText}}</b><br />
-                                            {{if not (eq $field.Collection "")}}{{$field.Collection}}<br />{{end}}
+                                            <b style="white-space: nowrap;">{{$field.AuthorText}}</b><br />
+                                            {{if not (eq $field.Collection "")}}<span  style="white-space: nowrap;">{{$field.Collection}}</span><br />{{end}}
+                                            {{if (gt (len $field.Media) 0)}}
+                                                {{if $field.ContentOK}}
+                                                    <svg alt="content accessible"
+                                                         id="svg12"
+                                                         version="1.1"
+                                                         viewBox="0 0 512 512"
+                                                         height="16"
+                                                         width="16">
+                                                        <use href="#ion-lock-open-outline"></use>
+                                                    </svg>
+                                                {{else}}
+                                                    <svg alt="content closed"
+                                                         id="svg12"
+                                                         version="1.1"
+                                                         viewBox="0 0 512 512"
+                                                         height="16"
+                                                         width="16">
+                                                        <use href="#ion-lock-closed-outline"></use>
+                                                    </svg>
+                                                {{end}}
+                                                {{range $type, $count := $field.Media}}
+                                                    {{if gt $count 0}}{{$type}}:{{$count}}{{end}}
+                                                {{end}}
+                                            {{end}}
                                         </div>
                                     </div>
                                 </div>
@@ -339,10 +398,11 @@ limitations under the License.
                     {{end}}
                 </div>
                 <!-- --------------------------------
-                    END small screen
+                    END - Content small
                 -------------------------------- -->
 
                 <br />
+                <!-- BEGIN Navigation -->
                 <table>
                     <tr>
                         <td>
@@ -393,6 +453,7 @@ limitations under the License.
                         </td>
                     </tr>
                 </table>
+                <!-- END Navigation -->
             </div>
         </section>
 </main>
