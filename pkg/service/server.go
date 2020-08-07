@@ -112,6 +112,43 @@ type Menu struct {
 	Sub   map[string]string
 }
 
+type facetField struct {
+	Id       string `json:"id"`
+	Name     string `json:"name"`
+	Selected bool   `json:"selected"`
+}
+
+type SearchResult struct {
+	Items           []SearchResultItem    `json:"items"`
+	Total           int64                 `json:"total"`
+	Start           int64                 `json:"start"`
+	Rows            int64                 `json:"rows"`
+	Query           string                `json:"query"`
+	Search          string                `json:"search"`
+	Next            string                `json:"next"`
+	FacetFieldCount map[string]facetField `json:"facetfieldcount"`
+}
+
+type SearchResultItem struct {
+	Id            string         `json:"Id"`
+	Type          string         `json:"type"`
+	Title         string         `json:"title"`
+	Text          string         `json:"text"`
+	Collection    string         `json:"collection"`
+	Authors       []string       `json:"authors"`
+	AuthorText    string         `json:"authortext"`
+	Link          string         `json:"link"`
+	FirstItem     bool           `json:"firstitem"`
+	Total         int64          `json:"total,omitempty"`
+	Date          string         `json:"date"`
+	Icon          string         `json:"icon"`
+	Media         map[string]int `json:"media"`
+	MetaPublic    bool           `json:"metapublic"`
+	ContentPublic bool           `json:"contentpublic"`
+	MetaOK        bool           `json:"metaok"`
+	ContentOK     bool           `json:"contentok"`
+}
+
 func (ng NetGroups) Contains(str string) []string {
 	var groups []string
 
@@ -530,9 +567,6 @@ func (s *Server) ListenAndServe(cert, key string) error {
 		}).HandlerFunc(s.searchHandler).Methods("GET")
 	//router.HandleFunc(fmt.Sprintf("/%s", s.searchPrefix), s.searchHandler).Methods("GET")
 
-	// https://data.mediathek.hgk.fhnw.ch/api/search
-	router.HandleFunc(fmt.Sprintf("/%s/search", s.apiPrefix), s.apiSearchHandler).Methods("GET", "POST")
-
 	// https://data.mediathek.hgk.fhnw.ch/detail/[signature]
 	mainRegexp := regexp.MustCompile(fmt.Sprintf("^/%s/(.+)$", s.detailPrefix))
 	router.
@@ -685,4 +719,150 @@ func (s *Server) string2Query(search string) string {
 		}
 	}
 	return qstr
+}
+
+func (s *Server) doc2result(search string,
+	query string,
+	docs []*source.Document,
+	total int64,
+	facetFieldCount source.FacetCountResult,
+	facets map[string]map[string]bool,
+	start int64,
+	user *User,
+	next string) (*SearchResult, error) {
+	result := &SearchResult{
+		Items:           []SearchResultItem{},
+		Total:           total,
+		Start:           start,
+		Rows:            int64(len(docs)),
+		Query:           query,
+		Search:          search,
+		Next:            next,
+		FacetFieldCount: make(map[string]facetField),
+	}
+
+	for facet, vals := range facetFieldCount {
+		for val, count := range vals {
+			id := fmt.Sprintf("facet_%s_%s", facet, val)
+			result.FacetFieldCount[id] = facetField{
+				Id:   id,
+				Name: fmt.Sprintf("%s (%d)", val, count),
+				Selected: func() bool {
+					res, ok := facets[facet]
+					if !ok {
+						return false
+					}
+					if res[val] {
+						return true
+					}
+					return false
+				}(),
+			}
+		}
+	}
+
+	for key, doc := range docs {
+		if doc == nil {
+			return nil, fmt.Errorf("empty document %v", key)
+		}
+		link := user.LinkSignature(doc.Id)
+		if !strings.HasPrefix(strings.ToLower(link), "http") {
+			link = "detail/" + link
+		}
+		if doc.Content == nil {
+			return nil, fmt.Errorf("no content in document %v", doc)
+		}
+		icon, ok := s.icons[strings.ToLower(doc.Content.Type)]
+		if !ok {
+			icon = "#ion-open-outline"
+		}
+		item := SearchResultItem{
+			Id:         doc.Id,
+			Type:       doc.Content.Type,
+			Title:      doc.Content.Title,
+			Text:       "",
+			Collection: doc.Content.CollectionTitle,
+			Authors:    []string{},
+			Link:       link,
+			Date:       doc.Content.Date,
+			Icon:       icon,
+			Media:      map[string]int{},
+		}
+		if key == 0 {
+			item.FirstItem = true
+			item.Total = total
+		}
+		for _, p := range doc.Content.Persons {
+			name := p.Name
+			if p.Role != "author" && p.Role != "director" && p.Role != "artist" {
+				name += fmt.Sprintf(" (%s)", p.Role)
+			}
+			item.Authors = append(item.Authors, name)
+		}
+		if len(item.Authors) > 0 {
+			item.AuthorText = item.Authors[0]
+		}
+		if len(item.Authors) > 1 {
+			item.AuthorText += " et al."
+		}
+		for mtype, medialist := range doc.Content.Media {
+			if mtype == "default" {
+				continue
+			}
+			count := len(medialist)
+			if count == 0 {
+				break
+			}
+			item.Media[mtype] = count
+		}
+		for acl, groups := range doc.ACL {
+			for _, group := range groups {
+				for _, ugroup := range user.Groups {
+					if group == ugroup {
+						switch acl {
+						case "meta":
+							item.MetaOK = true
+						case "content":
+							item.ContentOK = true
+						}
+					}
+				}
+				if group == s.guestGroup {
+					switch acl {
+					case "meta":
+						item.MetaPublic = true
+					case "content":
+						item.ContentPublic = true
+					}
+				}
+			}
+		}
+		if user.inGroup(s.adminGroup) {
+			item.MetaOK = true
+			item.ContentOK = true
+		}
+
+		result.Items = append(result.Items, item)
+	}
+	return result, nil
+}
+
+func (s *Server) doc2json(search string,
+	query string,
+	docs []*source.Document,
+	total int64,
+	facetFieldCount source.FacetCountResult,
+	facets map[string]map[string]bool,
+	start int64,
+	user *User,
+	next string) ([]byte, error) {
+	result, err := s.doc2result(search, query, docs, total, facetFieldCount, facets, start, user, next)
+	if err != nil {
+		return nil, emperror.Wrap(err, "cannot format result")
+	}
+	r, err := json.Marshal(result)
+	if err != nil {
+		return nil, emperror.Wrapf(err, "cannot marshal result")
+	}
+	return r, nil
 }
