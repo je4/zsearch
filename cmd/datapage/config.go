@@ -94,6 +94,11 @@ type Menu struct {
 	Sub   map[string]string `toml:"sub"`
 }
 
+type Query struct {
+	BaseQuery string            `toml:"basequery"`
+	SubQuery  map[string]string `toml:"subquery"`
+}
+
 type Config struct {
 	Logfile             string            `toml:"logfile"`
 	Loglevel            string            `toml:"loglevel"`
@@ -118,6 +123,7 @@ type Config struct {
 	Google              Google            `toml:"google"`
 	Template            Template          `toml:"template"`
 	Solr                Solr              `toml:"solr"`
+	Query               Query             `toml:"query"`
 	AccessGroup         AccessGroup       `toml:"access"`
 	Mediaserver         string            `toml:"mediaserver"`
 	MediaserverKey      string            `toml:"mediaserverkey"`
