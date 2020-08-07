@@ -180,11 +180,27 @@ func main() {
 		}
 	}
 	menu := []service.Menu{}
+
 	for _, m := range config.Menu {
+		sub := map[string]string{}
+		for _, s := range m.Sub {
+			for k, v := range s {
+				sub[k] = v
+			}
+		}
 		menu = append(menu, service.Menu{
 			Label: m.Label,
 			Url:   m.Url,
-			Sub:   m.Sub,
+			Sub:   sub,
+		})
+	}
+
+	subfilters := []service.SubFilter{}
+	for _, sf := range config.Query.SubFilter {
+		subfilters = append(subfilters, service.SubFilter{
+			Name:   sf.Name,
+			Label:  sf.Label,
+			Filter: sf.Filter,
 		})
 	}
 
@@ -222,6 +238,8 @@ func main() {
 		locations,
 		menu,
 		config.Icons,
+		config.Query.BaseFilter,
+		subfilters,
 	)
 
 	if err != nil {

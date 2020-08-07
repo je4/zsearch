@@ -89,14 +89,20 @@ type Network struct {
 }
 
 type Menu struct {
-	Label string            `toml:"label"`
-	Url   string            `toml:"url"`
-	Sub   map[string]string `toml:"sub"`
+	Label string                       `toml:"label"`
+	Url   string                       `toml:"url"`
+	Sub   map[string]map[string]string `toml:"sub"`
+}
+
+type SubFilter struct {
+	Name   string `toml:"name"`
+	Label  string `toml:"label"`
+	Filter string `toml:"filter"`
 }
 
 type Query struct {
-	BaseQuery string            `toml:"basequery"`
-	SubQuery  map[string]string `toml:"subquery"`
+	BaseFilter string      `toml:"basefilter"`
+	SubFilter  []SubFilter `toml:"subfilter"`
 }
 
 type Config struct {
@@ -135,16 +141,17 @@ type Config struct {
 	SearchFields        map[string]string `toml:"searchfields"`
 	Facets              []Facet           `toml:"facets"`
 	Locations           []Network         `toml:"locations"`
-	Menu                []Menu            `toml:"menu"`
+	Menu                map[string]Menu   `toml:"menu"`
 	Icons               map[string]string `toml:"icons"`
 }
 
 func LoadConfig(filepath string) Config {
 	var conf Config
-	_, err := toml.DecodeFile(filepath, &conf)
+	m, err := toml.DecodeFile(filepath, &conf)
 	if err != nil {
 		log.Fatalln("Error on loading config: ", err)
 	}
+	fmt.Sprintf("%v", m)
 	// make sure, that medaiserver url ends with an /
 	conf.Mediaserver = strings.TrimRight(conf.Mediaserver, "/")
 	conf.AddrExt = strings.TrimRight(conf.AddrExt, "/")

@@ -110,7 +110,7 @@
                         {{$url = .User.LinkSignatureCache .Doc.Id}}
                     {{end}}
                     {{if eq .Type "search"}}
-                        {{$url = .User.LinkSignatureCache "search"}}
+                        {{$url = .Self}}
                     {{end}}
                     <a href="{{$url}}" class="text-decoration-none mr2 ampstart-headerbar-fixed-link ">
 

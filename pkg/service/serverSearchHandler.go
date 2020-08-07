@@ -18,6 +18,7 @@ package service
 
 import (
 	"fmt"
+	"github.com/gorilla/mux"
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/generic"
 	"html/template"
 	"net"
@@ -29,6 +30,7 @@ import (
 
 func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 	var err error
+	vars := mux.Vars(req)
 
 	status := SearchStatus{
 		Type:          "search",
@@ -37,7 +39,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		BaseUrl:       s.addrExt,
 		SelfPath:      req.URL.Path,
 		LoginUrl:      s.loginUrl,
-		Title:         "search",
+		Title:         "Search",
 		QueryApi:      "api/search",
 		FacetCount:    make(map[string]FacetCountField),
 		Menu:          s.menu,
@@ -149,8 +151,19 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 	qstr := s.string2Query(search)
 	s.log.Infof("Query: %s", qstr)
 
+	filters := []string{s.baseFilter}
+	if subfiltername, ok := vars["subfilter"]; ok {
+		for _, sf := range s.subFilters {
+			if sf.Label == subfiltername {
+				filters = append(filters, sf.Filter)
+				status.Title = sf.Name
+				break
+			}
+		}
+	}
+
 	docs, total, facetFieldCount, err := s.mts.Search(qstr,
-		[]string{"zotero"},
+		filters,
 		facets,
 		status.User.Groups,
 		false,
@@ -167,12 +180,12 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	*/
 	/*
-	json, err := s.doc2json("", "", docs, total, facetFieldCount, facets, 0, status.User, "")
-	if err != nil {
-		s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal result: %v", false, err)
-		return
-	}
-	 */
+		json, err := s.doc2json("", "", docs, total, facetFieldCount, facets, 0, status.User, "")
+		if err != nil {
+			s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal result: %v", false, err)
+			return
+		}
+	*/
 	status.Result, err = s.doc2result("", "", docs, total, facetFieldCount, facets, 0, status.User, "")
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal result: %v", false, err)

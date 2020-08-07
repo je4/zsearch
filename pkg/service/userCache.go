@@ -39,12 +39,19 @@ type User struct {
 	LoggedOut bool      `json:"loggedOut"`
 }
 
+func (u User) inGroup(grp string) bool {
+	for _, g := range u.Groups {
+		if g == grp {
+			return true
+		}
+	}
+	return false
+}
+
 func (u User) LinkSignatureCache(signature string) string {
 	urlstr := fmt.Sprintf("%s/%s/%s", u.Server.addrExt, u.Server.detailPrefix, signature)
 	var err error
-	if u.Server.ampCache == nil {
-		urlstr = signature
-	} else {
+	if u.Server.ampCache != nil {
 		urlstr, err = u.Server.ampCache.BuildUrl(urlstr, amp.PAGE)
 		if err != nil {
 			return fmt.Sprintf("ERROR: %v", err)
@@ -76,9 +83,7 @@ func (u User) LinkSignature(signature string) string {
 		}
 		urlstr = fmt.Sprintf("%s?token=%s", urlstr, jwt)
 	} else {
-		if u.Server.ampCache == nil {
-			urlstr = signature
-		} else {
+		if u.Server.ampCache != nil {
 			var err error
 			urlstr, err = u.Server.ampCache.BuildUrl(urlstr, amp.PAGE)
 			if err != nil {

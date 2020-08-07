@@ -86,6 +86,8 @@ func (mts *MTSolr) GetContent(entry *cacheEntry) (Source, error) {
 	switch entry.Source {
 	case "zotero":
 		content, err = NewZotero(entry.ContentStr, mts)
+	case "diplomhgk":
+		content, err = NewDiplomHGK(entry.ContentStr, mts)
 	default:
 		err = errors.New(fmt.Sprintf("invalid Source %s", entry.ContentStr))
 	}
@@ -368,7 +370,7 @@ func (mts *MTSolr) LoadEntities(ids []string) (map[string]*Document, error) {
 	return result, nil
 }
 
-func (mts *MTSolr) Search(text string, sources []string, facets map[string]map[string]bool, groups []string, contentVisible bool, start, rows int) ([]*Document, int64, FacetCountResult, error) {
+func (mts *MTSolr) Search(text string, filters []string, facets map[string]map[string]bool, groups []string, contentVisible bool, start, rows int) ([]*Document, int64, FacetCountResult, error) {
 	//qstr := EscapeSolrString(text)
 	qstr := text
 	if qstr == "" {
@@ -415,10 +417,9 @@ func (mts *MTSolr) Search(text string, sources []string, facets map[string]map[s
 		query.FilterQuery(fmt.Sprintf("{!tag=%s}%s", "facet", filterQuery))
 	}
 
-	// source query
-	if len(sources) > 0 {
-		sq := orQuery("source", sources)
-		query.FilterQuery(sq)
+	// filter query
+	for _, fq := range filters {
+		query.FilterQuery(fq)
 	}
 
 	query.Q(qstr)

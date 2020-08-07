@@ -108,9 +108,15 @@ func (s *Server) doc2result(search string,
 	}
 
 	for key, doc := range docs {
+		if doc == nil {
+			return nil, fmt.Errorf("empty document %v", key)
+		}
 		link := user.LinkSignature(doc.Id)
 		if !strings.HasPrefix(strings.ToLower(link), "http") {
 			link = "detail/" + link
+		}
+		if doc.Content == nil {
+			return nil, fmt.Errorf("no content in document %v", doc)
 		}
 		icon, ok := s.icons[strings.ToLower(doc.Content.Type)]
 		if !ok {
@@ -176,6 +182,10 @@ func (s *Server) doc2result(search string,
 					}
 				}
 			}
+		}
+		if user.inGroup(s.adminGroup) {
+			item.MetaOK = true
+			item.ContentOK = true
 		}
 
 		result.Items = append(result.Items, item)
@@ -298,7 +308,7 @@ func (s *Server) apiSearchHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	docs, total, facetFields, err := s.mts.Search(qstr, []string{"zotero"}, facets, user.Groups, false, int(start), int(rows))
+	docs, total, facetFields, err := s.mts.Search(qstr, []string{"source:zotero"}, facets, user.Groups, false, int(start), int(rows))
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot execute solr query: %v", true, err)
 		return

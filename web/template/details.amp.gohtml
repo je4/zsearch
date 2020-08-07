@@ -102,7 +102,7 @@ limitations under the License.
         <div class="col-12 md-col-6 flex flex-wrap content-start px2 md-pl5 md-pr7 md-pt4">
             <div class="col-12 self-start pb2">
                 <h1 class="h3 md-h2">{{.Doc.Content.Title}}</h1>
-                <div class="h4 md-h3">{{range $key, $person := .Doc.Content.Persons}}{{ if $key }}; {{ end }}<a class="nobreak"href="../search?search=author:%22{{$person.Name}}%22">{{$person.Name}}</a>{{end}}</div>
+                <div class="h4 md-h3">{{range $key, $person := .Doc.Content.Persons}}{{ if $key }}; {{ end }}<a class="nobreak"href="../search?search=author:%22{{$person.Name}}%22">{{$person.Name}}{{if ne $person.Role "author"}} ({{$person.Role}}){{end}}</a>{{end}}</div>
             </div>
             <div class="col-12 self-start pb4">
                 {{if len .Doc.Content.Abstract}}
@@ -167,6 +167,7 @@ limitations under the License.
             </div>
         </div>
     </section>
+    {{if gt (len .Doc.Content.Queries) 0}}
     <section class="commerce-related-products col-12 px2 md-mt5 md-px4 ">
         <div class="col-12 mt3 md-mt4">
             <h2 class="h5 md-h4">You may also like</h2>
@@ -201,6 +202,7 @@ limitations under the License.
             </table>
         </div>
     </section>
+    {{end}}
 </main>
 
 {{template "footer.inc.gohtml" . }}

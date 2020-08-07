@@ -98,6 +98,12 @@ type SearchStatus struct {
 	Menu              []Menu
 }
 
+type SubFilter struct {
+	Name   string `toml:"name"`
+	Label  string `toml:"label"`
+	Filter string `toml:"filter"`
+}
+
 type NetGroups map[string][]*net.IPNet
 
 type Menu struct {
@@ -158,8 +164,8 @@ type Server struct {
 	locations         NetGroups
 	menu              []Menu
 	icons             map[string]string
-	baseQuery         string
-	subQueries        map[string]string
+	baseFilter        string
+	subFilters        []SubFilter
 }
 
 func NewServer(
@@ -196,6 +202,8 @@ func NewServer(
 	locations NetGroups,
 	menu []Menu,
 	icons map[string]string,
+	baseFilter string,
+	subFilter []SubFilter,
 ) (*Server, error) {
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
@@ -265,6 +273,8 @@ func NewServer(
 		locations:      locations,
 		menu:           menu,
 		icons:          icons,
+		baseFilter:     baseFilter,
+		subFilters:     subFilter,
 	}
 	if err := srv.InitTemplates(detailTemplate, errorTemplate, forbiddenTemplate, searchTemplate); err != nil {
 		return nil, emperror.Wrapf(err, "cannot initialize server")
@@ -489,7 +499,36 @@ func (s *Server) ListenAndServe(cert, key string) error {
 	router := mux.NewRouter()
 
 	// https://data.mediathek.hgk.fhnw.ch/search
-	router.HandleFunc(fmt.Sprintf("/%s", s.searchPrefix), s.searchHandler).Methods("GET")
+	searchRegexp := regexp.MustCompile(fmt.Sprintf("/%s(/(.+))?$", s.searchPrefix))
+	router.
+		MatcherFunc(func(r *http.Request, rm *mux.RouteMatch) bool {
+			matches := searchRegexp.FindSubmatch([]byte(r.URL.Path))
+			if len(matches) == 0 {
+				return false
+			}
+			rm.Vars = map[string]string{}
+			if len(matches) >= 3 {
+				if matches[2] != nil {
+					filter := string(matches[2])
+					// check for valid filtername
+					filterok := false
+					for _, sf := range s.subFilters {
+						if sf.Label == filter {
+							filterok = true
+							break
+						}
+					}
+					// otherwise 404
+					if !filterok {
+						return false
+					}
+					rm.Vars = map[string]string{}
+					rm.Vars["subfilter"] = filter
+				}
+			}
+			return true
+		}).HandlerFunc(s.searchHandler).Methods("GET")
+	//router.HandleFunc(fmt.Sprintf("/%s", s.searchPrefix), s.searchHandler).Methods("GET")
 
 	// https://data.mediathek.hgk.fhnw.ch/api/search
 	router.HandleFunc(fmt.Sprintf("/%s/search", s.apiPrefix), s.apiSearchHandler).Methods("GET", "POST")
