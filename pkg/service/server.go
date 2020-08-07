@@ -158,6 +158,8 @@ type Server struct {
 	locations         NetGroups
 	menu              []Menu
 	icons             map[string]string
+	baseQuery         string
+	subQueries        map[string]string
 }
 
 func NewServer(
@@ -372,7 +374,7 @@ func (s *Server) InitTemplates(detailTemplate, errorTemplate, forbiddenTemplate,
 	if err != nil {
 		return emperror.Wrapf(err, "cannot parse forbidden template %v", forbiddenTemplate)
 	}
-	s.searchTemplate, err = template.New("search2.amp.gohtml").Funcs(funcMap).ParseFiles(searchTemplate...)
+	s.searchTemplate, err = template.New("search.amp.gohtml").Funcs(funcMap).ParseFiles(searchTemplate...)
 	if err != nil {
 		return emperror.Wrapf(err, "cannot parse forbidden template %v", forbiddenTemplate)
 	}
