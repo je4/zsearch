@@ -85,9 +85,9 @@ func (mts *MTSolr) GetContent(entry *cacheEntry) (Source, error) {
 	var err error
 	switch entry.Source {
 	case "zotero":
-		content, err = NewZotero(entry, mts)
+		content, err = NewSourceZotero(entry, mts)
 	case "diplomhgk":
-		content, err = NewDiplomHGK(entry, mts)
+		content, err = NewSourceDiplomHGK(entry, mts)
 	default:
 		err = errors.New(fmt.Sprintf("invalid Source %s", entry.ContentStr))
 	}
