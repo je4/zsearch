@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/goph/emperror"
+	"github.com/vanng822/go-solr/solr"
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/generic"
 	"sort"
 	"strings"
@@ -11,7 +12,8 @@ import (
 
 type DiplomHGK struct {
 	mts   *MTSolr
-	DData DiplomHGKData `json:"DData"`
+	DData DiplomHGKData  `json:"DData"`
+	Doc   *solr.Document `json:"-"`
 }
 
 type DiplomHGKFileMeta struct {
@@ -75,22 +77,28 @@ type DiplomHGKData struct {
 	Rights            string            `json:"rights"`
 }
 
-func NewDiplomHGK(data string, mts *MTSolr) (*DiplomHGK, error) {
+func NewDiplomHGK(entry *cacheEntry, mts *MTSolr) (*DiplomHGK, error) {
 
 	dhgk := &DiplomHGK{
 		mts: mts,
+		Doc: entry.Doc,
 	}
-	return dhgk, dhgk.Init(data)
+	return dhgk, dhgk.Init(entry)
 }
 
-func (dhgk *DiplomHGK) Init(data string) error {
-	if err := json.Unmarshal([]byte(data), &dhgk.DData); err != nil {
-		return emperror.Wrapf(err, "cannot unmarshal json\n%s", data)
+func (dhgk *DiplomHGK) Init(entry *cacheEntry) error {
+	if err := json.Unmarshal([]byte(entry.ContentStr), &dhgk.DData); err != nil {
+		return emperror.Wrapf(err, "cannot unmarshal json\n%s", entry.ContentStr)
 	}
+	dhgk.Doc = entry.Doc
 	return nil
 }
 
 func (dhgk *DiplomHGK) Name() string { return "diplomhgk" }
+
+func (dhgk *DiplomHGK) GetSolrDoc() *solr.Document {
+	return dhgk.Doc
+}
 
 func (dhgk *DiplomHGK) GetNotes() []Note {
 	var notes []Note

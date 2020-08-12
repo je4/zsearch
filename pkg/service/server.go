@@ -568,7 +568,7 @@ func (s *Server) ListenAndServe(cert, key string) error {
 	//router.HandleFunc(fmt.Sprintf("/%s", s.searchPrefix), s.searchHandler).Methods("GET")
 
 	// https://data.mediathek.hgk.fhnw.ch/detail/[signature]
-	mainRegexp := regexp.MustCompile(fmt.Sprintf("^/%s/(.+)$", s.detailPrefix))
+	mainRegexp := regexp.MustCompile(fmt.Sprintf("^/%s/([^/]+)(/(.+))?$", s.detailPrefix))
 	router.
 		MatcherFunc(func(r *http.Request, rm *mux.RouteMatch) bool {
 			matches := mainRegexp.FindSubmatch([]byte(r.URL.Path))
@@ -577,6 +577,9 @@ func (s *Server) ListenAndServe(cert, key string) error {
 			}
 			rm.Vars = map[string]string{}
 			rm.Vars["signature"] = string(matches[1])
+			if matches[3] != nil {
+				rm.Vars["sub"] = string(matches[3])
+			}
 			return true
 		}).HandlerFunc(s.detailHandler).Methods("GET")
 

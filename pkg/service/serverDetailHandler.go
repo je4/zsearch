@@ -17,6 +17,7 @@ limitations under the License.
 package service
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/juliangruber/go-intersect"
@@ -28,6 +29,7 @@ import (
 func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 	// remove prefix and use whole rest of url as signature
 	vars := mux.Vars(req)
+	sub := vars["sub"]
 	signature, ok := vars["signature"]
 	if !ok {
 		s.DoPanicf(w, http.StatusBadRequest, "no signature in url: %s", false, req.URL.Path)
@@ -36,7 +38,6 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 
 	status := DetailStatus{
 		Type:          "detail",
-		Doc:           nil,
 		User:          nil,
 		ContentOK:     false,
 		MetaOK:        false,
@@ -47,12 +48,16 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 		Notifications: []Notification{},
 		Menu:          s.menu,
 	}
-	var err error
-	status.Doc, err = s.mts.LoadEntity(signature)
+	doc, err := s.mts.LoadEntity(signature)
 	if err != nil {
 		s.DoPanicf(w, http.StatusNotFound, "error loading signature %s: %v", false, signature, err)
 		return
 	}
+	if doc == nil {
+		s.DoPanicf(w, http.StatusInternalServerError, "data of signature %s is nil", false, signature)
+		return
+	}
+	status.Doc = doc
 
 	jwt, ok := req.URL.Query()["token"]
 	if ok {
@@ -156,10 +161,21 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 	status.Title = status.Doc.Content.CollectionTitle
 	status.IsAmp = status.User.LoggedIn && !status.User.LoggedOut && status.MetaOK
 
-	err = s.detailTemplate.Execute(w, status)
-	if err != nil {
-		s.DoPanicf(w, http.StatusInternalServerError, "cannot parse template: %+v", false, err)
-		return
+	switch sub {
+	case "data":
+		enc := json.NewEncoder(w)
+		w.Header().Set("Content-type", "text/json")
+		if err := enc.Encode(status.Doc.Content); err != nil {
+			s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal solr doc", true, jwt)
+			return
+		}
+	default:
+		err = s.detailTemplate.Execute(w, status)
+		if err != nil {
+			s.DoPanicf(w, http.StatusInternalServerError, "cannot parse template: %+v", false, err)
+			return
+		}
 	}
+
 	//	w.Write([]byte(fmt.Sprintf("%s/%s", access, signature)))
 }

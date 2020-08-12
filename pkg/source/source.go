@@ -21,6 +21,7 @@ import (
 	"compress/gzip"
 	"encoding/base64"
 	"github.com/goph/emperror"
+	"github.com/vanng822/go-solr/solr"
 	"html/template"
 	"io"
 )
@@ -80,7 +81,7 @@ type Reference struct {
 }
 
 type Source interface {
-	Init(data string) error
+	Init(entry *cacheEntry) error
 	Name() string
 	GetTitle() string
 	GetPlace() string
@@ -95,6 +96,7 @@ type Source interface {
 	GetMeta() map[string]string
 	GetType() string
 	GetQueries() []Query
+	GetSolrDoc() *solr.Document
 }
 
 type SourceData struct {

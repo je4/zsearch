@@ -77,7 +77,7 @@ type cacheEntry struct {
 	Acl     map[string][]string `json:"acl"`
 	Catalog []string            `json:"catalog"`
 	Tag     []string            `json:"tag"`
-	//doc     solr.Document
+	Doc     *solr.Document
 }
 
 func (mts *MTSolr) GetContent(entry *cacheEntry) (Source, error) {
@@ -85,9 +85,9 @@ func (mts *MTSolr) GetContent(entry *cacheEntry) (Source, error) {
 	var err error
 	switch entry.Source {
 	case "zotero":
-		content, err = NewZotero(entry.ContentStr, mts)
+		content, err = NewZotero(entry, mts)
 	case "diplomhgk":
-		content, err = NewDiplomHGK(entry.ContentStr, mts)
+		content, err = NewDiplomHGK(entry, mts)
 	default:
 		err = errors.New(fmt.Sprintf("invalid Source %s", entry.ContentStr))
 	}
@@ -112,7 +112,7 @@ func interface2StringSlice(d interface{}) (result []string) {
 	return
 }
 
-func (mts *MTSolr) cacheEntryFromDoc(doc solr.Document) (*cacheEntry, string, error) {
+func (mts *MTSolr) cacheEntryFromDoc(doc *solr.Document) (*cacheEntry, string, error) {
 	if !doc.Has("id") {
 		return nil, "", errors.New(fmt.Sprintf("doc has no id field"))
 	}
@@ -177,6 +177,7 @@ func (mts *MTSolr) cacheEntryFromDoc(doc solr.Document) (*cacheEntry, string, er
 		},
 		Catalog: catalog,
 		Tag:     cluster,
+		Doc:     doc,
 	}
 	return entry, id, nil
 }
@@ -207,7 +208,7 @@ func (mts *MTSolr) getSolrDocs(ids []string) (map[string]*cacheEntry, error) {
 	}
 	result := make(map[string]*cacheEntry)
 	for _, doc := range r.Results.Docs {
-		entry, id, err := mts.cacheEntryFromDoc(doc)
+		entry, id, err := mts.cacheEntryFromDoc(&doc)
 		if err != nil {
 			return nil, emperror.Wrapf(err, "cannot create cache entry from document")
 		}
@@ -450,36 +451,6 @@ func (mts *MTSolr) Search(text string, filters []string, facets map[string]map[s
 	ids := []string{}
 	result := []*Document{}
 	facetFields := make(FacetCountResult)
-	/*
-		_fff, ok := r.FacetCounts["facet_fields"]
-		if ok {
-			fff, ok := _fff.(map[string]interface{})
-			if ok {
-				for facetField, _val := range fff {
-					if _, ok := facetFields[facetField]; !ok {
-						facetFields[facetField] = make(map[string]int)
-					}
-					val, ok := _val.([]interface{})
-					if ok {
-						fld := ""
-						for _, _v := range val {
-							switch v := _v.(type) {
-							case string:
-								if v != "default" {
-									fld = v
-								}
-							case float64:
-								if fld != "" {
-									facetFields[facetField][fld] = int(v)
-								}
-								fld = ""
-							}
-						}
-					}
-				}
-			}
-		}
-	*/
 	var jsonFacets *SolrResultJSONFacets
 	if r.JsonFacets != nil {
 		jsonFacets, err = NewSolrResultJSONFacets()
@@ -509,7 +480,7 @@ func (mts *MTSolr) Search(text string, filters []string, facets map[string]map[s
 			return nil, 0, nil, errors.New(fmt.Sprintf("id not a string"))
 		}
 		ids = append(ids, id)
-		entry, id, err := mts.cacheEntryFromDoc(doc)
+		entry, id, err := mts.cacheEntryFromDoc(&doc)
 		if err != nil {
 			return nil, 0, nil, emperror.Wrapf(err, "cannot create cache entry from document")
 		}

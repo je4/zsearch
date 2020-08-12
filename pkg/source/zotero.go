@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/goph/emperror"
+	"github.com/vanng822/go-solr/solr"
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/generic"
 	"html/template"
 	"reflect"
@@ -33,6 +34,7 @@ type Zotero struct {
 	mts      *MTSolr
 	ZData    ZoteroData        `json:"ZData"`
 	CollMeta map[string]string `json:"collmeta"`
+	Doc      *solr.Document    `json:"-"`
 }
 
 var zoteroIgnoreMetaFields = []string{
@@ -51,29 +53,34 @@ var zoteroIgnoreMetaFields = []string{
 // name:value
 var zoteroTagVariable = regexp.MustCompile(`^([^:]+):(.+)$`)
 
-func NewZotero(data string, mts *MTSolr) (*Zotero, error) {
+func NewZotero(entry *cacheEntry, mts *MTSolr) (*Zotero, error) {
 	zot := &Zotero{
 		ZData:    ZoteroData{},
 		CollMeta: map[string]string{},
 		mts:      mts,
 	}
-	return zot, zot.Init(data)
+	return zot, zot.Init(entry)
 }
 
-func (zot *Zotero) Init(data string) error {
-	err := json.Unmarshal([]byte(data), &zot.ZData)
+func (zot *Zotero) Init(entry *cacheEntry) error {
+	err := json.Unmarshal([]byte(entry.ContentStr), &zot.ZData)
 	if err != nil {
-		return emperror.Wrapf(err, "cannot unmarshal json\n%s", data)
+		return emperror.Wrapf(err, "cannot unmarshal json\n%s", zot.ZData)
 	}
 	r := regexp.MustCompile("([^<>]+):([^<>]+)")
 	matches := r.FindAllStringSubmatch(zot.ZData.Group.Data.Description, -1)
 	for _, match := range matches {
 		zot.CollMeta[strings.TrimSpace(strings.ToLower(match[1]))] = strings.TrimSpace(match[2])
 	}
+	zot.Doc = entry.Doc
 	return nil
 }
 
 func (zot *Zotero) Name() string { return "zotero" }
+
+func (zot *Zotero) GetSolrDoc() *solr.Document {
+	return zot.Doc
+}
 
 func (zot *Zotero) GetCollectionTitle() string {
 	t, ok := zot.CollMeta["title"]
