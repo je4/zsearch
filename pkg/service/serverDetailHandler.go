@@ -165,7 +165,7 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 	case "data":
 		enc := json.NewEncoder(w)
 		w.Header().Set("Content-type", "text/json")
-		if err := enc.Encode(status.Doc.Content); err != nil {
+		if err := enc.Encode(status); err != nil {
 			s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal solr doc", true, jwt)
 			return
 		}

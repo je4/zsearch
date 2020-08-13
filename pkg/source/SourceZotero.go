@@ -51,7 +51,7 @@ var zoteroIgnoreMetaFields = []string{
 }
 
 // name:value
-var zoteroTagVariable = regexp.MustCompile(`^([^:]+):(.+)$`)
+var zoteroTagVariable = regexp.MustCompile(`^(acl_meta|acl_content):(.+)$`)
 
 func NewSourceZotero(entry *cacheEntry, mts *MTSolr) (*SourceZotero, error) {
 	zot := &SourceZotero{
@@ -141,7 +141,16 @@ func (zot *SourceZotero) GetAbstract() string {
 }
 
 func (zot *SourceZotero) GetType() string {
-	return zot.ZData.Data.ItemDataBase.ItemType
+	am := strings.TrimSpace(zot.ZData.Data.ArtworkMedium)
+	if am != "" {
+		return strings.ToLower(am)
+	}
+	pt := strings.TrimSpace(zot.ZData.Data.PresentationType)
+	if pt != "" {
+		return strings.ToLower(pt)
+	}
+
+	return strings.ToLower(zot.ZData.Data.ItemDataBase.ItemType)
 }
 
 func (zot *SourceZotero) GetNames() []Person {

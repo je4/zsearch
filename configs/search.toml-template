@@ -27,6 +27,19 @@ ampapikey = "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/configs/amp
 cachedir = "C:/temp/badger"
 clearcacheonstartup = true # remove badger files from cachedir
 
+[icons]
+    journalarticle = "#ion-document-text-outline"
+    book = "#ion-browsers-rotate-90"
+    audiorecording = "#ion-mic-outline"
+    videorecording = "#ion-videocam-outline"
+    conferencepaper = "#ion-document-text-outline"
+    document = "#ion-browsers"
+    thesis = "#ion-school-outline"
+    booksection = "#chrome-reader-mode-black"
+    project = "#ion-browsers"
+    presentation = "#ion-easel-outline"
+    reference = "#ion-open-outline"
+
 [[locations]]
     group = "location/fhnw"
     networks = ["10.0.0.0/8", "192.168.0.0/16", "147.86.0.0/16"]
@@ -35,9 +48,42 @@ clearcacheonstartup = true # remove badger files from cachedir
     group = "location/memoriav"
     networks = ["62.2.199.158/32"]
 
+[menu]
+[menu.0]
+label = "Mediathek"
+url = "https://mediathek.hgk.fhnw.ch"
+
+[menu.1]
+label = "Search"
+url = "https://mediathek.hgk.fhnw.ch/amp/search"
+
+[menu.2]
+label = "Collections"
+[menu.2.sub]
+[menu.2.sub.0]
+"Fotoarchiv HGK" = "http://localhost:82/search/hgkfotos"
+[menu.2.sub.1]
+"Diplomarchiv HGK" = "http://localhost:82/search/diplomhgk"
+
+[menu.3]
+label = "Institutes"
+[menu.3.sub]
+[menu.3.sub.0]
+"Aesthetic Practice and Theory" = "http://localhost:82/search"
+"Experimental Design and Media Cultures" = "http://localhost:82/search"
+"Postindustrial Design" = "http://localhost:82/search"
+"Industrial Design" = "http://localhost:82/search"
+"Visual Communication" = "http://localhost:82/search"
+"Interior Design and Szenography" = "http://localhost:82/search"
+"Integrative Design | Masterstudio" = "http://localhost:82/search"
+"Art" = "http://localhost:82/search"
+"Art and Design Education" = "http://localhost:82/search"
+"Fashion Design" = "http://localhost:82/search"
+
+
 [searchfields]
     author = "author"
-    tag = "cluster"
+    tag = "tag"
     cat = "category"
 
 [access]
@@ -51,6 +97,16 @@ clearcacheonstartup = true # remove badger files from cachedir
     cacheexpiration = "12h"
     cachesize = 500
 
+[query]
+    basefilter = "source:zotero OR source:diplomhgk"
+    [[query.subfilter]]
+        label = "hgkfotos"
+        name = "Fotoarchiv HGK"
+        filter = "catalog:hgkfotos"
+    [[query.subfilter]]
+        label = "diplomhgk"
+        name = "Diplomarchiv HGK"
+        filter = "source:diplomhgk"
 
 [google]
     apikey = "AIzaSyBfYHNyyspnojxDzqhpRuAMy5bQQ-iNwDE"
@@ -61,13 +117,13 @@ clearcacheonstartup = true # remove badger files from cachedir
 	Field = "mediatype"
 	#Query = ""
 	Prefix = ""
-	[Restrict]
+    Type = "terms"
+	[facets.restrict]
 	    video = false
 	    audio = false
 	    image = false
 	    pdf = false
 
-	Type = "terms"
 
 [template]
     detail = [

@@ -17,6 +17,7 @@ limitations under the License.
 package service
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/generic"
@@ -152,7 +153,8 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 	s.log.Infof("Query: %s", qstr)
 
 	filters := []string{s.baseFilter}
-	if subfiltername, ok := vars["subfilter"]; ok {
+	subfiltername, ok := vars["subfilter"]
+	if ok {
 		for _, sf := range s.subFilters {
 			if sf.Label == subfiltername {
 				filters = append(filters, sf.Filter)
@@ -173,19 +175,6 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot execute solr query: %v", false, err)
 		return
 	}
-	/*
-		if total == 0 {
-			s.DoPanicf(w, http.StatusNoContent, "no results found", false)
-			return
-		}
-	*/
-	/*
-		json, err := s.doc2json("", "", docs, total, facetFieldCount, facets, 0, status.User, "")
-		if err != nil {
-			s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal result: %v", false, err)
-			return
-		}
-	*/
 	status.Result, err = s.doc2result("", "", docs, total, facetFieldCount, facets, 0, status.User, "")
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal result: %v", false, err)
@@ -223,9 +212,19 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	if err := s.searchTemplate.Execute(w, status); err != nil {
-		s.DoPanicf(w, http.StatusInternalServerError, "cannot render template: %v", false, err)
-		return
+	switch subfiltername {
+	case "data":
+		enc := json.NewEncoder(w)
+		w.Header().Set("Content-type", "text/json")
+		if err := enc.Encode(status); err != nil {
+			s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal solr doc", true, jwt)
+			return
+		}
+	default:
+		if err := s.searchTemplate.Execute(w, status); err != nil {
+			s.DoPanicf(w, http.StatusInternalServerError, "cannot render template: %v", false, err)
+			return
+		}
 	}
 	return
 }

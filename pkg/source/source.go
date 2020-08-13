@@ -81,7 +81,6 @@ type Reference struct {
 }
 
 type Source interface {
-	Init(entry *cacheEntry) error
 	Name() string
 	GetTitle() string
 	GetPlace() string

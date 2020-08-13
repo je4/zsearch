@@ -557,7 +557,9 @@ func (s *Server) ListenAndServe(cert, key string) error {
 					}
 					// otherwise 404
 					if !filterok {
-						return false
+						if filter != "data" {
+							return false
+						}
 					}
 					rm.Vars = map[string]string{}
 					rm.Vars["subfilter"] = filter
@@ -696,13 +698,14 @@ func (s *Server) string2Query(search string) string {
 	       )
 	*/
 	if len(gen) > 0 {
-		qstr = fmt.Sprintf("%s OR %s OR %s OR %s OR %s OR %s",
+		qstr = fmt.Sprintf("%s OR %s OR %s OR %s OR %s OR %s OR %s",
 			solrOr("title", gen, 10, 10),
 			solrOr("author", gen, 10, 10),
 			solrOr("publisher", gen, 8, 10),
 			solrOr("content", gen, 0, 6),
 			solrOr("abstract", gen, 0, 8),
 			solrOr("signature", gen, 20, 10),
+			solrOr("cluster", gen, 5, 2),
 		)
 	}
 	qstr2 := ""
