@@ -14,7 +14,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package service
+package gsearch
 
 import (
 	"bufio"
@@ -31,12 +31,11 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/op/go-logging"
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/amp"
-	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/generic"
-	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/source"
 	"html/template"
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"regexp"
 	"sort"
@@ -52,7 +51,7 @@ type Notification struct {
 type DetailStatus struct {
 	Type          string
 	Notifications []Notification
-	Doc           *source.Document
+	Doc           *Document
 	User          *User
 	Token         string
 	MetaPublic    bool
@@ -77,25 +76,26 @@ type FacetCountField struct {
 }
 
 type SearchStatus struct {
-	Type              string
-	Notifications     []Notification
-	User              *User
-	Self              string
-	Token             string
-	BaseUrl           string
-	SelfPath          string
-	AmpBase           string
-	LoginUrl          string
-	Title             string
-	SearchResult      template.JS
-	Result            *SearchResult
-	QueryApi          template.URL
-	SearchResultStart int
-	SearchResultRows  int
-	SearchResultTotal int
-	SearchString      string
-	FacetCount        map[string]FacetCountField
-	Menu              []Menu
+	Type                string
+	Notifications       []Notification
+	User                *User
+	Self                string
+	Token               string
+	BaseUrl             string
+	SelfPath            string
+	AmpBase             string
+	LoginUrl            string
+	Title               string
+	SearchResult        template.JS
+	Result              *SearchResult
+	QueryApi            template.URL
+	SearchResultStart   int
+	SearchResultRows    int
+	SearchResultTotal   int
+	SearchString        string
+	SearchResultVisible bool
+	FacetCount          map[string]FacetCountField
+	Menu                []Menu
 }
 
 type SubFilter struct {
@@ -166,7 +166,7 @@ func (ng NetGroups) Contains(str string) []string {
 }
 
 type Server struct {
-	mts               *source.MTSolr
+	mts               *MTSolr
 	srv               *http.Server
 	userCache         *UserCache
 	host              string
@@ -197,7 +197,7 @@ type Server struct {
 	ampApiKey         *rsa.PrivateKey
 	ampCache          *amp.Cache
 	searchFields      map[string]string
-	facets            source.SolrFacetList
+	facets            SolrFacetList
 	locations         NetGroups
 	menu              []Menu
 	icons             map[string]string
@@ -206,7 +206,7 @@ type Server struct {
 }
 
 func NewServer(
-	mts *source.MTSolr,
+	mts *MTSolr,
 	uc *UserCache,
 	detailTemplate,
 	errorTemplate,
@@ -235,7 +235,7 @@ func NewServer(
 	AmpCache string,
 	ampApiKeyFile string,
 	searchFields map[string]string,
-	facets source.SolrFacetList,
+	facets SolrFacetList,
 	locations NetGroups,
 	menu []Menu,
 	icons map[string]string,
@@ -331,13 +331,13 @@ func solrOr(field string, values []string, weight1, weight2 int) string {
 			if result != "" {
 				result += " OR "
 			}
-			result += fmt.Sprintf(`%s:%s^%d`, field, source.EscapeSolrString(val), weight1)
+			result += fmt.Sprintf(`%s:%s^%d`, field, EscapeSolrString(val), weight1)
 		}
 		if weight2 > 0 && !withQuotes {
 			if result != "" {
 				result += " OR "
 			}
-			result += fmt.Sprintf(`%s:%s*^%d`, field, source.EscapeSolrString(val), weight2)
+			result += fmt.Sprintf(`%s:%s*^%d`, field, EscapeSolrString(val), weight2)
 		}
 	}
 	return result
@@ -372,6 +372,24 @@ func (s *Server) InitTemplates(detailTemplate, errorTemplate, forbiddenTemplate,
 		}
 		return uri + child
 	}
+	funcMap["searchtokenparam"] = func(user *User) string {
+		if !user.LoggedIn {
+			return ""
+		}
+		jwt, err := NewJWT(
+			s.mediaserverKey,
+			"search",
+			"HS256",
+			int64(s.linkTokenExp.Seconds()),
+			"mediaserver",
+			"mediathek",
+			user.Id)
+		if err != nil {
+			return fmt.Sprintf("&error=%s", url.QueryEscape(fmt.Sprintf("ERROR-%v", err)))
+		}
+		return fmt.Sprintf("&token=%s", jwt)
+	}
+
 	funcMap["medialink"] = func(uri, action, param string, token bool) string {
 		matches := mediaMatch.FindStringSubmatch(uri)
 		params := strings.Split(param, "/")
@@ -384,7 +402,7 @@ func (s *Server) InitTemplates(detailTemplate, errorTemplate, forbiddenTemplate,
 		signature := matches[2]
 		url := fmt.Sprintf("%s/%s/%s/%s/%s", s.mediaserver, collection, signature, action, param)
 		if token {
-			jwt, err := generic.NewJWT(
+			jwt, err := NewJWT(
 				s.mediaserverKey,
 				strings.TrimRight(fmt.Sprintf("mediaserver:%s/%s/%s/%s", collection, signature, action, strings.Join(params, "/")), "/"),
 				"HS256",
@@ -477,12 +495,12 @@ func (s *Server) DoPanicJSON(writer http.ResponseWriter, status int, message str
 func (s *Server) userFromToken(tokenstring, signature string) (*User, error) {
 
 	// jwt valid?
-	claims, err := generic.CheckJWTValid(tokenstring, s.jwtKey, s.jwtAlg)
+	claims, err := CheckJWTValid(tokenstring, s.jwtKey, s.jwtAlg)
 	if err != nil {
 		return nil, emperror.Wrapf(err, "invalid access token")
 	}
 
-	// check whether token is from login service
+	// check whether token is from login gsearch
 	issuer, ok := claims["iss"]
 	if !ok {
 		return nil, emperror.Wrapf(err, "no iss in token %v", tokenstring)
@@ -505,7 +523,7 @@ func (s *Server) userFromToken(tokenstring, signature string) (*User, error) {
 		s.userCache.SetUser(user, user.Id)
 	} else {
 		// sub given?
-		sub, err := generic.GetClaim(claims, "sub")
+		sub, err := GetClaim(claims, "sub")
 		if err != nil {
 			return nil, emperror.Wrapf(err, "no sub in token")
 		}
@@ -514,7 +532,8 @@ func (s *Server) userFromToken(tokenstring, signature string) (*User, error) {
 			return nil, emperror.Wrapf(err, "invalid sub %s (should be %s) in token", sub, signature)
 		}
 		// user given?
-		userstr, err := generic.GetClaim(claims, "user")
+
+		userstr, err := GetClaim(claims, "user")
 		if err != nil {
 			return nil, emperror.Wrapf(err, "no user in token")
 		}
@@ -623,19 +642,19 @@ func (s *Server) Shutdown(ctx context.Context) error {
 }
 
 func (s *Server) GetClaimUser(claims map[string]interface{}) (*User, error) {
-	id, err := generic.GetClaim(claims, "userId")
+	id, err := GetClaim(claims, "userId")
 	if err != nil {
 		return nil, emperror.Wrapf(err, "no userid in key")
 	}
-	groupstr, err := generic.GetClaim(claims, "groups")
+	groupstr, err := GetClaim(claims, "groups")
 	if err != nil {
 		groupstr = "global/guest"
 	}
 	groups := strings.Split(groupstr, ";")
-	firstName, _ := generic.GetClaim(claims, "firstName")
-	lastName, _ := generic.GetClaim(claims, "lastName")
-	homeOrg, _ := generic.GetClaim(claims, "homeOrg")
-	email, _ := generic.GetClaim(claims, "email")
+	firstName, _ := GetClaim(claims, "firstName")
+	lastName, _ := GetClaim(claims, "lastName")
+	homeOrg, _ := GetClaim(claims, "homeOrg")
+	email, _ := GetClaim(claims, "email")
 	expval, ok := claims["exp"]
 	if !ok {
 		return nil, emperror.Wrapf(err, "no exp in key")
@@ -729,9 +748,9 @@ func (s *Server) string2Query(search string) string {
 
 func (s *Server) doc2result(search string,
 	query string,
-	docs []*source.Document,
+	docs []*Document,
 	total int64,
-	facetFieldCount source.FacetCountResult,
+	facetFieldCount FacetCountResult,
 	facets map[string]map[string]bool,
 	start int64,
 	user *User,
@@ -855,9 +874,9 @@ func (s *Server) doc2result(search string,
 
 func (s *Server) doc2json(search string,
 	query string,
-	docs []*source.Document,
+	docs []*Document,
 	total int64,
-	facetFieldCount source.FacetCountResult,
+	facetFieldCount FacetCountResult,
 	facets map[string]map[string]bool,
 	start int64,
 	user *User,

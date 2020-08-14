@@ -14,7 +14,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package service
+package gsearch
 
 import (
 	"fmt"
@@ -22,7 +22,8 @@ import (
 	"github.com/goph/emperror"
 	"github.com/pkg/errors"
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/amp"
-	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/generic"
+	"html/template"
+	"net/url"
 	"time"
 )
 
@@ -60,6 +61,36 @@ func (u User) LinkSignatureCache(signature string) string {
 	return urlstr
 }
 
+func (u User) LinkSearch(query string, facets ...string) template.URL {
+	urlstr := fmt.Sprintf("%s/%s?search=%s", u.Server.addrExt, u.Server.searchPrefix, url.QueryEscape(query))
+	for _, f := range facets {
+		urlstr += fmt.Sprintf("&%s=true", url.QueryEscape(f))
+	}
+	if u.LoggedIn {
+		jwt, err := NewJWT(
+			u.Server.jwtKey,
+			"search",
+			"HS256",
+			int64(u.Server.linkTokenExp.Seconds()),
+			"catalogue",
+			"mediathek",
+			u.Id)
+		if err != nil {
+			return template.URL(fmt.Sprintf("ERROR: %v", err))
+		}
+		urlstr += fmt.Sprintf("&token=%s", jwt)
+	} else {
+		if u.Server.ampCache != nil {
+			var err error
+			urlstr, err = u.Server.ampCache.BuildUrl(urlstr, amp.PAGE)
+			if err != nil {
+				return template.URL(fmt.Sprintf("ERROR: %v", err))
+			}
+		}
+	}
+	return template.URL(urlstr)
+
+}
 func (u User) LinkSignature(signature string) string {
 	/*
 		proto := "http"
@@ -70,14 +101,14 @@ func (u User) LinkSignature(signature string) string {
 	*/
 	urlstr := fmt.Sprintf("%s/%s/%s", u.Server.addrExt, u.Server.detailPrefix, signature)
 	if u.LoggedIn {
-		jwt, err := generic.NewJWT(
+		jwt, err := NewJWT(
 			u.Server.jwtKey,
 			fmt.Sprintf("detail:%s", signature),
 			"HS256",
 			int64(u.Server.linkTokenExp.Seconds()),
 			"catalogue",
 			"mediathek",
-			fmt.Sprintf("%v", u.Id))
+			u.Id)
 		if err != nil {
 			return fmt.Sprintf("ERROR: %v", err)
 		}

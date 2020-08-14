@@ -1,4 +1,4 @@
-package source
+package gsearch
 
 type JSONQueryFacetMap JSONFacetMap
 

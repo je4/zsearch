@@ -14,7 +14,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package service
+package gsearch
 
 import (
 	"encoding/json"
@@ -169,6 +169,9 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 			s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal solr doc", true, jwt)
 			return
 		}
+	case "meta":
+		w.Header().Set("Content-type", doc.Content.ContentMime)
+		w.Write([]byte(doc.Content.ContentStr))
 	default:
 		err = s.detailTemplate.Execute(w, status)
 		if err != nil {

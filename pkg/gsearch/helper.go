@@ -14,7 +14,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package generic
+package gsearch
 
 import (
 	"errors"
@@ -201,7 +201,8 @@ func CreateLogger(module string, logfile string, loglevel string) (log *logging.
 	return
 }
 
-func NewJWT(secret string, subject string, alg string, valid int64, domain string, issuer string, user string) (tokenString string, err error) {
+func NewJWT(secret string, subject string, alg string, valid int64, domain string, issuer string, userId string) (tokenString string, err error) {
+
 	var signingMethod jwt.SigningMethod
 	switch strings.ToLower(alg) {
 	case "hs256":
@@ -237,8 +238,8 @@ func NewJWT(secret string, subject string, alg string, valid int64, domain strin
 	if issuer != "" {
 		claims["iss"] = issuer
 	}
-	if user != "" {
-		claims["user"] = user
+	if userId != "" {
+		claims["user"] = userId
 	}
 
 	token := jwt.NewWithClaims(signingMethod, claims)

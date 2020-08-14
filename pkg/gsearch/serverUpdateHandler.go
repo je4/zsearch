@@ -14,12 +14,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package service
+package gsearch
 
 import (
 	"fmt"
 	"github.com/gorilla/mux"
-	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/generic"
 	"net/http"
 	"net/url"
 	"strings"
@@ -53,14 +52,14 @@ func (s *Server) updateHandler(w http.ResponseWriter, req *http.Request) {
 		tokenstring := jwt[0]
 		if tokenstring != "" {
 			// jwt valid?
-			claims, err := generic.CheckJWTValid(tokenstring, s.jwtKey, s.jwtAlg)
+			claims, err := CheckJWTValid(tokenstring, s.jwtKey, s.jwtAlg)
 			if err != nil {
 				s.DoPanicf(w, http.StatusForbidden, "invalid access token: %v", false, err)
 				return
 			}
 
 			// sub given?
-			sub, err := generic.GetClaim(claims, "sub")
+			sub, err := GetClaim(claims, "sub")
 			if err != nil {
 				s.DoPanicf(w, http.StatusForbidden, "no sub in token: %v", false, err)
 				return

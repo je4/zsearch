@@ -1,4 +1,4 @@
-package source
+package gsearch
 
 type JSONDomainMap map[string]interface{}
 

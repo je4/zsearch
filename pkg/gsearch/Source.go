@@ -14,7 +14,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package source
+package gsearch
 
 import (
 	"bytes"
@@ -96,6 +96,8 @@ type Source interface {
 	GetType() string
 	GetQueries() []Query
 	GetSolrDoc() *solr.Document
+	GetContentString() string
+	GetContentMime() string
 }
 
 type SourceData struct {
@@ -114,4 +116,6 @@ type SourceData struct {
 	Meta            map[string]string    `json:"meta"`
 	Type            string               `json:"type"`
 	Queries         []Query              `json:"queries"`
+	ContentStr      string
+	ContentMime     string
 }

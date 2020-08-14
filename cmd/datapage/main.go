@@ -20,9 +20,7 @@ import (
 	"context"
 	"flag"
 	"github.com/dgraph-io/badger"
-	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/generic"
-	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/service"
-	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/source"
+	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/gsearch"
 	"io"
 	"net"
 	"os"
@@ -76,7 +74,7 @@ func main() {
 	config := LoadConfig(*cfgfile)
 
 	// create logger instance
-	log, lf := generic.CreateLogger("memostream", config.Logfile, config.Loglevel)
+	log, lf := gsearch.CreateLogger("memostream", config.Logfile, config.Loglevel)
 	defer lf.Close()
 
 	var accesslog io.Writer
@@ -145,7 +143,7 @@ func main() {
 	}
 	defer db.Close()
 
-	mts, err := source.NewMTSolr(
+	mts, err := gsearch.NewMTSolr(
 		config.Solr.Url,
 		config.Solr.Core,
 		config.Solr.CacheExpiration.Duration,
@@ -156,14 +154,14 @@ func main() {
 		log.Panic(err)
 	}
 
-	uc, err := service.NewUserCache(config.IdleTimeout.Duration, config.UserCacheSize)
+	uc, err := gsearch.NewUserCache(config.IdleTimeout.Duration, config.UserCacheSize)
 	if err != nil {
 		log.Panic(err)
 	}
 
-	facets := source.SolrFacetList{}
+	facets := gsearch.SolrFacetList{}
 	for _, facet := range config.Facets {
-		facets[facet.Name] = source.SolrFacet{
+		facets[facet.Name] = gsearch.SolrFacet{
 			Label:    facet.Name,
 			Name:     facet.Name,
 			Field:    facet.Field,
@@ -172,14 +170,14 @@ func main() {
 		}
 	}
 
-	locations := service.NetGroups{}
+	locations := gsearch.NetGroups{}
 	for _, loc := range config.Locations {
 		locations[loc.Group] = []*net.IPNet{}
 		for _, n := range loc.Networks {
 			locations[loc.Group] = append(locations[loc.Group], &n.IPNet)
 		}
 	}
-	menu := []service.Menu{}
+	menu := []gsearch.Menu{}
 
 	for _, m := range config.Menu {
 		sub := map[string]string{}
@@ -188,23 +186,23 @@ func main() {
 				sub[k] = v
 			}
 		}
-		menu = append(menu, service.Menu{
+		menu = append(menu, gsearch.Menu{
 			Label: m.Label,
 			Url:   m.Url,
 			Sub:   sub,
 		})
 	}
 
-	subfilters := []service.SubFilter{}
+	subfilters := []gsearch.SubFilter{}
 	for _, sf := range config.Query.SubFilter {
-		subfilters = append(subfilters, service.SubFilter{
+		subfilters = append(subfilters, gsearch.SubFilter{
 			Name:   sf.Name,
 			Label:  sf.Label,
 			Filter: sf.Filter,
 		})
 	}
 
-	srv, err := service.NewServer(
+	srv, err := gsearch.NewServer(
 		mts,
 		uc,
 		config.Template.Detail,

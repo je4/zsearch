@@ -15,8 +15,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
 <!doctype html>
+{{$user := .User}}
 <!-- only open pages and not logged in user can become an AMP page -->
 <html {{if .IsAmp}}⚡="" {{end}}lang="en">
 
@@ -96,13 +96,13 @@ limitations under the License.
         </amp-user-notification>
     {{end}}
     <section class="flex flex-wrap pb4 md-pb7">
-        <div class="col-12 md-col-6 px2 pt2 md-pl7 md-pt4">
+        <div class="col-12 md-col-6 px2 pt2 md-pt4">
             {{template "details.media.inc.gohtml" . }}
         </div>
         <div class="col-12 md-col-6 flex flex-wrap content-start px2 md-pl5 md-pr7 md-pt4">
             <div class="col-12 self-start pb2">
                 <h1 class="h3 md-h2">{{.Doc.Content.Title}}</h1>
-                <div class="h4 md-h3">{{range $key, $person := .Doc.Content.Persons}}{{ if $key }}; {{ end }}<a class="nobreak"href="../search?search=author:%22{{$person.Name}}%22">{{$person.Name}}{{if ne $person.Role "author"}} ({{$person.Role}}){{end}}</a>{{end}}</div>
+                <div class="h4 md-h3">{{range $key, $person := .Doc.Content.Persons}}{{ if $key }}; {{ end }}<a class="nobreak"href="{{$user.LinkSearch (printf "author:%s" $person.Name)}}">{{$person.Name}}{{if ne $person.Role "author"}} ({{$person.Role}}){{end}}</a>{{end}}</div>
             </div>
             <div class="col-12 self-start pb4">
                 {{if len .Doc.Content.Abstract}}
@@ -119,9 +119,9 @@ limitations under the License.
         </div>
         <div class="col-12 flex flex-wrap pb3">
             <hr class="xs-hide sm-hide mt4">
-            <div class="col-12 md-col-6 px2 pt2 md-pl7 md-pt4">
+            <div class="col-12 md-col-6 px2 pt2">
                 {{if len .Doc.Content.Notes}}
-                <section class="pt3 md-pt4 md-px4">
+                <section class="pt3 md-pt4">
                         {{range $note := .Doc.Content.Notes}}
                             <h2 class="h5 md-h4">{{$note.Title}}</h2>
                             <p class="mt2 mb3">{{$note.Note}}</p>
@@ -129,11 +129,11 @@ limitations under the License.
                 </section>
                 {{end}}
                 {{if len .Doc.Content.Tags}}
-                    <section class="pt3 md-pt4 md-px4">
+                    <section class="pt3 md-pt4">
                         <h2 class="h5 md-h4">Tags</h2>
                             <p class="mt2 mb3">
                             {{range $key,$tag := .Doc.Content.Tags}}
-                                <a href="../search?search=tag:%22{{$tag}}%22"><span class="ampstart-btn ampstart-btn-seemore caps">{{$tag}}</span></a>
+                                <a href="{{$user.LinkSearch (printf "tag:\"%s\"" $tag)}}"><span class="ampstart-btn ampstart-btn-seemore caps">{{$tag}}</span></a>
                             {{end}}
                             </p>
                     </section>
@@ -171,38 +171,13 @@ limitations under the License.
     <section class="commerce-related-products col-12 px2 md-mt5 md-px4 ">
         <div class="col-12 mt3 md-mt4">
             <h2 class="h5 md-h4">You may also like</h2>
-            <table>
-                    {{range $query := .Doc.Content.Queries}}
-                <tr>
-                    <td>
-                        <a href="../search?search={{$query.Search}}" class="text-decoration-none">
-                        <svg
-                                class="mb2 i-amphtml-element i-amphtml-layout-responsive i-amphtml-layout-size-defined i-amphtml-layout"
-                                id="svg6"
-                                version="1.1"
-                                height="48px"
-                                width="48px"
-                                fill="black"
-                                role="button"
-                                style="vertical-align: middle;"
-                                tabindex="1"
-                                on="tap:AMP.setState({SearchResult:{items: []},SearchResultStart:0}),resultListSmall.refresh,resultListWide.refresh,search.submit"
-                                viewBox="0 0 24 24">
-                            <use href="#imgsearch"></use>
-                        </svg>
-                        </a>
-                    </td>
-                    <td>
-                    <a href="../search?search=cat:%22{{$query.Search}}%22" class="text-decoration-none">
-                        <h2 class="commerce-related-product-name h6">{{$query.Label}}</h2>
-                    </a>
-                    </td>
-                </tr>
+            {{range $query := .Doc.Content.Queries}}
+                <a href="{{$user.LinkSearch $query.Search}}"><span class="ampstart-btn ampstart-btn-seemore caps">{{$query.Label}}</span></a><br />
             {{end}}
-            </table>
         </div>
     </section>
     {{end}}
+    <p>&nbsp;</p>
 </main>
 
 {{template "footer.inc.gohtml" . }}

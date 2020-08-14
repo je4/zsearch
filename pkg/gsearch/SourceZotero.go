@@ -14,7 +14,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package source
+package gsearch
 
 import (
 	"encoding/json"
@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"github.com/goph/emperror"
 	"github.com/vanng822/go-solr/solr"
-	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/generic"
 	"html/template"
 	"reflect"
 	"regexp"
@@ -31,10 +30,11 @@ import (
 )
 
 type SourceZotero struct {
-	mts      *MTSolr
-	ZData    ZoteroData        `json:"ZData"`
-	CollMeta map[string]string `json:"collmeta"`
-	Doc      *solr.Document    `json:"-"`
+	mts        *MTSolr
+	ZData      ZoteroData        `json:"ZData"`
+	CollMeta   map[string]string `json:"collmeta"`
+	doc        *solr.Document    `json:"-"`
+	contentStr string            `json:"-"`
 }
 
 var zoteroIgnoreMetaFields = []string{
@@ -55,9 +55,10 @@ var zoteroTagVariable = regexp.MustCompile(`^(acl_meta|acl_content):(.+)$`)
 
 func NewSourceZotero(entry *cacheEntry, mts *MTSolr) (*SourceZotero, error) {
 	zot := &SourceZotero{
-		ZData:    ZoteroData{},
-		CollMeta: map[string]string{},
-		mts:      mts,
+		ZData:      ZoteroData{},
+		CollMeta:   map[string]string{},
+		mts:        mts,
+		contentStr: entry.ContentStr,
 	}
 	return zot, zot.Init(entry)
 }
@@ -72,14 +73,22 @@ func (zot *SourceZotero) Init(entry *cacheEntry) error {
 	for _, match := range matches {
 		zot.CollMeta[strings.TrimSpace(strings.ToLower(match[1]))] = strings.TrimSpace(match[2])
 	}
-	zot.Doc = entry.Doc
+	zot.doc = entry.Doc
 	return nil
 }
 
 func (zot *SourceZotero) Name() string { return "zotero" }
 
+func (zot *SourceZotero) GetContentString() string {
+	return zot.contentStr
+}
+
+func (zot *SourceZotero) GetContentMime() string {
+	return "text/json"
+}
+
 func (zot *SourceZotero) GetSolrDoc() *solr.Document {
-	return zot.Doc
+	return zot.doc
 }
 
 func (zot *SourceZotero) GetCollectionTitle() string {
@@ -109,7 +118,7 @@ func (zot *SourceZotero) GetMeta() map[string]string {
 	for i := 0; i < s.NumField(); i++ {
 		f := s.Field(i)
 		fname := typeOfT.Field(i).Name
-		if generic.InList(zoteroIgnoreMetaFields, fname) {
+		if InList(zoteroIgnoreMetaFields, fname) {
 			continue
 		}
 		if fname == "ItemDataBase" {
@@ -125,7 +134,7 @@ func (zot *SourceZotero) GetMeta() map[string]string {
 	for i := 0; i < s.NumField(); i++ {
 		f := s.Field(i)
 		fname := typeOfT.Field(i).Name
-		if generic.InList(zoteroIgnoreMetaFields, fname) {
+		if InList(zoteroIgnoreMetaFields, fname) {
 			continue
 		}
 		valstr := strings.TrimSpace(fmt.Sprintf("%v", f.Interface()))
@@ -186,21 +195,21 @@ func (zot *SourceZotero) GetTags() []string {
 	for _, t := range zot.ZData.Data.Tags {
 		// ignore variables (i.e. <name>:<value>
 		if !zoteroTagVariable.MatchString(t.Tag) {
-			tags = generic.AppendIfMissing(tags, strings.ToLower(t.Tag))
+			tags = AppendIfMissing(tags, strings.ToLower(t.Tag))
 		}
 	}
-	tags = generic.AppendIfMissing(tags, strings.ToLower(zot.ZData.Group.Data.Name))
+	tags = AppendIfMissing(tags, strings.ToLower(zot.ZData.Group.Data.Name))
 
 	for _, c := range zot.ZData.Data.Collections {
 		for _, coll := range zot.ZData.Collections {
 			if coll.Key == c {
-				tags = generic.AppendIfMissing(tags, strings.ToLower(coll.Data.Name))
+				tags = AppendIfMissing(tags, strings.ToLower(coll.Data.Name))
 				for ok := true; ok; ok = (coll.Data.ParentCollection == "") {
 					coll, err := zot.getColl(string(coll.Data.ParentCollection))
 					if err != nil {
 						break
 					}
-					tags = generic.AppendIfMissing(tags, strings.ToLower(coll.Data.Name))
+					tags = AppendIfMissing(tags, strings.ToLower(coll.Data.Name))
 				}
 			}
 		}

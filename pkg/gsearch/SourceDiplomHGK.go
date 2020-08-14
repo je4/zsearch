@@ -1,19 +1,19 @@
-package source
+package gsearch
 
 import (
 	"encoding/json"
 	"fmt"
 	"github.com/goph/emperror"
 	"github.com/vanng822/go-solr/solr"
-	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/generic"
 	"sort"
 	"strings"
 )
 
 type SourceDiplomHGK struct {
-	mts   *MTSolr
-	DData SourceDiplomHGKData `json:"DData"`
-	Doc   *solr.Document      `json:"-"`
+	mts        *MTSolr
+	DData      SourceDiplomHGKData `json:"DData"`
+	doc        *solr.Document      `json:"-"`
+	contentStr string
 }
 
 type SourceDiplomHGKFileMeta struct {
@@ -80,8 +80,9 @@ type SourceDiplomHGKData struct {
 func NewSourceDiplomHGK(entry *cacheEntry, mts *MTSolr) (*SourceDiplomHGK, error) {
 
 	dhgk := &SourceDiplomHGK{
-		mts: mts,
-		Doc: entry.Doc,
+		mts:        mts,
+		doc:        entry.Doc,
+		contentStr: entry.ContentStr,
 	}
 	return dhgk, dhgk.Init(entry)
 }
@@ -90,14 +91,22 @@ func (dhgk *SourceDiplomHGK) Init(entry *cacheEntry) error {
 	if err := json.Unmarshal([]byte(entry.ContentStr), &dhgk.DData); err != nil {
 		return emperror.Wrapf(err, "cannot unmarshal json\n%s", entry.ContentStr)
 	}
-	dhgk.Doc = entry.Doc
+	dhgk.doc = entry.Doc
 	return nil
+}
+
+func (dhgk *SourceDiplomHGK) GetContentString() string {
+	return dhgk.contentStr
+}
+
+func (dhgk *SourceDiplomHGK) GetContentMime() string {
+	return "text/json"
 }
 
 func (dhgk *SourceDiplomHGK) Name() string { return "diplomhgk" }
 
 func (dhgk *SourceDiplomHGK) GetSolrDoc() *solr.Document {
-	return dhgk.Doc
+	return dhgk.doc
 }
 
 func (dhgk *SourceDiplomHGK) GetNotes() []Note {
@@ -163,15 +172,15 @@ func (dhgk *SourceDiplomHGK) GetTags() []string {
 	tags := []string{"diplomhgk"}
 
 	for _, t := range dhgk.DData.Categories {
-		tags = generic.AppendIfMissing(tags, strings.ToLower(t))
+		tags = AppendIfMissing(tags, strings.ToLower(t))
 	}
 	for _, t := range dhgk.DData.Tags {
-		tags = generic.AppendIfMissing(tags, strings.ToLower(t))
+		tags = AppendIfMissing(tags, strings.ToLower(t))
 	}
 	for _, t := range dhgk.DData.Series {
-		tags = generic.AppendIfMissing(tags, strings.ToLower(t))
+		tags = AppendIfMissing(tags, strings.ToLower(t))
 	}
-	tags = generic.AppendIfMissing(tags, strings.ToLower(dhgk.DData.Institut))
+	tags = AppendIfMissing(tags, strings.ToLower(dhgk.DData.Institut))
 
 	return tags
 }

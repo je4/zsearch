@@ -14,13 +14,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package service
+package gsearch
 
 import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
-	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/generic"
 	"html/template"
 	"net"
 	"net/http"
@@ -73,14 +72,14 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		status.User = NewGuestUser(s)
 	}
 	if status.User.LoggedIn {
-		jwt, err := generic.NewJWT(
+		jwt, err := NewJWT(
 			status.User.Server.jwtKey,
 			"search",
 			"HS256",
 			int64(status.User.Server.linkTokenExp.Seconds()),
 			"catalogue",
 			"mediathek",
-			fmt.Sprintf("%v", status.User.Id))
+			status.User.Id)
 		if err != nil {
 			s.DoPanicf(w, http.StatusInternalServerError, "create token: %v", false, err)
 			return
@@ -122,6 +121,8 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 			lastsearch = val
 		case "search":
 			search = val
+		case "visible":
+			status.SearchResultVisible = val == "true"
 		default:
 			found := facetRegex.FindAllStringSubmatch(key, -1)
 			if len(found) > 0 {
@@ -168,7 +169,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		filters,
 		facets,
 		status.User.Groups,
-		false,
+		status.SearchResultVisible,
 		int(start),
 		int(rows))
 	if err != nil {

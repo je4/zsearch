@@ -126,6 +126,11 @@ limitations under the License.
        {{.SearchResultStart}}
         </script>
     </amp-state>
+    <amp-state id="SearchResultVisible">
+        <script type="application/json">
+       {{.SearchResultVisible}}
+        </script>
+    </amp-state>
     <!--
     <amp-state id="SearchResult">
         <script type="application/json">
@@ -154,6 +159,14 @@ limitations under the License.
                                 </button>
                             </div>
                     {{end}}
+                    <div class="ampstart-w100 ampstart-input ampstart-input-radio inline-block relative m0 p0 mb3">
+                        <button
+                                style="width:100%;"
+                                class="ampstart-btn-facet{{if .SearchResultVisible}}-inv{{end}} ampstart-btn caps"
+                                on="tap:AMP.setState({SearchResultStart:0, SearchResultVisible:!SearchResultVisible}),search.submit">
+                            Visible Media
+                        </button>
+                    </div>
                 </div>
             </div>
             <!-- END - Facets wide -->
@@ -166,6 +179,7 @@ limitations under the License.
                         {{if not (eq .Token "")}}<input type="hidden" name="token" value="{{.Token}}"/>{{end}}
                         <input type="hidden" name="start" value="0" [value]="SearchResultStart"/>
                         <input type="hidden" name="lastsearch" value="" [value]="SearchResultSearch"/>
+                        <input type="hidden" name="visible" value="" [value]="SearchResultVisible"/>
                         {{range $facet,$val := .FacetCount}}
                             <input type="hidden"
                                    name="{{$facet}}"

@@ -14,7 +14,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package source
+package gsearch
 
 import (
 	"encoding/json"
@@ -24,7 +24,6 @@ import (
 	"github.com/goph/emperror"
 	"github.com/op/go-logging"
 	"github.com/vanng822/go-solr/solr"
-	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/generic"
 	"regexp"
 	"sync"
 	"time"
@@ -239,7 +238,7 @@ func (mts *MTSolr) storeCache(doc *Document) error {
 		return emperror.Wrap(err, "cannot marshal entry")
 	}
 	// compress it
-	data := generic.Compress([]byte(jsonstr))
+	data := Compress([]byte(jsonstr))
 	if err := mts.db.Update(func(txn *badger.Txn) error {
 		txn.Set([]byte(doc.Id), data)
 		return nil
@@ -263,7 +262,7 @@ func (mts *MTSolr) getFromCache(id string) (*Document, error) {
 			var doc = &Document{}
 
 			// decompress...
-			data, err := generic.Decompress(v)
+			data, err := Decompress(v)
 			if err != nil {
 				return emperror.Wrapf(err, "cannot deocmpress %s", string(v))
 			}
@@ -348,6 +347,8 @@ func (mts *MTSolr) LoadEntities(ids []string) (map[string]*Document, error) {
 			Meta:            content.GetMeta(),
 			Type:            content.GetType(),
 			Queries:         content.GetQueries(),
+			ContentStr:      content.GetContentString(),
+			ContentMime:     content.GetContentMime(),
 		}
 		sourceData.HasMedia = len(sourceData.Media) > 0
 
@@ -385,6 +386,7 @@ func (mts *MTSolr) Search(text string, filters []string, facets map[string]map[s
 	if contentVisible {
 		contentacl := orQuery("acl_content", groups)
 		query.FilterQuery(contentacl)
+		query.FilterQuery("mediatype:[* TO *]")
 	}
 
 	filterQuery := ""
