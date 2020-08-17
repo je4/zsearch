@@ -676,10 +676,11 @@ func (s *Server) GetClaimUser(claims map[string]interface{}) (*User, error) {
 	return u, nil
 }
 
+var rexp = regexp.MustCompile(`([a-zA-Z0-9]+:([^ "]+|"[^"]+"))|([^ "]+)|"([^"]+)"`)
+
 func (s *Server) string2Query(search string) string {
 	var qstr string
 
-	rexp := regexp.MustCompile(`([a-zA-Z0-9]+:([^ "]+|"[^"]+"))|([^ "]+)|"([^"]+)"`)
 	slice := rexp.FindAllString(search, -1)
 	if slice == nil {
 		slice = []string{}
@@ -687,20 +688,23 @@ func (s *Server) string2Query(search string) string {
 
 	// expand to field an generic search
 	rexp2 := regexp.MustCompile(`^(` + strings.Join(maps.GetKeysStringString(s.searchFields), `|`) + `):(.+)$`)
-	fields := make(map[string][]string)
+	//fields := make(map[string][]string)
 	gen := []string{}
+	qstr2 := ""
 
 	for _, f := range slice {
 		fldq := rexp2.FindStringSubmatch(f)
 		if fldq != nil {
-			fldname, ok := s.searchFields[fldq[1]]
+			fldquery, ok := s.searchFields[fldq[1]]
 			if !ok {
 				continue
 			}
-			if _, ok := fields[fldname]; !ok {
-				fields[fldname] = []string{}
+			val := EscapeSolrString(fldq[2])
+			fldquery = strings.ReplaceAll(fldquery, "__Q__", val)
+			if qstr2 != "" {
+				qstr2 += " AND "
 			}
-			fields[fldname] = append(fields[fldname], fldq[2])
+			qstr2 += fmt.Sprintf("(%s)", fldquery)
 		} else {
 			gen = append(gen, f)
 		}
@@ -726,15 +730,6 @@ func (s *Server) string2Query(search string) string {
 			solrOr("signature", gen, 20, 10),
 			solrOr("cluster", gen, 5, 2),
 		)
-	}
-	qstr2 := ""
-	if len(fields) > 0 {
-		for field, val := range fields {
-			if qstr2 != "" {
-				qstr2 += " OR "
-			}
-			qstr2 += solrOr(field, val, 30, 15)
-		}
 	}
 	if qstr2 != "" {
 		if qstr != "" {

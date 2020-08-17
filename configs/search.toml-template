@@ -82,9 +82,11 @@ label = "Institutes"
 
 
 [searchfields]
-    author = "author"
-    tag = "tag"
-    cat = "category"
+    # __Q__ will be replaced by search term
+    author = "author:__Q__"
+    tag = "tag:__Q__"
+    cat = "category:__Q__"
+    source = "source:__Q__"
 
 [access]
     admin = "localhost/admin"

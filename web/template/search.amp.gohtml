@@ -227,6 +227,11 @@ limitations under the License.
                                     {{.Name}}
                                 </button>
                             {{end}}
+                            <button
+                                    class="ampstart-btn-facet{{if .SearchResultVisible}}-inv{{end}} ampstart-btn caps"
+                                    on="tap:AMP.setState({SearchResultStart:0, SearchResultVisible:!SearchResultVisible}),search.submit">
+                                Visible Media
+                            </button>
                         </div>
                         <!-- END - Facets small -->
                     </div>

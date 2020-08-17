@@ -48,6 +48,7 @@ var zoteroIgnoreMetaFields = []string{
 	"Tags",
 	"Title",
 	"Extra",
+	"Note",
 }
 
 // name:value
@@ -234,6 +235,12 @@ func (zot *SourceZotero) GetChildren(itemType, linkMode string) []ZoteroData {
 
 func (zot *SourceZotero) GetNotes() []Note {
 	var notes []Note
+	if zot.ZData.Data.Note != "" {
+		notes = append(notes, Note{
+			Title: "",
+			Note:  template.HTML(zot.ZData.Data.Note),
+		})
+	}
 	for _, child := range zot.GetChildren("note", "") {
 		note := strings.Trim(child.Data.Note, " ")
 		if note == "" {

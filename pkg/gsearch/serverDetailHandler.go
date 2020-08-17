@@ -48,17 +48,6 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 		Notifications: []Notification{},
 		Menu:          s.menu,
 	}
-	doc, err := s.mts.LoadEntity(signature)
-	if err != nil {
-		s.DoPanicf(w, http.StatusNotFound, "error loading signature %s: %v", false, signature, err)
-		return
-	}
-	if doc == nil {
-		s.DoPanicf(w, http.StatusInternalServerError, "data of signature %s is nil", false, signature)
-		return
-	}
-	status.Doc = doc
-
 	jwt, ok := req.URL.Query()["token"]
 	if ok {
 		// jwt in parameter?
@@ -91,6 +80,61 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 	for _, grp := range s.locations.Contains(ip) {
 		status.User.Groups = append(status.User.Groups, grp)
 	}
+
+	if sub == "solr" {
+		doc, err := s.mts.getSolrDocRaw(signature)
+		if err != nil {
+			s.DoPanicf(w, http.StatusNotFound, "error loading signature %s: %v", false, signature, err)
+			return
+		}
+		if doc == nil {
+			s.DoPanicf(w, http.StatusInternalServerError, "data of signature %s is nil", false, signature)
+			return
+		}
+		metaOK := false
+		if !doc.Has("acl_meta") {
+			s.DoPanicf(w, http.StatusInternalServerError, "id %s has no acl_meta field", true, signature)
+			return
+		}
+		acl_metaI := doc.Get("acl_meta")
+		acl_meta := interface2StringSlice(acl_metaI)
+		for _, group := range acl_meta {
+			for _, ugroup := range status.User.Groups {
+				if group == ugroup {
+					metaOK = true
+				}
+			}
+		}
+
+		for _, ugroup := range status.User.Groups {
+			if s.adminGroup == ugroup {
+				metaOK = true
+			}
+		}
+		if !metaOK {
+			s.DoPanicf(w, http.StatusForbidden, "no access to document %v metadata for %v", true, signature, status.User.Groups)
+			return
+		}
+
+		enc := json.NewEncoder(w)
+		w.Header().Set("Content-type", "text/json")
+		if err := enc.Encode(doc); err != nil {
+			s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal solr doc", true, signature)
+			return
+		}
+		return
+	}
+
+	doc, err := s.mts.LoadEntity(signature)
+	if err != nil {
+		s.DoPanicf(w, http.StatusNotFound, "error loading signature %s: %v", false, signature, err)
+		return
+	}
+	if doc == nil {
+		s.DoPanicf(w, http.StatusInternalServerError, "data of signature %s is nil", false, signature)
+		return
+	}
+	status.Doc = doc
 
 	for acl, groups := range status.Doc.ACL {
 		for _, group := range groups {

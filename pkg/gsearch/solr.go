@@ -181,10 +181,20 @@ func (mts *MTSolr) cacheEntryFromDoc(doc *solr.Document) (*cacheEntry, string, e
 	return entry, id, nil
 }
 
-func (mts *MTSolr) getSolrDocs(ids []string) (map[string]*cacheEntry, error) {
+func (mts *MTSolr) getSolrDocRaw(id string) (solr.Document, error) {
+	docs, err := mts.getSolrDocsRaw([]string{id})
+	if err != nil {
+		return nil, emperror.Wrapf(err, "cannot load solr doc %v", id)
+	}
+	if len(docs) != 1 {
+		return nil, fmt.Errorf("cannot find solr doc %v", id)
+	}
+	return docs[0], nil
+}
+func (mts *MTSolr) getSolrDocsRaw(ids []string) ([]solr.Document, error) {
 	numIDs := len(ids)
 	if numIDs == 0 {
-		return make(map[string]*cacheEntry), nil
+		return []solr.Document{}, nil
 	}
 	qstr := ""
 	for _, id := range ids {
@@ -205,8 +215,16 @@ func (mts *MTSolr) getSolrDocs(ids []string) (map[string]*cacheEntry, error) {
 	if len(r.Results.Docs) != numIDs {
 		return nil, errors.New(fmt.Sprintf("got %v documents for %v ids %v", len(r.Results.Docs), numIDs, ids))
 	}
+	return r.Results.Docs, nil
+}
+
+func (mts *MTSolr) getSolrDocs(ids []string) (map[string]*cacheEntry, error) {
+	docs, err := mts.getSolrDocsRaw(ids)
+	if err != nil {
+		return nil, emperror.Wrapf(err, "cannot load solr docs")
+	}
 	result := make(map[string]*cacheEntry)
-	for _, doc := range r.Results.Docs {
+	for _, doc := range docs {
 		entry, id, err := mts.cacheEntryFromDoc(&doc)
 		if err != nil {
 			return nil, emperror.Wrapf(err, "cannot create cache entry from document")
