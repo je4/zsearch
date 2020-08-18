@@ -114,7 +114,29 @@ limitations under the License.
             </div>
         </amp-user-notification>
     {{end}}
-    <amp-img class="commerce-listing-banner xs-hide sm-hide" src="{{.BaseUrl}}/static/img/wide-mediathek-hero.jpg" width="2560" height="400" layout="responsive" alt="Mediathek Search" noloading=""><div placeholder="" class="commerce-loader"></div></amp-img>
+    <amp-img
+            class="commerce-listing-banner xs-hide sm-hide"
+            src="{{.BaseUrl}}/static/img/wide-mediathek-hero.webp"
+            srcset="{{.BaseUrl}}/static/img/wide-mediathek-hero_1280w.webp 1280w, {{.BaseUrl}}/static/img/wide-mediathek-hero_640w.webp 640w"
+            width="2560"
+            height="400"
+            layout="responsive"
+            alt="Mediathek Search"
+            noloading="">
+        <div placeholder="" class="commerce-loader"></div>
+        <amp-img
+                class="commerce-listing-banner xs-hide sm-hide"
+                src="{{.BaseUrl}}/static/img/wide-mediathek-hero.jpg"
+                srcset="{{.BaseUrl}}/static/img/wide-mediathek-hero_1280w.jpg 1280w, {{.BaseUrl}}/static/img/wide-mediathek-hero_640w.jpg 640w"
+                width="2560"
+                height="400"
+                alt="Mediathek Search"
+                layout="responsive"
+                fallback
+                noloading="">
+            <div placeholder="" class="commerce-loader"></div>
+        </amp-img>
+    </amp-img>
     <!-- BEGIN - virtual states for search interaction -->
     <amp-state id="SearchResultSearch">
         <script type="application/json">

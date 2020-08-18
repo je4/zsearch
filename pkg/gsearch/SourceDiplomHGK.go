@@ -42,6 +42,17 @@ type SourceDiplomHGKFile struct {
 	Url        string                  `json:"url"`
 }
 
+type ResourceParam struct {
+	Type     string `json:"type"`
+	Mimetype string `json:"resourcetype"`
+}
+
+type Resource struct {
+	Src   string        `json:"src"`
+	Name  string        `json:"name"`
+	Param ResourceParam `json:"param"`
+}
+
 type SourceDiplomHGKData struct {
 	Year              string                `json:"year"`
 	Anlassnummer      string                `json:"anlassnummer"`
@@ -70,7 +81,7 @@ type SourceDiplomHGKData struct {
 	Tags              []string              `json:"tags"`
 	Slug              string                `json:"slug"`
 	Series            []string              `json:"series"`
-	Resources         []string              `json:"resources"`
+	Resources         []Resource            `json:"resources"`
 	Files             []SourceDiplomHGKFile `json:"files"`
 	Images            []string              `json:"images"`
 	Pdfs              []string              `json:"pdfs"`

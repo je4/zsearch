@@ -39,9 +39,15 @@ type MTSolr struct {
 
 type FacetCountResult map[string]map[string]int
 
+var replaceSolr = regexp.MustCompile(`([-\\!():^\[\]"{}~*?|&;/+]|[[:space:]])`)
+var checkQuotes = regexp.MustCompile(`^".+"$`)
+
 func EscapeSolrString(str string) string {
-	var re = regexp.MustCompile(`([-\\!():^\[\]"{}~*?|&;/+]|[[:space:]])`)
-	return re.ReplaceAllString(str, "\\$1")
+	// do not touch strings with quotes
+	if checkQuotes.MatchString(str) {
+		return str
+	}
+	return replaceSolr.ReplaceAllString(str, "\\$1")
 }
 
 func orQuery(field string, values []string) string {
@@ -49,6 +55,17 @@ func orQuery(field string, values []string) string {
 	for key, val := range values {
 		if key > 0 {
 			q += " OR "
+		}
+		q += fmt.Sprintf("(%s:%s)", field, val)
+	}
+	return q
+}
+
+func andQuery(field string, values []string) string {
+	q := ""
+	for key, val := range values {
+		if key > 0 {
+			q += " AND "
 		}
 		q += fmt.Sprintf("(%s:%s)", field, val)
 	}
@@ -435,6 +452,7 @@ func (mts *MTSolr) Search(text string, filters []string, facets map[string]map[s
 		}
 	}
 	if filterQuery != "" {
+		mts.log.Infof("Filterquery: %s", filterQuery)
 		query.FilterQuery(fmt.Sprintf("{!tag=%s}%s", "facet", filterQuery))
 	}
 

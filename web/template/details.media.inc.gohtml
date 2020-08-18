@@ -39,7 +39,7 @@
                         "posters": [
                         {{range $key, $video := .Doc.Content.Media.video}}
                             {{$poster := printf "%s$$timeshot$$3" $video.Uri}}
-                            {{if $key}},{{end}}"{{medialink $poster "master" "" (not $contentPublic)}}"
+                            {{if $key}},{{end}}"{{medialink $poster "resize" "size1280x720/formatJPEG" (not $contentPublic)}}"
                         {{end}}
                         ],
                         "selectedVideo": 0
@@ -53,7 +53,7 @@
                 <amp-video
                         src="{{medialink $src "master" "" (not $contentPublic)}}"
                         [src]="video.videos[video.selectedVideo]"
-                        {{if $isMedia}}poster="{{medialink $poster "master" "" (not $contentPublic)}}"
+                        {{if $isMedia}}poster="{{medialink $poster "resize" "size1280x720/formatJPEG" (not $contentPublic)}}"
                         [poster]="video.posters[video.selectedVideo]"{{end}}
                         artwork=""
                         width="1280"
@@ -67,6 +67,7 @@
                         href="{{medialink $video.Uri "iframe" "" (not $contentPublic)}}"
                         [href]="video.iframes[video.selectedVideo]"
                         target="_blank"
+                        rel="noreferrer"
                 ><h3 class="h6">Open in new window</h3></a>
                 {{if gt $len 1}}
                 <amp-selector class="center" [selected]="video.selectedVideo" on="select:AMP.setState({video: {selectedVideo: event.targetOption}})">
@@ -97,10 +98,16 @@
                         {{if $key}},{{end}}"{{medialink $audio.Uri "master" "" (not $contentPublic)}}"
                         {{end}}
                         ],
-                        "posters": [
+                        "postersJPEG": [
                         {{range $key, $audio := .Doc.Content.Media.audio}}
                         {{$poster := printf "%s$$poster" $audio.Uri}}
-                        {{if $key}},{{end}}"{{medialink $poster "resize" "size1280x150/stretch" (not $contentPublic)}}"
+                        {{if $key}},{{end}}"{{medialink $poster "resize" "size1280x150/stretch/formatJPEG" (not $contentPublic)}}"
+                        {{end}}
+                        ],
+                        "postersWEBP": [
+                        {{range $key, $audio := .Doc.Content.Media.audio}}
+                        {{$poster := printf "%s$$poster" $audio.Uri}}
+                        {{if $key}},{{end}}"{{medialink $poster "resize" "size1280x150/stretch/formatWEBP" (not $contentPublic)}}"
                         {{end}}
                         ],
                         "selectedAudio": 0
@@ -111,10 +118,17 @@
                 {{$src := printf "%s$$web$$1" $audio.Uri}}
                 {{$poster := printf "%s$$poster" $audio.Uri}}
                 <amp-img async
-                         src="{{medialink $poster "resize" "size1280x150/stretch" (not $contentPublic)}}"
-                         [src]="audio.posters[audio.selectedAudio]"
+                         src="{{medialink $poster "resize" "size1280x150/stretch/formatWEBP" (not $contentPublic)}}"
+                         [src]="audio.postersJPEG[audio.selectedAudio]"
                          width="1280px"
                          height="150px">
+                    <amp-img async
+                             src="{{medialink $poster "resize" "size1280x150/stretch/formatJPEG" (not $contentPublic)}}"
+                             [src]="audio.postersWEBP[audio.selectedAudio]"
+                             fallback
+                             width="1280px"
+                             height="150px">
+                    </amp-img>
                 </amp-img>
                 <amp-audio
                         src="{{medialink $src "master" "" (not $contentPublic)}}"
@@ -151,7 +165,13 @@
                         width="250"
                         height="250"
                         layout="nodisplay"
-                        src="{{medialink $image.Uri "resize" "size250x250/crop/formatJPEG" (not $contentPublic)}}">
+                        src="{{medialink $image.Uri "resize" "size250x250/crop/formatWEBP" (not $contentPublic)}}">
+                    <amp-img
+                            width="250"
+                            height="250"
+                            fallback
+                            src="{{medialink $image.Uri "resize" "size250x250/crop/formatJPEG" (not $contentPublic)}}">
+                    </amp-img>
                 </amp-img>
                 {{end}}
                 <amp-carousel lightbox
@@ -162,13 +182,24 @@
                     {{range $key, $image := .Doc.Content.Media.image}}
                         <!-- Image -->
                         <amp-img
-                                src="{{medialink $image.Uri "resize" "size1280x720/formatJPEG" (not $contentPublic)}}"
+                                src="{{medialink $image.Uri "resize" "size1280x720/formatWEBP" (not $contentPublic)}}"
                                 width="1280"
                                 height="720"
                                 layout="responsive"
                                 tabindex="{{$key}}"
                                 lightbox-thumbnail-id="img-{{$key}}"
                                 noloading="">
+                            <amp-img
+                                    src="{{medialink $image.Uri "resize" "size1280x720/formatJPEG" (not $contentPublic)}}"
+                                    width="1280"
+                                    height="720"
+                                    layout="responsive"
+                                    tabindex="{{$key}}"
+                                    lightbox-thumbnail-id="img-{{$key}}"
+                                    fallback
+                                    noloading="">
+                                <div placeholder="" class="commerce-loader"></div>
+                            </amp-img>
                             <div placeholder="" class="commerce-loader"></div>
                         </amp-img>
                     {{end}}
@@ -204,8 +235,9 @@
                             allowfullscreen
                             width="1280"
                             height="1000"
+                            rel="noreferrer"
                             layout="responsive">
-                        <amp-img layout="fill" src="https://foo.com/foo.png" placeholder></amp-img>
+                        <amp-img layout="fill" src="{{.BaseUrl}}/static/img/adobe-pdf-icon.svg" placeholder></amp-img>
                     </amp-iframe>
                 </div>
                 {{if gt $len 1}}

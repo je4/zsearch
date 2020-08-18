@@ -222,6 +222,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	default:
+		w.Header().Set("Cache-Control", "max-age=14400, s-maxage=12200, stale-while-revalidate=9000, public")
 		if err := s.searchTemplate.Execute(w, status); err != nil {
 			s.DoPanicf(w, http.StatusInternalServerError, "cannot render template: %v", false, err)
 			return

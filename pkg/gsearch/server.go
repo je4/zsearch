@@ -551,6 +551,12 @@ func (s *Server) userFromToken(tokenstring, signature string) (*User, error) {
 	return user, nil
 }
 
+const (
+	acceptEncoding string = "Accept-Encoding"
+	gzipEncoding          = "gzip"
+	flateEncoding         = "deflate"
+)
+
 func (s *Server) ListenAndServe(cert, key string) error {
 	router := mux.NewRouter()
 
@@ -585,7 +591,10 @@ func (s *Server) ListenAndServe(cert, key string) error {
 				}
 			}
 			return true
-		}).HandlerFunc(s.searchHandler).Methods("GET")
+		}).
+		Handler(
+			handlers.CompressHandler(func() http.Handler { return http.HandlerFunc(s.searchHandler) }())).
+		Methods("GET")
 	//router.HandleFunc(fmt.Sprintf("/%s", s.searchPrefix), s.searchHandler).Methods("GET")
 
 	// https://data.mediathek.hgk.fhnw.ch/detail/[signature]
@@ -602,7 +611,9 @@ func (s *Server) ListenAndServe(cert, key string) error {
 				rm.Vars["sub"] = string(matches[3])
 			}
 			return true
-		}).HandlerFunc(s.detailHandler).Methods("GET")
+		}).
+		Handler(handlers.CompressHandler(func() http.Handler { return http.HandlerFunc(s.detailHandler) }())).
+		Methods("GET")
 
 	// https://data.mediathek.hgk.fhnw.ch/update/[signature]
 	updateRegexp := regexp.MustCompile(fmt.Sprintf("^/%s/(.+)$", s.updatePrefix))
@@ -615,12 +626,19 @@ func (s *Server) ListenAndServe(cert, key string) error {
 			rm.Vars = map[string]string{}
 			rm.Vars["signature"] = string(matches[1])
 			return true
-		}).HandlerFunc(s.updateHandler).Methods("GET")
+		}).
+		Handler(handlers.CompressHandler(func() http.Handler { return http.HandlerFunc(s.updateHandler) }())).
+		Methods("GET")
 
 	// the static fileserver
 	router.
 		PathPrefix(fmt.Sprintf("/%s", s.staticPrefix)).
-		Handler(http.StripPrefix("/"+s.staticPrefix, http.FileServer(http.Dir(s.staticDir)))).Methods("GET")
+		Handler(http.StripPrefix("/"+s.staticPrefix, func(h http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Cache-Control", "max-age=14400, s-maxage=12200, stale-while-revalidate=9000, public") // 30 days
+				h.ServeHTTP(w, r)
+			})
+		}(http.FileServer(http.Dir(s.staticDir))))).Methods("GET")
 
 	loggedRouter := handlers.LoggingHandler(s.accesslog, router)
 	addr := net.JoinHostPort(s.host, s.port)
