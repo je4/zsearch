@@ -182,6 +182,7 @@
                     {{range $key, $image := .Doc.Content.Media.image}}
                         <!-- Image -->
                         <amp-img
+                                aria-label="{{$image.Name}}"
                                 src="{{medialink $image.Uri "resize" "size1280x720/formatWEBP" (not $contentPublic)}}"
                                 width="1280"
                                 height="720"
@@ -190,6 +191,7 @@
                                 lightbox-thumbnail-id="img-{{$key}}"
                                 noloading="">
                             <amp-img
+                                    aria-label="{{$image.Name}}"
                                     src="{{medialink $image.Uri "resize" "size1280x720/formatJPEG" (not $contentPublic)}}"
                                     width="1280"
                                     height="720"
@@ -257,15 +259,18 @@
 </amp-accordion>
 
 <!-- BEGIN Media Type Selector -->
-<amp-selector class="media-selector"
+<!-- <amp-selector class="media-selector"
+              aria-label="Media Selection"
               layout="container">
+-->
+        <div style="text-align: center;">
     {{if .Doc.Content.Media.video}}
         <svg xmlns="http://www.w3.org/2000/svg"
+             aria-label="Show Videos"
              height="48px"
              viewBox="0 0 24 24"
              width="48px"
              option="4"
-             tabindex="1"
              role="button"
              on="tap:AMP.setState({mediasection: 1})">
             <path
@@ -284,11 +289,11 @@
 
     {{if .Doc.Content.Media.audio}}
         <svg xmlns="http://www.w3.org/2000/svg"
+             aria-label="Show Audio"
              height="48px"
              viewBox="0 0 24 24"
              width="48px"
              option="4"
-             tabindex="2"
              role="button"
              on="tap:AMP.setState({mediasection: 2})">
             <path
@@ -307,11 +312,11 @@
 
     {{if .Doc.Content.Media.image}}
         <svg xmlns="http://www.w3.org/2000/svg"
+             aria-label="Show Images"
              height="48px"
              viewBox="0 0 24 24"
              width="48px"
              option="2"
-             tabindex="3"
              role="button"
              on="tap:AMP.setState({mediasection: 3})">
             <path
@@ -331,11 +336,11 @@
 
     {{if .Doc.Content.Media.pdf}}
         <svg xmlns="http://www.w3.org/2000/svg"
+             aria-label="Show PDF"
              height="48px"
              viewBox="0 0 24 24"
              width="48px"
              option="2"
-             tabindex="4"
              role="button"
              on="tap:AMP.setState({mediasection: 4})">
             <path
@@ -351,8 +356,8 @@
            on="tap:AMP.setState({mediasection: 4})">chrome_reader_mode</i>
         -->
     {{end}}
-
-</amp-selector>
+    </div>
+<!-- </amp-selector> -->
 {{end}}
 <!-- END Media Type Selector -->
 

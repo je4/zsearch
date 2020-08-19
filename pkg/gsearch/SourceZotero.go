@@ -31,10 +31,11 @@ import (
 
 type SourceZotero struct {
 	mts        *MTSolr
-	ZData      ZoteroData        `json:"ZData"`
-	CollMeta   map[string]string `json:"collmeta"`
-	doc        *solr.Document    `json:"-"`
-	contentStr string            `json:"-"`
+	ZData      ZoteroData           `json:"ZData"`
+	CollMeta   map[string]string    `json:"collmeta"`
+	doc        *solr.Document       `json:"-"`
+	contentStr string               `json:"-"`
+	medias     map[string]MediaList `jsnon:"-"`
 }
 
 var zoteroIgnoreMetaFields = []string{
@@ -278,11 +279,14 @@ func (zot *SourceZotero) GetReferences() []Reference {
 }
 
 func (zot *SourceZotero) GetMedia() map[string]MediaList {
-	var medias = make(map[string]MediaList)
+	if zot.medias != nil {
+		return zot.medias
+	}
+	zot.medias = make(map[string]MediaList)
 	var types []string
 	for _, child := range zot.GetChildren("attachment", "") {
 		meta := child.Data.Media.Metadata
-		t := meta.Type
+		t := strings.ToLower(meta.Type)
 		// empty type == no media
 		if t == "" {
 			if strings.HasSuffix(child.Data.Url, ".mp4") {
@@ -293,11 +297,11 @@ func (zot *SourceZotero) GetMedia() map[string]MediaList {
 			}
 		}
 		// if type not in list create it
-		if _, ok := medias[t]; !ok {
-			medias[t] = MediaList{}
+		if _, ok := zot.medias[t]; !ok {
+			zot.medias[t] = MediaList{}
 			types = append(types, t)
 		}
-		medias[t] = append(medias[t], Media{
+		zot.medias[t] = append(zot.medias[t], Media{
 			Name:     child.Data.Title,
 			Mimetype: meta.Mimetype,
 			Type:     t,
@@ -309,9 +313,21 @@ func (zot *SourceZotero) GetMedia() map[string]MediaList {
 	}
 	// sort medias according to their name
 	for _, t := range types {
-		sort.Sort(medias[t])
+		sort.Sort(zot.medias[t])
 	}
-	return medias
+	return zot.medias
+}
+
+func (zot *SourceZotero) GetPoster() *Media {
+	medias := zot.GetMedia()
+	images, ok := medias["image"]
+	if !ok {
+		return nil
+	}
+	if images.Len() == 0 {
+		return nil
+	}
+	return &images[0]
 }
 
 func (zot *SourceZotero) GetQueries() []Query {
@@ -324,13 +340,19 @@ func (zot *SourceZotero) GetQueries() []Query {
 			elements := parents[0:i]
 			queries = append(queries, Query{
 				Label:  fmt.Sprintf("%s - %s", zot.ZData.Group.Data.Name, strings.Join(elements, ` - `)),
-				Search: fmt.Sprintf("%d!!%s!!%s", 3+len(elements), catGroup, strings.Join(elements, `!!`)),
+				Search: fmt.Sprintf("cat:\"%d!!%s!!%s\"", 3+len(elements), catGroup, strings.Join(elements, `!!`)),
 			})
 		}
 	}
 	queries = append(queries, Query{
 		Label:  fmt.Sprintf("%s", zot.ZData.Group.Data.Name),
-		Search: fmt.Sprintf("%d!!%s", 3, catGroup),
+		Search: fmt.Sprintf("cat:\"%d!!%s\"", 3, catGroup),
 	})
+	if zot.ZData.Data.ArchiveLocation != "" {
+		queries = append(queries, Query{
+			Label:  "Group",
+			Search: zot.ZData.Data.ArchiveLocation,
+		})
+	}
 	return queries
 }

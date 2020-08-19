@@ -49,23 +49,24 @@ type Notification struct {
 }
 
 type DetailStatus struct {
-	Type          string
-	Notifications []Notification
-	Doc           *Document
-	User          *User
-	Token         string
-	MetaPublic    bool
-	ContentPublic bool
-	MetaOK        bool
-	ContentOK     bool
-	IsAmp         bool
-	Self          string
-	BaseUrl       string
-	SelfPath      string
-	AmpBase       string
-	LoginUrl      string
-	Title         string
-	Menu          []Menu
+	Type            string
+	Notifications   []Notification
+	Doc             *Document
+	User            *User
+	Token           string
+	MetaPublic      bool
+	ContentPublic   bool
+	MetaOK          bool
+	ContentOK       bool
+	IsAmp           bool
+	Self            string
+	BaseUrl         string
+	SelfPath        string
+	AmpBase         string
+	LoginUrl        string
+	Title           string
+	Menu            []Menu
+	MetaDescription string
 }
 
 type FacetCountField struct {
@@ -96,6 +97,7 @@ type SearchStatus struct {
 	SearchResultVisible bool
 	FacetCount          map[string]FacetCountField
 	Menu                []Menu
+	MetaDescription     string
 }
 
 type SubFilter struct {
@@ -573,19 +575,21 @@ func (s *Server) ListenAndServe(cert, key string) error {
 				if matches[2] != nil {
 					filter := string(matches[2])
 					// check for valid filtername
-					filterok := false
-					for _, sf := range s.subFilters {
-						if sf.Label == filter {
-							filterok = true
-							break
+					/*
+						filterok := false
+						for _, sf := range s.subFilters {
+							if sf.Label == filter {
+								filterok = true
+								break
+							}
 						}
-					}
-					// otherwise 404
-					if !filterok {
-						if filter != "data" {
-							return false
+						// otherwise 404
+						if !filterok {
+							if filter != "data" {
+								return false
+							}
 						}
-					}
+					*/
 					rm.Vars = map[string]string{}
 					rm.Vars["subfilter"] = filter
 				}

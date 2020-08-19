@@ -24,7 +24,7 @@ limitations under the License.
     <title>Mediathek</title>
     <link rel="canonical" href="{{.Self}}">
     <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
-    <meta name="amp-google-client-id-api" content="googleanalytics">
+    <meta name="Description" content="{{.MetaDescription}}">
 
     <script async="" src="https://cdn.ampproject.org/v0.js"></script>
 
@@ -210,14 +210,17 @@ limitations under the License.
                                    [value]="SearchFacets.{{js $val.Id}}.Selected?'true':'false'"/>
                         {{end}}
                         <h1 class="h3 mb2 md-mt2 md-mb2 md-ml0 flex-auto px2">
-                            <input
+
+                            <input  id="searchtext"
                                     type="text"
-                                    name="search"
-                                    placeholder=""
+                                    aria-label="Search Text"
+                                    name="searchtext"
+                                    placeholder="enter search text"
                                     value="{{.SearchString}}"
                             >
                             <svg
-                                        id="svg6"
+                                        aria-label="Search Button"
+                                        id="searchbutton"
                                         version="1.1"
                                         height="48px"
                                         width="48px"
@@ -269,7 +272,8 @@ limitations under the License.
                     <table>
                         <tr>
                             <td>
-                                <svg
+                                <svg    id="ButtonStart"
+                                        aria-label="Go to start"
                                         [class]="(SearchResultStart<=0?'':'')"
                                         class="{{if le .SearchResultStart 0}}{{end}}"
                                         viewBox="0 0 24 24"
@@ -285,6 +289,8 @@ limitations under the License.
                             </td>
                             <td>
                                 <svg
+                                        id="ButtonPrevPage"
+                                        aria-label="Previous Page"
                                         [class]="(SearchResultStart<=0?'hidden':'')"
                                         class="{{if le .SearchResultStart 0}}hidden{{end}}"
                                         version="1.1"
@@ -301,6 +307,8 @@ limitations under the License.
                             </td>
                             <td>
                                 <svg
+                                        id="ButtonNextPage"
+                                        aria-label="Next Page"
                                         class="{{if ge (add .SearchResultStart .SearchResultRows) .SearchResultTotal}}hidden{{end}}"
                                         version="1.1"
                                         height="48px"
@@ -333,6 +341,7 @@ limitations under the License.
                                     </div>
                                     <div style="display:table-cell; width:24px; vertical-align: top; padding-left: 5px; padding-right: 15px;">
                                         <svg alt="{{$field.Type}}"
+                                             aria-label="Icon {{$field.Type}}"
                                                 id="svg12"
                                                 version="1.1"
                                                 viewBox="0 0 512 512"
@@ -350,6 +359,7 @@ limitations under the License.
                                         {{if (gt (len $field.Media) 0)}}
                                             {{if $field.ContentOK}}
                                                 <svg alt="content accessible"
+                                                     aria-label="Icon Has Content"
                                                      id="svg12"
                                                      version="1.1"
                                                      viewBox="0 0 512 512"
@@ -359,6 +369,7 @@ limitations under the License.
                                                 </svg>
                                             {{else}}
                                                 <svg alt="content closed"
+                                                     aria-label="Icon No Content"
                                                      id="svg12"
                                                      version="1.1"
                                                      viewBox="0 0 512 512"
@@ -392,7 +403,7 @@ limitations under the License.
                                     <div style="display:table-row;">
                                         <div style="display:table-cell; width:24px; vertical-align: top; padding-left: 5px; padding-right: 15px;">
                                             <svg alt="{{$field.Type}}"
-                                                 id="svg12"
+                                                 aria-label="Icon {{$field.Type}}"
                                                  version="1.1"
                                                  viewBox="0 0 512 512"
                                                  height="24"
@@ -410,7 +421,7 @@ limitations under the License.
                                             {{if (gt (len $field.Media) 0)}}
                                                 {{if $field.ContentOK}}
                                                     <svg alt="content accessible"
-                                                         id="svg12"
+                                                         aria-label="Icon Has Content"
                                                          version="1.1"
                                                          viewBox="0 0 512 512"
                                                          height="16"
@@ -419,7 +430,7 @@ limitations under the License.
                                                     </svg>
                                                 {{else}}
                                                     <svg alt="content closed"
-                                                         id="svg12"
+                                                         aria-label="Icon No Content"
                                                          version="1.1"
                                                          viewBox="0 0 512 512"
                                                          height="16"
@@ -450,6 +461,7 @@ limitations under the License.
                             <svg
                                     [class]="(SearchResultStart<=0?'':'')"
                                     class="{{if le .SearchResultStart 0}}{{end}}"
+                                    aria-label="Icon Goto Start"
                                     viewBox="0 0 24 24"
                                     fill="black"
                                     width="48px"
@@ -465,6 +477,7 @@ limitations under the License.
                             <svg
                                     [class]="(SearchResultStart<=0?'hidden':'')"
                                     class="{{if le .SearchResultStart 0}}hidden{{end}}"
+                                    aria-label="Icon Previous Page"
                                     version="1.1"
                                     height="48px"
                                     width="48px"
@@ -480,6 +493,7 @@ limitations under the License.
                         <td>
                             <svg
                                     class="{{if ge (add .SearchResultStart .SearchResultRows) .SearchResultTotal}}hidden{{end}}"
+                                    aria-label="Icon Next Page"
                                     version="1.1"
                                     height="48px"
                                     width="48px"

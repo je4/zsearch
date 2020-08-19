@@ -89,6 +89,7 @@ type Source interface {
 	GetNames() []Person
 	GetTags() []string
 	GetMedia() map[string]MediaList
+	GetPoster() *Media
 	GetNotes() []Note
 	GetAbstract() string
 	GetReferences() []Reference
@@ -109,6 +110,7 @@ type SourceData struct {
 	Persons         []Person             `json:"persons"`
 	Tags            []string             `json:"tags"`
 	Media           map[string]MediaList `json:"media"`
+	Poster          *Media               `json:poster`
 	Notes           []Note               `json:"notes"`
 	Abstract        string               `json:"abstract"`
 	HasMedia        bool                 `json:"hasmedia"`

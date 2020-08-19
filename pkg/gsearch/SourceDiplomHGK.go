@@ -14,6 +14,7 @@ type SourceDiplomHGK struct {
 	DData      SourceDiplomHGKData `json:"DData"`
 	doc        *solr.Document      `json:"-"`
 	contentStr string
+	medias     map[string]MediaList `json:"-"`
 }
 
 type SourceDiplomHGKFileMeta struct {
@@ -202,20 +203,23 @@ func (dhgk *SourceDiplomHGK) GetReferences() []Reference {
 }
 
 func (dhgk *SourceDiplomHGK) GetMedia() map[string]MediaList {
-	var medias = make(map[string]MediaList)
+	if dhgk.medias != nil {
+		return dhgk.medias
+	}
+	dhgk.medias = make(map[string]MediaList)
 	var types []string
 	for _, file := range dhgk.DData.Files {
-		t := file.Metadata.Type
+		t := strings.ToLower(file.Metadata.Type)
 		// empty type == no media
 		if t == "" {
 			continue
 		}
 		// if type not in list create it
-		if _, ok := medias[t]; !ok {
-			medias[t] = MediaList{}
+		if _, ok := dhgk.medias[t]; !ok {
+			dhgk.medias[t] = MediaList{}
 			types = append(types, t)
 		}
-		medias[t] = append(medias[t], Media{
+		dhgk.medias[t] = append(dhgk.medias[t], Media{
 			Name:     file.Name,
 			Mimetype: file.Metadata.Mimetype,
 			Type:     t,
@@ -227,9 +231,21 @@ func (dhgk *SourceDiplomHGK) GetMedia() map[string]MediaList {
 	}
 	// sort medias according to their name
 	for _, t := range types {
-		sort.Sort(medias[t])
+		sort.Sort(dhgk.medias[t])
 	}
-	return medias
+	return dhgk.medias
+}
+
+func (dhgk *SourceDiplomHGK) GetPoster() *Media {
+	medias := dhgk.GetMedia()
+	images, ok := medias["image"]
+	if !ok {
+		return nil
+	}
+	if images.Len() == 0 {
+		return nil
+	}
+	return &images[0]
 }
 
 func (dhgk *SourceDiplomHGK) GetQueries() []Query {

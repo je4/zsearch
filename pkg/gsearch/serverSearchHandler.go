@@ -119,7 +119,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 			rows, _ = strconv.ParseInt(val, 10, 64)
 		case "lastsearch":
 			lastsearch = val
-		case "search":
+		case "searchtext":
 			search = val
 		case "visible":
 			status.SearchResultVisible = val == "true"
@@ -156,13 +156,36 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 	filters := []string{s.baseFilter}
 	subfiltername, ok := vars["subfilter"]
 	if ok {
+		var f *SubFilter = nil
+		// check for configured subfilter
 		for _, sf := range s.subFilters {
 			if sf.Label == subfiltername {
-				filters = append(filters, sf.Filter)
-				status.Title = sf.Name
+				f = &sf
 				break
 			}
 		}
+		if f == nil {
+			// load as collection
+			doc, err := s.mts.LoadEntity(subfiltername)
+			if err != nil {
+				s.DoPanicf(w, http.StatusNotFound, "error loading signature %s: %v", false, subfiltername, err)
+				return
+			}
+			if doc == nil {
+				s.DoPanicf(w, http.StatusInternalServerError, "data of signature %s is nil", false, subfiltername)
+				return
+			}
+			for _, q := range doc.Content.Queries {
+				if strings.ToLower(q.Label) == "group" {
+					filters = append(filters, s.string2Query(q.Search))
+					status.Title = doc.Content.Title
+				}
+			}
+		} else {
+			filters = append(filters, f.Filter)
+			status.Title = f.Name
+		}
+
 	}
 
 	docs, total, facetFieldCount, err := s.mts.Search(qstr,
@@ -213,6 +236,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
+	status.MetaDescription = "Integrated Catalogue of Mediathek HGK FHNW"
 	switch subfiltername {
 	case "data":
 		enc := json.NewEncoder(w)

@@ -205,6 +205,22 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 	status.Title = status.Doc.Content.CollectionTitle
 	status.IsAmp = status.User.LoggedIn && !status.User.LoggedOut && status.MetaOK
 
+	metadescription := ""
+	metadescription = fmt.Sprintf("Title: %s", doc.Content.Title)
+	if len(doc.Content.Persons) > 0 {
+		metadescription += fmt.Sprintf("\nAuthor: ")
+		for k, p := range doc.Content.Persons {
+			if k > 0 {
+				metadescription += "; "
+			}
+			metadescription += p.Name
+		}
+	}
+	if doc.Content.Abstract != "" {
+		metadescription += "\nAbstract: " + doc.Content.Abstract
+	}
+	status.MetaDescription = strings.ReplaceAll(metadescription, "\"", "'")
+
 	switch sub {
 	case "data":
 		enc := json.NewEncoder(w)
