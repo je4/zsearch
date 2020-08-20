@@ -1,0 +1,56 @@
+<!-- BEGIN - Navigation -->
+<table>
+    <tr>
+        <td>
+            <svg    id="ButtonStart"
+                    aria-label="Go to start"
+                    [class]="(SearchResultStart<=0?'':'')"
+                    class="{{if le .SearchResultStart 0}}{{end}}"
+                    viewBox="0 0 24 24"
+                    fill="black"
+                    width="48px"
+                    height="48px"
+                    version="1.1"
+                    role="button"
+                    tabindex="2"
+                    on="tap:AMP.setState({SearchResultStart:0}),search.submit">
+                <use href="#imgpagefirst"></use>
+            </svg>
+        </td>
+        <td>
+            <svg
+                    id="ButtonPrevPage"
+                    aria-label="Previous Page"
+                    [class]="(SearchResultStart<=0?'hidden':'')"
+                    class="{{if le .SearchResultStart 0}}hidden{{end}}"
+                    version="1.1"
+                    height="48px"
+                    width="48px"
+                    fill="black"
+                    viewBox="0 0 24 24"
+                    role="button"
+                    tabindex="3"
+                    on="tap:AMP.setState({SearchResultStart:(SearchResultStart-10)}),search.submit"
+            >
+                <use href="#imgpageleft"></use>
+            </svg>
+        </td>
+        <td>
+            <svg
+                    id="ButtonNextPage"
+                    aria-label="Next Page"
+                    class="{{if ge (add .SearchResultStart .SearchResultRows) .SearchResultTotal}}hidden{{end}}"
+                    version="1.1"
+                    height="48px"
+                    width="48px"
+                    fill="black"
+                    viewBox="0 0 24 24"
+                    role="button"
+                    tabindex="4"
+                    on="tap:AMP.setState({SearchResultStart:(SearchResultStart+10)}),search.submit">
+                <use href="#imgpageright"></use>
+            </svg>
+        </td>
+    </tr>
+</table>
+<!-- END - Navigation -->

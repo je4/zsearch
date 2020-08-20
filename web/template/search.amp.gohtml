@@ -153,13 +153,6 @@ limitations under the License.
        {{.SearchResultVisible}}
         </script>
     </amp-state>
-    <!--
-    <amp-state id="SearchResult">
-        <script type="application/json">
-       {{.SearchResult}}
-        </script>
-    </amp-state>
-    -->
     <amp-state id="SearchFacets">
         <script type="application/json">
        {{.FacetCount}}
@@ -210,7 +203,7 @@ limitations under the License.
                                    [value]="SearchFacets.{{js $val.Id}}.Selected?'true':'false'"/>
                         {{end}}
                         <h1 class="h3 mb2 md-mt2 md-mb2 md-ml0 flex-auto px2">
-
+                            <span class="sm-hide md-hide lg-hide">Mediathek - </span><span class="md-hide lg-hide">{{if not (eq .Title "")}}{{.Title}}<br />{{end}}</span>
                             <input  id="searchtext"
                                     type="text"
                                     aria-label="Search Text"
@@ -240,12 +233,6 @@ limitations under the License.
                         <div class="commerce-select-wrapper inline-block md-mr1 pl2 md-hide lg-hide">
                             <h2 class="h5 mb2">Media</h2>
                             {{range .FacetCount}}
-                                <!--
-                                <div class="ampstart-input ampstart-input-radio inline-block relative m0 p0 mb3 " on="change: AMP.setState({FacetSelect:{ {{.Id}}: event.value}})">
-                                    <input type="checkbox" value="" name="h{{.Id}}" id="h{{.Id}}" class="relative" {{if .Selected}}checked="true"{{end}}>
-                                    <label for="h{{.Id}}" class="" aria-hidden="true">{{.Name}}</label>
-                                </div>
-                                    -->
                                 <button
                                         class="ampstart-btn-facet{{if .Selected}}-inv{{end}} ampstart-btn caps"
                                         on="tap:AMP.setState({SearchResultStart:0, SearchFacets: { {{js .Id}}: { Selected: !(SearchFacets.{{js .Id}}.Selected)}}}),search.submit">
@@ -268,63 +255,10 @@ limitations under the License.
                         <div class="inline">{{add .SearchResultStart .SearchResultRows}}</div>]
                     </h2>
                     <p>&nbsp;</p>
-                    <!-- BEGIN - Navigation -->
-                    <table>
-                        <tr>
-                            <td>
-                                <svg    id="ButtonStart"
-                                        aria-label="Go to start"
-                                        [class]="(SearchResultStart<=0?'':'')"
-                                        class="{{if le .SearchResultStart 0}}{{end}}"
-                                        viewBox="0 0 24 24"
-                                        fill="black"
-                                        width="48px"
-                                        height="48px"
-                                        version="1.1"
-                                        role="button"
-                                        tabindex="2"
-                                        on="tap:AMP.setState({SearchResultStart:0}),search.submit">
-                                    <use href="#imgpagefirst"></use>
-                                </svg>
-                            </td>
-                            <td>
-                                <svg
-                                        id="ButtonPrevPage"
-                                        aria-label="Previous Page"
-                                        [class]="(SearchResultStart<=0?'hidden':'')"
-                                        class="{{if le .SearchResultStart 0}}hidden{{end}}"
-                                        version="1.1"
-                                        height="48px"
-                                        width="48px"
-                                        fill="black"
-                                        viewBox="0 0 24 24"
-                                        role="button"
-                                        tabindex="3"
-                                        on="tap:AMP.setState({SearchResultStart:(SearchResultStart-10)}),search.submit"
-                                >
-                                    <use href="#imgpageleft"></use>
-                                </svg>
-                            </td>
-                            <td>
-                                <svg
-                                        id="ButtonNextPage"
-                                        aria-label="Next Page"
-                                        class="{{if ge (add .SearchResultStart .SearchResultRows) .SearchResultTotal}}hidden{{end}}"
-                                        version="1.1"
-                                        height="48px"
-                                        width="48px"
-                                        fill="black"
-                                        viewBox="0 0 24 24"
-                                        role="button"
-                                        tabindex="4"
-                                        on="tap:AMP.setState({SearchResultStart:(SearchResultStart+10)}),search.submit"
-                                >
-                                    <use href="#imgpageright"></use>
-                                </svg>
-                            </td>
-                        </tr>
-                    </table>
-                    <!-- END - Navigation -->
+
+                    <!-- Paging -->
+                    {{template "searchNav.inc.gohtml" . }}
+
                     <p>&nbsp;</p>
                 </div>
                 <!-- --------------------------------
@@ -454,61 +388,10 @@ limitations under the License.
                 -------------------------------- -->
 
                 <br />
-                <!-- BEGIN Navigation -->
-                <table>
-                    <tr>
-                        <td>
-                            <svg
-                                    [class]="(SearchResultStart<=0?'':'')"
-                                    class="{{if le .SearchResultStart 0}}{{end}}"
-                                    aria-label="Icon Goto Start"
-                                    viewBox="0 0 24 24"
-                                    fill="black"
-                                    width="48px"
-                                    height="48px"
-                                    version="1.1"
-                                    role="button"
-                                    tabindex="2"
-                                    on="tap:AMP.setState({SearchResultStart:0}),resultListSmall.refresh,resultListWide.refresh,search.submit,top.scrollTo(duration=200)">
-                                <use href="#imgpagefirst"></use>
-                            </svg>
-                        </td>
-                        <td>
-                            <svg
-                                    [class]="(SearchResultStart<=0?'hidden':'')"
-                                    class="{{if le .SearchResultStart 0}}hidden{{end}}"
-                                    aria-label="Icon Previous Page"
-                                    version="1.1"
-                                    height="48px"
-                                    width="48px"
-                                    fill="black"
-                                    viewBox="0 0 24 24"
-                                    role="button"
-                                    tabindex="3"
-                                    on="tap:AMP.setState({SearchResultStart:(SearchResultStart-10)}),resultListSmall.refresh,resultListWide.refresh,search.submit,top.scrollTo(duration=200)"
-                            >
-                                <use href="#imgpageleft"></use>
-                            </svg>
-                        </td>
-                        <td>
-                            <svg
-                                    class="{{if ge (add .SearchResultStart .SearchResultRows) .SearchResultTotal}}hidden{{end}}"
-                                    aria-label="Icon Next Page"
-                                    version="1.1"
-                                    height="48px"
-                                    width="48px"
-                                    fill="black"
-                                    viewBox="0 0 24 24"
-                                    role="button"
-                                    tabindex="4"
-                                    on="tap:AMP.setState({SearchResultStart:(SearchResultStart+10)}),search.submit"
-                            >
-                                <use href="#imgpageright"></use>
-                            </svg>
-                        </td>
-                    </tr>
-                </table>
-                <!-- END Navigation -->
+
+                <!-- Paging -->
+                {{template "searchNav.inc.gohtml" . }}
+
             </div>
         </section>
 </main>

@@ -56,10 +56,11 @@ type Google struct {
 }
 
 type Template struct {
-	Detail    []string `toml:"detail"`
-	Error     []string `toml:"error"`
-	Forbidden []string `toml:"forbidden"`
-	Search    []string `toml:"search"`
+	Detail      []string `toml:"detail"`
+	Error       []string `toml:"error"`
+	Forbidden   []string `toml:"forbidden"`
+	Search      []string `toml:"search"`
+	ImageSearch []string `toml:"imagesearch"`
 }
 
 type Solr struct {
@@ -118,6 +119,7 @@ type Config struct {
 	DetailPrefix        string            `toml:"detailprefix"`
 	UpdatePrefix        string            `toml:"updateprefix"`
 	SearchPrefix        string            `toml:"searchprefix"`
+	ImageSearchPrefix   string            `toml:"imagesearchprefix"`
 	ApiPrefix           string            `toml:"apiprefix"`
 	JWTKey              string            `toml:"jwtkey"`
 	JWTAlg              []string          `toml:"jwtalg"`
@@ -159,6 +161,7 @@ func LoadConfig(filepath string) Config {
 	conf.DetailPrefix = strings.Trim(conf.DetailPrefix, "/")
 	conf.UpdatePrefix = strings.Trim(conf.UpdatePrefix, "/")
 	conf.SearchPrefix = strings.Trim(conf.SearchPrefix, "/")
+	conf.ImageSearchPrefix = strings.Trim(conf.ImageSearchPrefix, "/")
 	conf.ApiPrefix = strings.Trim(conf.ApiPrefix, "/")
 	return conf
 }

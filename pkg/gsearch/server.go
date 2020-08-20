@@ -100,6 +100,28 @@ type SearchStatus struct {
 	MetaDescription     string
 }
 
+type ImageSearchStatus struct {
+	Type              string
+	Notifications     []Notification
+	User              *User
+	Self              string
+	Token             string
+	BaseUrl           string
+	SelfPath          string
+	AmpBase           string
+	LoginUrl          string
+	Title             string
+	SearchResult      template.JS
+	Result            *SearchResult
+	QueryApi          template.URL
+	SearchResultStart int
+	SearchResultRows  int
+	SearchResultTotal int
+	SearchString      string
+	Menu              []Menu
+	MetaDescription   string
+}
+
 type SubFilter struct {
 	Name   string `toml:"name"`
 	Label  string `toml:"label"`
@@ -149,6 +171,7 @@ type SearchResultItem struct {
 	ContentPublic bool           `json:"contentpublic"`
 	MetaOK        bool           `json:"metaok"`
 	ContentOK     bool           `json:"contentok"`
+	Poster        *Media         `json:"poster"`
 }
 
 func (ng NetGroups) Contains(str string) []string {
@@ -168,43 +191,45 @@ func (ng NetGroups) Contains(str string) []string {
 }
 
 type Server struct {
-	mts               *MTSolr
-	srv               *http.Server
-	userCache         *UserCache
-	host              string
-	port              string
-	addrExt           string
-	staticDir         string
-	detailPrefix      string
-	staticPrefix      string
-	updatePrefix      string
-	searchPrefix      string
-	apiPrefix         string
-	jwtKey            string
-	jwtAlg            []string
-	linkTokenExp      time.Duration
-	loginUrl          string
-	loginIssuer       string
-	guestGroup        string
-	adminGroup        string
-	detailTemplate    *template.Template
-	errorTemplate     *template.Template
-	forbiddenTemplate *template.Template
-	searchTemplate    *template.Template
-	mediaserver       string
-	mediaserverKey    string
-	mediaTokenExp     time.Duration
-	log               *logging.Logger
-	accesslog         io.Writer
-	ampApiKey         *rsa.PrivateKey
-	ampCache          *amp.Cache
-	searchFields      map[string]string
-	facets            SolrFacetList
-	locations         NetGroups
-	menu              []Menu
-	icons             map[string]string
-	baseFilter        string
-	subFilters        []SubFilter
+	mts                 *MTSolr
+	srv                 *http.Server
+	userCache           *UserCache
+	host                string
+	port                string
+	addrExt             string
+	staticDir           string
+	detailPrefix        string
+	staticPrefix        string
+	updatePrefix        string
+	searchPrefix        string
+	imageSearchPrefix   string
+	apiPrefix           string
+	jwtKey              string
+	jwtAlg              []string
+	linkTokenExp        time.Duration
+	loginUrl            string
+	loginIssuer         string
+	guestGroup          string
+	adminGroup          string
+	detailTemplate      *template.Template
+	errorTemplate       *template.Template
+	forbiddenTemplate   *template.Template
+	searchTemplate      *template.Template
+	imageSearchTemplate *template.Template
+	mediaserver         string
+	mediaserverKey      string
+	mediaTokenExp       time.Duration
+	log                 *logging.Logger
+	accesslog           io.Writer
+	ampApiKey           *rsa.PrivateKey
+	ampCache            *amp.Cache
+	searchFields        map[string]string
+	facets              SolrFacetList
+	locations           NetGroups
+	menu                []Menu
+	icons               map[string]string
+	baseFilter          string
+	subFilters          []SubFilter
 }
 
 func NewServer(
@@ -214,6 +239,7 @@ func NewServer(
 	errorTemplate,
 	forbiddenTemplate []string,
 	searchTemplate []string,
+	imageSearchTemplate []string,
 	addr,
 	addrExt,
 	mediaserver,
@@ -233,6 +259,7 @@ func NewServer(
 	detailPrefix string,
 	updatePrefix string,
 	searchPrefix string,
+	imageSearchPrefix string,
 	apiPrefix string,
 	AmpCache string,
 	ampApiKeyFile string,
@@ -271,51 +298,43 @@ func NewServer(
 		return nil, err
 	}
 	ampCache, _ := aCaches[AmpCache]
-	/*
-		if !ok {
-			keys := reflect.ValueOf(aCaches).MapKeys()
-			if len(keys) == 0 {
-				return nil, errors.New("no AMP caches found")
-			}
-			ampCache = aCaches[keys[rand.Intn(len(keys))].Interface().(string)]
-		}
-	*/
 
 	srv := &Server{
-		mts:            mts,
-		userCache:      uc,
-		host:           host,
-		port:           port,
-		addrExt:        addrExt,
-		mediaserver:    mediaserver,
-		mediaserverKey: mediaserverkey,
-		mediaTokenExp:  mediatokenexp,
-		log:            log,
-		accesslog:      accesslog,
-		staticPrefix:   staticPrefix,
-		staticDir:      staticDir,
-		jwtKey:         jwtKey,
-		jwtAlg:         jwtAlg,
-		linkTokenExp:   linkTokenExp,
-		loginUrl:       loginUrl,
-		loginIssuer:    loginIssuer,
-		guestGroup:     guestGroup,
-		adminGroup:     adminGroup,
-		detailPrefix:   detailPrefix,
-		updatePrefix:   updatePrefix,
-		searchPrefix:   searchPrefix,
-		apiPrefix:      apiPrefix,
-		ampCache:       ampCache,
-		ampApiKey:      ampApiKey,
-		searchFields:   searchFields,
-		facets:         facets,
-		locations:      locations,
-		menu:           menu,
-		icons:          icons,
-		baseFilter:     baseFilter,
-		subFilters:     subFilter,
+		mts:               mts,
+		userCache:         uc,
+		host:              host,
+		port:              port,
+		addrExt:           addrExt,
+		mediaserver:       mediaserver,
+		mediaserverKey:    mediaserverkey,
+		mediaTokenExp:     mediatokenexp,
+		log:               log,
+		accesslog:         accesslog,
+		staticPrefix:      staticPrefix,
+		staticDir:         staticDir,
+		jwtKey:            jwtKey,
+		jwtAlg:            jwtAlg,
+		linkTokenExp:      linkTokenExp,
+		loginUrl:          loginUrl,
+		loginIssuer:       loginIssuer,
+		guestGroup:        guestGroup,
+		adminGroup:        adminGroup,
+		detailPrefix:      detailPrefix,
+		updatePrefix:      updatePrefix,
+		searchPrefix:      searchPrefix,
+		imageSearchPrefix: imageSearchPrefix,
+		apiPrefix:         apiPrefix,
+		ampCache:          ampCache,
+		ampApiKey:         ampApiKey,
+		searchFields:      searchFields,
+		facets:            facets,
+		locations:         locations,
+		menu:              menu,
+		icons:             icons,
+		baseFilter:        baseFilter,
+		subFilters:        subFilter,
 	}
-	if err := srv.InitTemplates(detailTemplate, errorTemplate, forbiddenTemplate, searchTemplate); err != nil {
+	if err := srv.InitTemplates(detailTemplate, errorTemplate, forbiddenTemplate, searchTemplate, imageSearchTemplate); err != nil {
 		return nil, emperror.Wrapf(err, "cannot initialize server")
 	}
 	return srv, nil
@@ -345,7 +364,7 @@ func solrOr(field string, values []string, weight1, weight2 int) string {
 	return result
 }
 
-func (s *Server) InitTemplates(detailTemplate, errorTemplate, forbiddenTemplate, searchTemplate []string) (err error) {
+func (s *Server) InitTemplates(detailTemplate, errorTemplate, forbiddenTemplate, searchTemplate, imageSearchTemplate []string) (err error) {
 	mediaMatch := regexp.MustCompile(`^mediaserver:([^/]+)/([^/]+)$`)
 
 	funcMap := sprig.FuncMap()
@@ -366,6 +385,32 @@ func (s *Server) InitTemplates(detailTemplate, errorTemplate, forbiddenTemplate,
 	}
 	funcMap["srcset"] = func(value string) template.Srcset {
 		return template.Srcset(value)
+	}
+	funcMap["resizeW"] = func(width, height, targetW, targetH int64) int64 {
+		aspect := float64(width) / float64(height)
+		targetAspect := float64(targetW) / float64(targetH)
+		if aspect > targetAspect {
+			w := float64(targetW)
+			//h := w/aspect
+			return int64(w)
+		} else {
+			h := float64(targetH)
+			w := h * aspect
+			return int64(w)
+		}
+	}
+	funcMap["resizeH"] = func(width, height, targetW, targetH int64) int64 {
+		aspect := float64(width) / float64(height)
+		targetAspect := float64(targetW) / float64(targetH)
+		if aspect > targetAspect {
+			w := float64(targetW)
+			h := w / aspect
+			return int64(h)
+		} else {
+			h := float64(targetH)
+			//w := h*aspect
+			return int64(h)
+		}
 	}
 	funcMap["mediachild"] = func(uri, child string) string {
 		matches := mediaMatch.FindStringSubmatch(uri)
@@ -443,7 +488,11 @@ func (s *Server) InitTemplates(detailTemplate, errorTemplate, forbiddenTemplate,
 	}
 	s.searchTemplate, err = template.New("search.amp.gohtml").Funcs(funcMap).ParseFiles(searchTemplate...)
 	if err != nil {
-		return emperror.Wrapf(err, "cannot parse forbidden template %v", forbiddenTemplate)
+		return emperror.Wrapf(err, "cannot parse search template %v", searchTemplate)
+	}
+	s.imageSearchTemplate, err = template.New("imagesearch.amp.gohtml").Funcs(funcMap).ParseFiles(imageSearchTemplate...)
+	if err != nil {
+		return emperror.Wrapf(err, "cannot parse imagesearch template %v", imageSearchTemplate)
 	}
 	return nil
 }
@@ -564,40 +613,45 @@ func (s *Server) ListenAndServe(cert, key string) error {
 
 	// https://data.mediathek.hgk.fhnw.ch/search
 	searchRegexp := regexp.MustCompile(fmt.Sprintf("/%s(/(.+))?$", s.searchPrefix))
+	searchMatcher := func(r *http.Request, rm *mux.RouteMatch) bool {
+		matches := searchRegexp.FindSubmatch([]byte(r.URL.Path))
+		if len(matches) == 0 {
+			return false
+		}
+		rm.Vars = map[string]string{}
+		if len(matches) >= 3 {
+			if matches[2] != nil {
+				filter := string(matches[2])
+				rm.Vars = map[string]string{}
+				rm.Vars["subfilter"] = filter
+			}
+		}
+		return true
+	}
 	router.
-		MatcherFunc(func(r *http.Request, rm *mux.RouteMatch) bool {
-			matches := searchRegexp.FindSubmatch([]byte(r.URL.Path))
-			if len(matches) == 0 {
-				return false
+		MatcherFunc(searchMatcher).
+		Handler(handlers.CompressHandler(func() http.Handler { return http.HandlerFunc(s.searchHandler) }())).
+		Methods("GET")
+
+	imageSearchRegexp := regexp.MustCompile(fmt.Sprintf("/%s(/(.+))?$", s.imageSearchPrefix))
+	imageSearchMatcher := func(r *http.Request, rm *mux.RouteMatch) bool {
+		matches := imageSearchRegexp.FindSubmatch([]byte(r.URL.Path))
+		if len(matches) == 0 {
+			return false
+		}
+		rm.Vars = map[string]string{}
+		if len(matches) >= 3 {
+			if matches[2] != nil {
+				filter := string(matches[2])
+				rm.Vars = map[string]string{}
+				rm.Vars["subfilter"] = filter
 			}
-			rm.Vars = map[string]string{}
-			if len(matches) >= 3 {
-				if matches[2] != nil {
-					filter := string(matches[2])
-					// check for valid filtername
-					/*
-						filterok := false
-						for _, sf := range s.subFilters {
-							if sf.Label == filter {
-								filterok = true
-								break
-							}
-						}
-						// otherwise 404
-						if !filterok {
-							if filter != "data" {
-								return false
-							}
-						}
-					*/
-					rm.Vars = map[string]string{}
-					rm.Vars["subfilter"] = filter
-				}
-			}
-			return true
-		}).
-		Handler(
-			handlers.CompressHandler(func() http.Handler { return http.HandlerFunc(s.searchHandler) }())).
+		}
+		return true
+	}
+	router.
+		MatcherFunc(imageSearchMatcher).
+		Handler(handlers.CompressHandler(func() http.Handler { return http.HandlerFunc(s.imageSearchHandler) }())).
 		Methods("GET")
 	//router.HandleFunc(fmt.Sprintf("/%s", s.searchPrefix), s.searchHandler).Methods("GET")
 
@@ -829,6 +883,7 @@ func (s *Server) doc2result(search string,
 			Date:       doc.Content.Date,
 			Icon:       icon,
 			Media:      map[string]int{},
+			Poster:     doc.Content.Poster,
 		}
 		if key == 0 {
 			item.FirstItem = true
