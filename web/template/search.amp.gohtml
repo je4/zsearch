@@ -21,18 +21,25 @@ limitations under the License.
 
 <head>
     <meta charset="utf-8">
-    <title>Mediathek</title>
-    <link rel="canonical" href="{{.Self}}">
     <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
     <meta name="Description" content="{{.MetaDescription}}">
 
     <script async="" src="https://cdn.ampproject.org/v0.js"></script>
 
+    <!-- preload the hero image -->
+    <link rel="preload" as="image"
+          href="{{.BaseUrl}}/static/img/wide-mediathek-hero_1280w.webp"
+          media="(min-width:40.06rem)">
 
-
-    <style amp-boilerplate=""></style></noscript>
-
-
+    <!-- preload standart font -->
+    <link rel="preload" as="font"
+          href="{{.BaseUrl}}/static/font/inter/Inter-roman.var.woff2?v=3.15"
+          type="font/woff2"
+          crossorigin="anonymous">
+    <link rel="preload" as="font"
+          href="{{.BaseUrl}}/static/font/inter/Inter-Bold.woff2?v=3.15"
+          type="font/woff2"
+          crossorigin="anonymous">
 
     <script custom-element="amp-sidebar" src="https://cdn.ampproject.org/v0/amp-sidebar-0.1.js" async=""></script>
     <script custom-element="amp-bind" src="https://cdn.ampproject.org/v0/amp-bind-0.1.js" async=""></script>
@@ -48,6 +55,14 @@ limitations under the License.
     {{template "css.inc.gohtml" . }}
     <!-- end CSS -->
 
+    <!-- start inter font CSS -->
+    {{template "inter_css.inc.gohtml" . }}
+    <!-- end inter font CSS -->
+
+    <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
+
+    <title>Mediathek</title>
+    <link rel="canonical" href="{{.Self}}">
 </head>
 
 <body>
@@ -116,8 +131,7 @@ limitations under the License.
     {{end}}
     <amp-img
             class="commerce-listing-banner xs-hide sm-hide"
-            src="{{.BaseUrl}}/static/img/wide-mediathek-hero.webp"
-            srcset="{{.BaseUrl}}/static/img/wide-mediathek-hero_1280w.webp 1280w, {{.BaseUrl}}/static/img/wide-mediathek-hero_640w.webp 640w"
+            src="{{.BaseUrl}}/static/img/wide-mediathek-hero_1280w.webp"
             width="2560"
             height="400"
             layout="responsive"

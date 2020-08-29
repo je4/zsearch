@@ -104,6 +104,8 @@ func (mts *MTSolr) GetContent(entry *cacheEntry) (Source, error) {
 		content, err = NewSourceZotero(entry, mts)
 	case "diplomhgk":
 		content, err = NewSourceDiplomHGK(entry, mts)
+	case "cdk":
+		content, err = NewSourceCDK(entry, mts)
 	default:
 		err = errors.New(fmt.Sprintf("invalid Source %s", entry.ContentStr))
 	}
@@ -171,17 +173,21 @@ func (mts *MTSolr) cacheEntryFromDoc(doc *solr.Document) (*cacheEntry, string, e
 	acl_contentI := doc.Get("acl_content")
 	acl_content := interface2StringSlice(acl_contentI)
 
-	if !doc.Has("catalog") {
-		return nil, "", errors.New(fmt.Sprintf("id %s has no catalog field", id))
+	var catalog []string
+	if doc.Has("catalog") {
+		catalogI := doc.Get("catalog")
+		catalog = interface2StringSlice(catalogI)
+	} else {
+		catalog = []string{srcstr}
 	}
-	catalogI := doc.Get("catalog")
-	catalog := interface2StringSlice(catalogI)
 
-	if !doc.Has("cluster") {
-		return nil, "", errors.New(fmt.Sprintf("id %s has no cluster field", id))
+	var cluster []string
+	if doc.Has("cluster") {
+		clusterI := doc.Get("cluster")
+		cluster = interface2StringSlice(clusterI)
+	} else {
+		cluster = []string{srcstr}
 	}
-	clusterI := doc.Get("cluster")
-	cluster := interface2StringSlice(clusterI)
 
 	entry := &cacheEntry{
 		Id:         id,
