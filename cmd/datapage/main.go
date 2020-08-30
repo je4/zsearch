@@ -219,6 +219,7 @@ func main() {
 		accesslog,
 		config.StaticPrefix,
 		config.StaticDir,
+		config.StaticCacheControl,
 		config.JWTKey,
 		config.JWTAlg,
 		config.LinkTokenExp.Duration,

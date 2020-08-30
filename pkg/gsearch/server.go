@@ -29,6 +29,7 @@ import (
 	"github.com/goph/emperror"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/htfy96/reformism"
 	"github.com/op/go-logging"
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/amp"
 	"html/template"
@@ -200,6 +201,7 @@ type Server struct {
 	staticDir           string
 	detailPrefix        string
 	staticPrefix        string
+	staticCacheControl  string
 	updatePrefix        string
 	searchPrefix        string
 	imageSearchPrefix   string
@@ -249,6 +251,7 @@ func NewServer(
 	accesslog io.Writer,
 	staticPrefix,
 	staticDir,
+	staticCacheControl,
 	jwtKey string,
 	jwtAlg []string,
 	linkTokenExp time.Duration,
@@ -300,39 +303,40 @@ func NewServer(
 	ampCache, _ := aCaches[AmpCache]
 
 	srv := &Server{
-		mts:               mts,
-		userCache:         uc,
-		host:              host,
-		port:              port,
-		addrExt:           addrExt,
-		mediaserver:       mediaserver,
-		mediaserverKey:    mediaserverkey,
-		mediaTokenExp:     mediatokenexp,
-		log:               log,
-		accesslog:         accesslog,
-		staticPrefix:      staticPrefix,
-		staticDir:         staticDir,
-		jwtKey:            jwtKey,
-		jwtAlg:            jwtAlg,
-		linkTokenExp:      linkTokenExp,
-		loginUrl:          loginUrl,
-		loginIssuer:       loginIssuer,
-		guestGroup:        guestGroup,
-		adminGroup:        adminGroup,
-		detailPrefix:      detailPrefix,
-		updatePrefix:      updatePrefix,
-		searchPrefix:      searchPrefix,
-		imageSearchPrefix: imageSearchPrefix,
-		apiPrefix:         apiPrefix,
-		ampCache:          ampCache,
-		ampApiKey:         ampApiKey,
-		searchFields:      searchFields,
-		facets:            facets,
-		locations:         locations,
-		menu:              menu,
-		icons:             icons,
-		baseFilter:        baseFilter,
-		subFilters:        subFilter,
+		mts:                mts,
+		userCache:          uc,
+		host:               host,
+		port:               port,
+		addrExt:            addrExt,
+		mediaserver:        mediaserver,
+		mediaserverKey:     mediaserverkey,
+		mediaTokenExp:      mediatokenexp,
+		log:                log,
+		accesslog:          accesslog,
+		staticPrefix:       staticPrefix,
+		staticDir:          staticDir,
+		staticCacheControl: staticCacheControl,
+		jwtKey:             jwtKey,
+		jwtAlg:             jwtAlg,
+		linkTokenExp:       linkTokenExp,
+		loginUrl:           loginUrl,
+		loginIssuer:        loginIssuer,
+		guestGroup:         guestGroup,
+		adminGroup:         adminGroup,
+		detailPrefix:       detailPrefix,
+		updatePrefix:       updatePrefix,
+		searchPrefix:       searchPrefix,
+		imageSearchPrefix:  imageSearchPrefix,
+		apiPrefix:          apiPrefix,
+		ampCache:           ampCache,
+		ampApiKey:          ampApiKey,
+		searchFields:       searchFields,
+		facets:             facets,
+		locations:          locations,
+		menu:               menu,
+		icons:              icons,
+		baseFilter:         baseFilter,
+		subFilters:         subFilter,
 	}
 	if err := srv.InitTemplates(detailTemplate, errorTemplate, forbiddenTemplate, searchTemplate, imageSearchTemplate); err != nil {
 		return nil, emperror.Wrapf(err, "cannot initialize server")
@@ -368,9 +372,15 @@ func (s *Server) InitTemplates(detailTemplate, errorTemplate, forbiddenTemplate,
 	mediaMatch := regexp.MustCompile(`^mediaserver:([^/]+)/([^/]+)$`)
 
 	funcMap := sprig.FuncMap()
+
+	for key, val := range reformism.FuncsHTML {
+		funcMap[key] = val
+	}
+
 	funcMap["url"] = func(value string) template.URL {
 		return template.URL(value)
 	}
+
 	funcMap["js"] = func(value string) template.JS {
 		return template.JS(value)
 	}
@@ -693,7 +703,7 @@ func (s *Server) ListenAndServe(cert, key string) error {
 		PathPrefix(fmt.Sprintf("/%s", s.staticPrefix)).
 		Handler(http.StripPrefix("/"+s.staticPrefix, func(h http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.Header().Set("Cache-Control", "max-age=14400, s-maxage=12200, stale-while-revalidate=9000, public") // 30 days
+				w.Header().Set("Cache-Control", s.staticCacheControl)
 				h.ServeHTTP(w, r)
 			})
 		}(http.FileServer(http.Dir(s.staticDir))))).Methods("GET")

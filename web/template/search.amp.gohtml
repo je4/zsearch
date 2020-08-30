@@ -231,7 +231,6 @@ limitations under the License.
                                         fill="black"
                                         role="button"
                                         style="vertical-align: middle;"
-                                        tabindex="1"
                                         on="tap:AMP.setState({SearchResult:{items: []},SearchResultStart:0}),search.submit"
                                         viewBox="0 0 24 24">
                                 <use href="#imgsearch"></use>
@@ -268,7 +267,7 @@ limitations under the License.
                     <p>&nbsp;</p>
 
                     <!-- Paging -->
-                    {{template "searchNav.inc.gohtml" . }}
+                    {{template "searchNav.inc.gohtml" . | arg "navPrefix" "top" }}
 
                     <p>&nbsp;</p>
                 </div>
@@ -401,7 +400,7 @@ limitations under the License.
                 <br />
 
                 <!-- Paging -->
-                {{template "searchNav.inc.gohtml" . }}
+                {{template "searchNav.inc.gohtml" . | arg "navPrefix" "bottom" }}
 
             </div>
         </section>

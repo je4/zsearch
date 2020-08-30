@@ -32,6 +32,20 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 	var err error
 	vars := mux.Vars(req)
 
+	if pusher, ok := w.(http.Pusher); ok {
+		// Push is supported.
+		furl := "/" + s.staticPrefix + "/font/inter/Inter-roman.var.woff2?v=3.15"
+		s.log.Infof("pushing font %s", furl)
+		if err := pusher.Push(furl, nil); err != nil {
+			s.log.Errorf("Failed to push %s: %v", furl, err)
+		}
+		furl = "/" + s.staticPrefix + "/font/inter/Inter-Bold.woff2?v=3.15"
+		s.log.Infof("pushing font %s", furl)
+		if err := pusher.Push(furl, nil); err != nil {
+			s.log.Errorf("Failed to push %s: %v", furl, err)
+		}
+	}
+
 	status := SearchStatus{
 		Type:          "search",
 		Notifications: []Notification{},

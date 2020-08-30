@@ -16,6 +16,7 @@ require (
 	github.com/goph/emperror v0.17.2
 	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.4
+	github.com/htfy96/reformism v0.0.0-20160819020323-e5bfca398e73
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.10 // indirect
 	github.com/juliangruber/go-intersect v1.0.0

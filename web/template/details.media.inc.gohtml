@@ -95,7 +95,8 @@
                     {
                         "audios": [
                         {{range $key, $audio := .Doc.Content.Media.audio}}
-                        {{if $key}},{{end}}"{{medialink $audio.Uri "master" "" (not $contentPublic)}}"
+                        {{$web := mediachild $audio.Uri "$$web$$1"}}
+                        {{if $key}},{{end}}"{{medialink $web "master" "" (not $contentPublic)}}"
                         {{end}}
                         ],
                         "postersJPEG": [

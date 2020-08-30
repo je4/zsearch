@@ -116,6 +116,7 @@ type Config struct {
 	KeyPEM              string            `toml:"keypem"`
 	StaticDir           string            `toml:"staticdir"`
 	StaticPrefix        string            `toml:"staticprefix"`
+	StaticCacheControl  string            `toml:"staticcachecontrol"`
 	DetailPrefix        string            `toml:"detailprefix"`
 	UpdatePrefix        string            `toml:"updateprefix"`
 	SearchPrefix        string            `toml:"searchprefix"`
