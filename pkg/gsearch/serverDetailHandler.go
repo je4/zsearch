@@ -203,7 +203,7 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	status.Title = status.Doc.Content.CollectionTitle
-	status.IsAmp = status.User.LoggedIn && !status.User.LoggedOut && status.MetaOK
+	status.IsAmp = !status.User.LoggedIn && !status.User.LoggedOut && status.MetaOK
 
 	metadescription := ""
 	metadescription = fmt.Sprintf("Title: %s", doc.Content.Title)

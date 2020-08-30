@@ -51,13 +51,10 @@ limitations under the License.
     <script async custom-element="amp-form" src="https://cdn.ampproject.org/v0/amp-form-0.1.js"></script>
     <script async custom-element="amp-list" src="https://cdn.ampproject.org/v0/amp-list-0.1.js"></script>
 
-    <!-- start CSS -->
-    {{template "css.inc.gohtml" . }}
-    <!-- end CSS -->
-
-    <!-- start inter font CSS -->
-    {{template "inter_css.inc.gohtml" . }}
-    <!-- end inter font CSS -->
+    <style amp-custom="">
+        {{template "main.inc.min.css" . }}
+        {{template "inter.inc.css" . }}
+    </style>
 
     <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
 
@@ -201,7 +198,8 @@ limitations under the License.
                     <!-- BEGIN - FORM -->
                     <form method="GET"
                           id="search"
-                          action="#">
+                          action="#"
+                          target="_top">
                         {{if not (eq .Token "")}}<input type="hidden" name="token" value="{{.Token}}"/>{{end}}
                         <input type="hidden" name="start" value="0" [value]="SearchResultStart"/>
                         <input type="hidden" name="lastsearch" value="" [value]="SearchResultSearch"/>
@@ -231,6 +229,7 @@ limitations under the License.
                                         fill="black"
                                         role="button"
                                         style="vertical-align: middle;"
+                                        tabindex="1"
                                         on="tap:AMP.setState({SearchResult:{items: []},SearchResultStart:0}),search.submit"
                                         viewBox="0 0 24 24">
                                 <use href="#imgsearch"></use>
@@ -267,7 +266,7 @@ limitations under the License.
                     <p>&nbsp;</p>
 
                     <!-- Paging -->
-                    {{template "searchNav.inc.gohtml" . | arg "navPrefix" "top" }}
+                    {{template "searchNav.inc.gohtml" . | arg "navPrefix" "top" | arg "tabIndex" 2 }}
 
                     <p>&nbsp;</p>
                 </div>
@@ -284,7 +283,7 @@ limitations under the License.
                                         <b>{{$field.AuthorText}}</b>
                                     </div>
                                     <div style="display:table-cell; width:24px; vertical-align: top; padding-left: 5px; padding-right: 15px;">
-                                        <svg alt="{{$field.Type}}"
+                                        <svg
                                              aria-label="Icon {{$field.Type}}"
                                                 id="svg12"
                                                 version="1.1"
@@ -292,6 +291,7 @@ limitations under the License.
                                                 height="24"
                                                 width="24">
                                             <use href="{{$field.Icon}}"></use>
+                                            <desc>{{$field.Type}}</desc>
                                         </svg>
                                     </div>
                                     <div style="display:table-cell; vertical-align: top;">
@@ -302,7 +302,7 @@ limitations under the License.
                                         {{if not (eq $field.Collection "")}}{{$field.Collection}}<br />{{end}}
                                         {{if (gt (len $field.Media) 0)}}
                                             {{if $field.ContentOK}}
-                                                <svg alt="content accessible"
+                                                <svg
                                                      aria-label="Icon Has Content"
                                                      id="svg12"
                                                      version="1.1"
@@ -310,9 +310,10 @@ limitations under the License.
                                                      height="16"
                                                      width="16">
                                                     <use href="#ion-lock-open-outline"></use>
+                                                    <desc>content accessible</desc>
                                                 </svg>
                                             {{else}}
-                                                <svg alt="content closed"
+                                                <svg
                                                      aria-label="Icon No Content"
                                                      id="svg12"
                                                      version="1.1"
@@ -320,6 +321,7 @@ limitations under the License.
                                                      height="16"
                                                      width="16">
                                                     <use href="#ion-lock-closed-outline"></use>
+                                                    <desc>content closed</desc>
                                                 </svg>
                                             {{end}}
                                             {{range $type, $count := $field.Media}}
@@ -346,13 +348,14 @@ limitations under the License.
                                 <div style="display:table;">
                                     <div style="display:table-row;">
                                         <div style="display:table-cell; width:24px; vertical-align: top; padding-left: 5px; padding-right: 15px;">
-                                            <svg alt="{{$field.Type}}"
+                                            <svg
                                                  aria-label="Icon {{$field.Type}}"
                                                  version="1.1"
                                                  viewBox="0 0 512 512"
                                                  height="24"
                                                  width="24">
                                                 <use href="{{$field.Icon}}"></use>
+                                                <desc>{{$field.Type}}</desc>
                                             </svg>
                                         </div>
                                         <div style="display:table-cell;">
@@ -364,22 +367,24 @@ limitations under the License.
                                             {{if not (eq $field.Collection "")}}<span  style="white-space: nowrap;">{{$field.Collection}}</span><br />{{end}}
                                             {{if (gt (len $field.Media) 0)}}
                                                 {{if $field.ContentOK}}
-                                                    <svg alt="content accessible"
+                                                    <svg
                                                          aria-label="Icon Has Content"
                                                          version="1.1"
                                                          viewBox="0 0 512 512"
                                                          height="16"
                                                          width="16">
                                                         <use href="#ion-lock-open-outline"></use>
+                                                        <desc>content accessible</desc>
                                                     </svg>
                                                 {{else}}
-                                                    <svg alt="content closed"
+                                                    <svg
                                                          aria-label="Icon No Content"
                                                          version="1.1"
                                                          viewBox="0 0 512 512"
                                                          height="16"
                                                          width="16">
                                                         <use href="#ion-lock-closed-outline"></use>
+                                                        <desc>content closed</desc>
                                                     </svg>
                                                 {{end}}
                                                 {{range $type, $count := $field.Media}}
@@ -400,7 +405,7 @@ limitations under the License.
                 <br />
 
                 <!-- Paging -->
-                {{template "searchNav.inc.gohtml" . | arg "navPrefix" "bottom" }}
+                {{template "searchNav.inc.gohtml" . | arg "navPrefix" "bottom" | arg "tabIndex" 5 }}
 
             </div>
         </section>

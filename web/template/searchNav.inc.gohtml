@@ -1,5 +1,5 @@
 <!-- BEGIN - Navigation -->
-{{if $args := . | require "navPrefix" | args }}
+{{if $args := . | require "navPrefix" | require "tabIndex" | args }}
     {{with .Origin}}
 <table>
     <tr>
@@ -14,6 +14,7 @@
                     height="48px"
                     version="1.1"
                     role="button"
+                    tabindex="{{add $args.tabIndex 1}}"
                     on="tap:AMP.setState({SearchResultStart:0}),search.submit">
                 <use href="#imgpagefirst"></use>
             </svg>
@@ -30,6 +31,7 @@
                     fill="black"
                     viewBox="0 0 24 24"
                     role="button"
+                    tabindex="{{add $args.tabIndex 2}}"
                     on="tap:AMP.setState({SearchResultStart:(SearchResultStart-10)}),search.submit"
             >
                 <use href="#imgpageleft"></use>
@@ -46,6 +48,7 @@
                     fill="black"
                     viewBox="0 0 24 24"
                     role="button"
+                    tabindex="{{add $args.tabIndex 3}}"
                     on="tap:AMP.setState({SearchResultStart:(SearchResultStart+10)}),search.submit">
                 <use href="#imgpageright"></use>
             </svg>
