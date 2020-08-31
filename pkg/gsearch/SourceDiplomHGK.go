@@ -93,6 +93,7 @@ func NewSourceDiplomHGK(entry *cacheEntry, mts *MTSolr) (*SourceDiplomHGK, error
 
 	dhgk := &SourceDiplomHGK{
 		mts:        mts,
+		DData:      SourceDiplomHGKData{},
 		doc:        entry.Doc,
 		contentStr: entry.ContentStr,
 	}
