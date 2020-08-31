@@ -102,7 +102,7 @@ func NewSourceDiplomHGK(entry *cacheEntry, mts *MTSolr) (*SourceDiplomHGK, error
 
 func (dhgk *SourceDiplomHGK) Init(entry *cacheEntry) error {
 	if err := json.Unmarshal([]byte(entry.ContentStr), &dhgk.DData); err != nil {
-		return emperror.Wrapf(err, "cannot unmarshal json\n%s", entry.ContentStr)
+		return emperror.Wrapf(err, "xcannot unmarshal json\n%s", entry.ContentStr)
 	}
 	dhgk.doc = entry.Doc
 	return nil
