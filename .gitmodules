@@ -1,3 +1,3 @@
 [submodule "web/static/ionicons"]
   path = web/static/ionicons
-  url = git://github.com/ionic-team/ionicons/
+  url = git://github.com/ionic-team/ionicons
