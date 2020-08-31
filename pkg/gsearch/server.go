@@ -542,7 +542,9 @@ func (s *Server) DoPanicJSON(writer http.ResponseWriter, status int, message str
 		StatusText string `json:"statustext"`
 		Message    string `json:"message"`
 	}
+
 	debug.PrintStack()
+
 	s.log.Error(message)
 	data := errData{
 		Status:     status,
