@@ -107,45 +107,48 @@ type Query struct {
 }
 
 type Config struct {
-	Logfile             string            `toml:"logfile"`
-	Loglevel            string            `toml:"loglevel"`
-	AccessLog           string            `toml:"accesslog"`
-	Addr                string            `toml:"addr"`
-	AddrExt             string            `toml:"addrext"`
-	CertPEM             string            `toml:"certpem"`
-	KeyPEM              string            `toml:"keypem"`
-	StaticDir           string            `toml:"staticdir"`
-	StaticPrefix        string            `toml:"staticprefix"`
-	StaticCacheControl  string            `toml:"staticcachecontrol"`
-	DetailPrefix        string            `toml:"detailprefix"`
-	UpdatePrefix        string            `toml:"updateprefix"`
-	SearchPrefix        string            `toml:"searchprefix"`
-	ImageSearchPrefix   string            `toml:"imagesearchprefix"`
-	ApiPrefix           string            `toml:"apiprefix"`
-	JWTKey              string            `toml:"jwtkey"`
-	JWTAlg              []string          `toml:"jwtalg"`
-	LinkTokenExp        duration          `toml:"linktokenexp"`
-	LoginUrl            string            `toml:"loginurl"`
-	LoginIssuer         string            `toml:"loginissuer"`
-	IdleTimeout         duration          `toml:"idletimeout"`
-	UserCacheSize       int               `toml:"usercachesize"`
-	Google              Google            `toml:"google"`
-	Template            Template          `toml:"template"`
-	Solr                Solr              `toml:"solr"`
-	Query               Query             `toml:"query"`
-	AccessGroup         AccessGroup       `toml:"access"`
-	Mediaserver         string            `toml:"mediaserver"`
-	MediaserverKey      string            `toml:"mediaserverkey"`
-	MediaserverExp      duration          `toml:"mediaserverexp"`
-	AmpCache            string            `toml:"ampcache"`
-	AmpApiKey           string            `toml:"ampapikey"`
-	CacheDir            string            `toml:"cachedir"`
-	ClearCacheOnStartup bool              `toml:"clearcacheonstartup"`
-	SearchFields        map[string]string `toml:"searchfields"`
-	Facets              []Facet           `toml:"facets"`
-	Locations           []Network         `toml:"locations"`
-	Menu                map[string]Menu   `toml:"menu"`
-	Icons               map[string]string `toml:"icons"`
+	Logfile             string              `toml:"logfile"`
+	Loglevel            string              `toml:"loglevel"`
+	AccessLog           string              `toml:"accesslog"`
+	Addr                string              `toml:"addr"`
+	AddrExt             string              `toml:"addrext"`
+	CertPEM             string              `toml:"certpem"`
+	KeyPEM              string              `toml:"keypem"`
+	StaticDir           string              `toml:"staticdir"`
+	StaticPrefix        string              `toml:"staticprefix"`
+	StaticCacheControl  string              `toml:"staticcachecontrol"`
+	DetailPrefix        string              `toml:"detailprefix"`
+	UpdatePrefix        string              `toml:"updateprefix"`
+	SearchPrefix        string              `toml:"searchprefix"`
+	CollectionsPrefix   string              `toml:"collectionsprefix"`
+	ImageSearchPrefix   string              `toml:"imagesearchprefix"`
+	CollectionsCatalog  string              `toml:"collectionscatalog"`
+	ApiPrefix           string              `toml:"apiprefix"`
+	JWTKey              string              `toml:"jwtkey"`
+	JWTAlg              []string            `toml:"jwtalg"`
+	LinkTokenExp        duration            `toml:"linktokenexp"`
+	LoginUrl            string              `toml:"loginurl"`
+	LoginIssuer         string              `toml:"loginissuer"`
+	IdleTimeout         duration            `toml:"idletimeout"`
+	UserCacheSize       int                 `toml:"usercachesize"`
+	Google              Google              `toml:"google"`
+	Template            map[string][]string `toml:"template"`
+	TemplateDev         bool                `toml:"templatedev"`
+	Solr                Solr                `toml:"solr"`
+	Query               Query               `toml:"query"`
+	AccessGroup         AccessGroup         `toml:"access"`
+	Mediaserver         string              `toml:"mediaserver"`
+	MediaserverKey      string              `toml:"mediaserverkey"`
+	MediaserverExp      duration            `toml:"mediaserverexp"`
+	AmpCache            string              `toml:"ampcache"`
+	AmpApiKey           string              `toml:"ampapikey"`
+	CacheDir            string              `toml:"cachedir"`
+	ClearCacheOnStartup bool                `toml:"clearcacheonstartup"`
+	SearchFields        map[string]string   `toml:"searchfields"`
+	Facets              []Facet             `toml:"facets"`
+	Locations           []Network           `toml:"locations"`
+	Menu                map[string]Menu     `toml:"menu"`
+	Icons               map[string]string   `toml:"icons"`
 }
 
 func LoadConfig(filepath string) Config {
@@ -162,6 +165,7 @@ func LoadConfig(filepath string) Config {
 	conf.DetailPrefix = strings.Trim(conf.DetailPrefix, "/")
 	conf.UpdatePrefix = strings.Trim(conf.UpdatePrefix, "/")
 	conf.SearchPrefix = strings.Trim(conf.SearchPrefix, "/")
+	conf.CollectionsPrefix = strings.Trim(conf.CollectionsPrefix, "/")
 	conf.ImageSearchPrefix = strings.Trim(conf.ImageSearchPrefix, "/")
 	conf.ApiPrefix = strings.Trim(conf.ApiPrefix, "/")
 	return conf

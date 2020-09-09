@@ -198,7 +198,9 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 	if !status.MetaOK {
 		w.WriteHeader(http.StatusForbidden)
 		// if there's no error Template, there's no help...
-		err = s.forbiddenTemplate.Execute(w, status)
+		if tpl, ok := s.templates["forbidden"]; ok {
+			tpl.Execute(w, status)
+		}
 		return
 	}
 
@@ -247,10 +249,12 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Content-type", doc.Content.ContentMime)
 		w.Write([]byte(doc.Content.ContentStr))
 	default:
-		err = s.detailTemplate.Execute(w, status)
-		if err != nil {
-			s.DoPanicf(w, http.StatusInternalServerError, "cannot parse template: %+v", false, err)
-			return
+		if tpl, ok := s.templates["details.amp.gohtml"]; ok {
+			err = tpl.Execute(w, status)
+			if err != nil {
+				s.DoPanicf(w, http.StatusInternalServerError, "cannot parse template: %+v", false, err)
+				return
+			}
 		}
 	}
 

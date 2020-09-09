@@ -192,6 +192,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 			for _, q := range doc.Content.Queries {
 				if strings.ToLower(q.Label) == "group" {
 					filters = append(filters, s.string2Query(q.Search))
+					//filters = append(filters, q.Search)
 					status.Title = doc.Content.Title
 				}
 			}
@@ -261,9 +262,11 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	default:
 		w.Header().Set("Cache-Control", "max-age=14400, s-maxage=12200, stale-while-revalidate=9000, public")
-		if err := s.searchTemplate.Execute(w, status); err != nil {
-			s.DoPanicf(w, http.StatusInternalServerError, "cannot render template: %v", false, err)
-			return
+		if tpl, ok := s.templates["search.amp.gohtml"]; ok {
+			if err := tpl.Execute(w, status); err != nil {
+				s.DoPanicf(w, http.StatusInternalServerError, "cannot render template: %v", false, err)
+				return
+			}
 		}
 	}
 	return

@@ -205,11 +205,8 @@ func main() {
 	srv, err := gsearch.NewServer(
 		mts,
 		uc,
-		config.Template.Detail,
-		config.Template.Error,
-		config.Template.Forbidden,
-		config.Template.Search,
-		config.Template.ImageSearch,
+		config.Template,
+		config.TemplateDev,
 		config.Addr,
 		config.AddrExt,
 		config.Mediaserver,
@@ -231,6 +228,7 @@ func main() {
 		config.UpdatePrefix,
 		config.SearchPrefix,
 		config.ImageSearchPrefix,
+		config.CollectionsPrefix,
 		config.ApiPrefix,
 		config.AmpCache,
 		config.AmpApiKey,
@@ -241,6 +239,7 @@ func main() {
 		config.Icons,
 		config.Query.BaseFilter,
 		subfilters,
+		config.CollectionsCatalog,
 	)
 
 	if err != nil {
