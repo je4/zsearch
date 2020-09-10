@@ -27,7 +27,7 @@ import (
 	"strings"
 )
 
-var tagFieldRegexp = regexp.MustCompile("^field:(.+)$")
+var tagFieldRegexp = regexp.MustCompile("^(area|field):(.+)$")
 
 func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 	var err error
@@ -55,7 +55,7 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 		BaseUrl:       s.addrExt,
 		SelfPath:      req.URL.Path,
 		LoginUrl:      s.loginUrl,
-		Title:         "Search",
+		Title:         "Collections",
 		QueryApi:      "api/search",
 		Menu:          s.menu,
 		Result:        map[string][]*Document{},
@@ -129,7 +129,7 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 	for _, doc := range docs {
 		for _, tag := range doc.Content.Tags {
 			if r := tagFieldRegexp.FindStringSubmatch(tag); r != nil {
-				field := r[1]
+				field := r[2]
 				if _, ok := status.Result[field]; !ok {
 					status.Result[field] = []*Document{}
 				}

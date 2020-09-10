@@ -122,11 +122,11 @@ limitations under the License.
                 {{range $area, $items := .Result}}
                     <h3>{{title $area}}</h3>
                     {{range $key, $item := $items}}
-                        <div style="padding-left:16px; height:260px; overflow:hidden; margin-bottom: 12px;" class="md-result-list relative md-flex flex-wrap items-center md-mx0">
+                        <div style="padding-left:16px; /* height:260px; */ overflow:hidden; margin-bottom: 12px;" class="md-result-list relative md-flex flex-wrap items-center md-mx0">
                             <a style="text-decoration: none;" href="{{$baseurl}}/search/{{$item.Id}}">
                                 <div style="display:table;">
                                     <div style="display:table-row; width:100%;">
-                                        <div style="display:table-cell; width:260px; height:260px; padding-right:16px; vertical-align: top;">
+                                        <div style="display:table-cell; width:260px; /* height:260px; */ padding-right:16px; vertical-align: top;">
                                             {{if $item.Content.Poster}}
                                                 {{$image := $item.Content.Poster}}
                                                 <amp-img
