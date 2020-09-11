@@ -275,7 +275,7 @@ limitations under the License.
                 -------------------------------- -->
                 <div class="xs-hide sm-hide">
                     {{range $key, $field := .Result.Items}}
-                        <div style="padding-left:16px; height:5em; overflow:hidden; margin-bottom: 2px;" class="md-result-list relative md-flex flex-wrap items-center md-mx0">
+                        <div style="padding-left:16px; padding-bottom:10px; overflow:hidden; margin-bottom: 2px;" class="md-result-list relative md-flex flex-wrap items-center md-mx0">
                             <a style="text-decoration: none;" href="{{$field.Link}}">
                             <div style="display:table;">
                                 <div style="display:table-row; width:100%;">
@@ -295,7 +295,7 @@ limitations under the License.
                                         </svg>
                                     </div>
                                     <div style="display:table-cell; vertical-align: top;">
-                                        <div style="height:18px; overflow:hidden;">
+                                        <div style="">
                                             <b>{{$field.Title}}</b>
                                         </div>
                                         {{if not (eq $field.Date "")}}{{$field.Date}}<br />{{end}}
