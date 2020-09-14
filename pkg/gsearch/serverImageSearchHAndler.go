@@ -155,7 +155,7 @@ func (s *Server) imageSearchHandler(w http.ResponseWriter, req *http.Request) {
 		}
 
 	}
-	facets := map[string]map[string]bool{}
+	var facets map[string]termFacet
 	docs, total, facetFieldCount, err := s.mts.Search(qstr,
 		filters,
 		facets,

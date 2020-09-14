@@ -96,6 +96,12 @@ type cacheEntry struct {
 	Doc     *solr.Document
 }
 
+type termFacet struct {
+	selected map[string]bool
+	prefix   string
+	limit    int64
+}
+
 func (mts *MTSolr) GetContent(entry *cacheEntry) (Source, error) {
 	var content Source
 	var err error
@@ -386,6 +392,7 @@ func (mts *MTSolr) LoadEntities(ids []string) (map[string]*Document, error) {
 			Notes:           content.GetNotes(),
 			Abstract:        content.GetAbstract(),
 			References:      content.GetReferences(),
+			Extra:           content.GetExtra(),
 			Meta:            content.GetMeta(),
 			Type:            content.GetType(),
 			Queries:         content.GetQueries(),
@@ -414,7 +421,7 @@ func (mts *MTSolr) LoadEntities(ids []string) (map[string]*Document, error) {
 	return result, nil
 }
 
-func (mts *MTSolr) Search(text string, filters []string, facets map[string]map[string]bool, groups []string, contentVisible bool, start, rows int) ([]*Document, int64, FacetCountResult, error) {
+func (mts *MTSolr) Search(text string, filters []string, facets map[string]termFacet, groups []string, contentVisible bool, start, rows int) ([]*Document, int64, FacetCountResult, error) {
 	//qstr := EscapeSolrString(text)
 	qstr := text
 	if qstr == "" {
@@ -435,6 +442,12 @@ func (mts *MTSolr) Search(text string, filters []string, facets map[string]map[s
 	// build facets with filter exclusion
 	for field, vals := range facets {
 		solrJSONTermsFacet := CreateJSONTermsFacetMap(field)
+		if vals.limit > 0 {
+			solrJSONTermsFacet.setLimit(vals.limit)
+		}
+		if vals.prefix != "" {
+			solrJSONTermsFacet.SetTermPrefix(vals.prefix)
+		}
 		solrJSONDomainMap := CreateJSONDomainMap().WithTagsToExclude("facet")
 		solrJSONTermsFacet.JSONFacetMap().withDomain(solrJSONDomainMap)
 		json, err := json.Marshal(map[string]*JSONFacetMap{field: solrJSONTermsFacet.JSONFacetMap()})
@@ -445,7 +458,7 @@ func (mts *MTSolr) Search(text string, filters []string, facets map[string]map[s
 		//		query.AddFacet(fmt.Sprintf("{!ex=%s}%s", facet, facet))
 		// filterquery only needed if selections available
 		selected := []string{}
-		for val, sel := range vals {
+		for val, sel := range vals.selected {
 			if sel {
 				selected = append(selected, val)
 			}
@@ -554,6 +567,7 @@ func (mts *MTSolr) Search(text string, filters []string, facets map[string]map[s
 					Notes:           content.GetNotes(),
 					Abstract:        content.GetAbstract(),
 					References:      content.GetReferences(),
+					Extra:           content.GetExtra(),
 					Meta:            content.GetMeta(),
 					Type:            content.GetType(),
 					Queries:         content.GetQueries(),

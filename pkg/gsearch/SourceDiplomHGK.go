@@ -149,6 +149,11 @@ func (dhgk *SourceDiplomHGK) GetMeta() map[string]string {
 	return result
 }
 
+func (dhgk *SourceDiplomHGK) GetExtra() map[string]string {
+	var result = make(map[string]string)
+	return result
+}
+
 func (dhgk *SourceDiplomHGK) GetAbstract() string {
 	return strings.TrimSpace(dhgk.DData.Beschreibung)
 }

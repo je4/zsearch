@@ -98,6 +98,8 @@ type SearchStatus struct {
 	SearchString        string
 	SearchResultVisible bool
 	FacetCount          map[string]FacetCountField
+	Facet               map[string]map[string]FacetCountField
+	CoreFacets          []string
 	Menu                []Menu
 	MetaDescription     string
 }
@@ -884,7 +886,7 @@ func (s *Server) doc2result(search string,
 	docs []*Document,
 	total int64,
 	facetFieldCount FacetCountResult,
-	facets map[string]map[string]bool,
+	facets map[string]termFacet,
 	start int64,
 	user *User,
 	next string) (*SearchResult, error) {
@@ -910,7 +912,7 @@ func (s *Server) doc2result(search string,
 					if !ok {
 						return false
 					}
-					if res[val] {
+					if res.selected[val] {
 						return true
 					}
 					return false
@@ -1011,7 +1013,7 @@ func (s *Server) doc2json(search string,
 	docs []*Document,
 	total int64,
 	facetFieldCount FacetCountResult,
-	facets map[string]map[string]bool,
+	facets map[string]termFacet,
 	start int64,
 	user *User,
 	next string) ([]byte, error) {

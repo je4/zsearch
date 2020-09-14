@@ -169,7 +169,7 @@ limitations under the License.
                     <h2 class="h5 md-h4">Full spec</h2>
                     <div class="mt2">
                         <dl class="flex flex-wrap">
-                            {{range $name,$val := .Doc.Content.Meta}}
+                            {{range $name,$val := .Doc.Content.Extra}}
                             <dt class="h7 col-4 sm-col-3 md-col-5 lg-col-4 pb1">{{$name}}</dt>
                             <dd class="m0 col-8 sm-col-9 md-col-7 lg-col-8 pb1">{{$val}}</dd>
                             {{end}}

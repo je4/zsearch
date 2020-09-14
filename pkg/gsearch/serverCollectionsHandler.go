@@ -112,7 +112,7 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 
 	filters := []string{fmt.Sprintf("catalog:\"%s\"", s.collectionsCatalog)}
 
-	var facets map[string]map[string]bool
+	var facets map[string]termFacet
 	docs, total, _, err := s.mts.Search(qstr,
 		filters,
 		facets,

@@ -120,9 +120,6 @@ func (zot *SourceZotero) GetMeta() map[string]string {
 	for i := 0; i < s.NumField(); i++ {
 		f := s.Field(i)
 		fname := typeOfT.Field(i).Name
-		if InList(zoteroIgnoreMetaFields, fname) {
-			continue
-		}
 		if fname == "ItemDataBase" {
 			continue
 		}
@@ -136,13 +133,21 @@ func (zot *SourceZotero) GetMeta() map[string]string {
 	for i := 0; i < s.NumField(); i++ {
 		f := s.Field(i)
 		fname := typeOfT.Field(i).Name
-		if InList(zoteroIgnoreMetaFields, fname) {
-			continue
-		}
 		valstr := strings.TrimSpace(fmt.Sprintf("%v", f.Interface()))
 		if valstr != "" {
 			result[fname] = valstr
 		}
+	}
+	return result
+}
+
+func (zot *SourceZotero) GetExtra() map[string]string {
+	var result = make(map[string]string)
+	for key, val := range zot.GetMeta() {
+		if InList(zoteroIgnoreMetaFields, key) {
+			continue
+		}
+		result[key] = val
 	}
 	return result
 }

@@ -17,6 +17,7 @@ limitations under the License.
 package gsearch
 
 import (
+	"crypto/md5"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
@@ -27,6 +28,8 @@ import (
 	"strconv"
 	"strings"
 )
+
+var facetDefRegexp = regexp.MustCompile("^([^:]+):(.+:)?([0-9]+)$")
 
 func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 	var err error
@@ -56,7 +59,9 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		Title:         "Search",
 		QueryApi:      "api/search",
 		FacetCount:    make(map[string]FacetCountField),
+		Facet:         make(map[string]map[string]FacetCountField),
 		Menu:          s.menu,
+		CoreFacets:    []string{},
 	}
 
 	jwt, ok := req.URL.Query()["token"]
@@ -105,14 +110,19 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		status.User.Groups = append(status.User.Groups, grp)
 	}
 
-	facets := map[string]map[string]bool{}
+	facets := map[string]termFacet{}
 	for _, val := range s.facets {
 		if _, ok := facets[val.Field]; !ok {
-			facets[val.Field] = map[string]bool{}
+			facets[val.Field] = termFacet{
+				selected: map[string]bool{},
+				prefix:   "",
+				limit:    0,
+			}
 		}
 		for v, sel := range val.Restrict {
-			facets[val.Field][v] = sel
+			facets[val.Field].selected[v] = sel
 		}
+		status.CoreFacets = append(status.CoreFacets, val.Field)
 	}
 
 	var start int64 = 0
@@ -144,12 +154,16 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 					fld := found[0][1]
 					v := found[0][2]
 					if _, ok := facets[fld]; !ok {
-						facets[fld] = map[string]bool{}
+						facets[fld] = termFacet{
+							selected: map[string]bool{},
+							prefix:   "",
+							limit:    0,
+						}
 					}
 					if val == "true" {
-						facets[fld][v] = true
+						facets[fld].selected[v] = true
 					} else {
-						facets[fld][v] = false
+						facets[fld].selected[v] = false
 					}
 				}
 
@@ -189,18 +203,37 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 				s.DoPanicf(w, http.StatusInternalServerError, "data of signature %s is nil", false, subfiltername)
 				return
 			}
-			for _, q := range doc.Content.Queries {
-				if strings.ToLower(q.Label) == "group" {
-					filters = append(filters, s.string2Query(q.Search))
-					//filters = append(filters, q.Search)
-					status.Title = doc.Content.Title
+			if filter, ok := doc.Content.Meta["ArchiveLocation"]; ok {
+				filters = append(filters, s.string2Query(filter))
+				status.Title = doc.Content.Title
+			}
+			if facetstring, ok := doc.Content.Meta["Extra"]; ok {
+				if fl := facetDefRegexp.FindStringSubmatch(facetstring); fl != nil {
+					s.log.Infof("%v", fl)
+					facetField := fl[1]
+					facetPrefix := fl[2]
+					facetLimit, err := strconv.ParseInt(fl[3], 10, 64)
+					if err != nil {
+						facetLimit = 0
+					}
+					if _, ok := facets[facetField]; !ok {
+						facets[facetField] = termFacet{
+							selected: map[string]bool{},
+							prefix:   "",
+							limit:    0,
+						}
+					}
+					f := facets[facetField]
+					f.prefix = facetPrefix
+					f.limit = facetLimit
+					facets[facetField] = f
 				}
 			}
+
 		} else {
 			filters = append(filters, f.Filter)
 			status.Title = f.Name
 		}
-
 	}
 
 	docs, total, facetFieldCount, err := s.mts.Search(qstr,
@@ -220,6 +253,8 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// todo: MD5 for facet names
+
 	//status.SearchResult = template.JS(json)
 	status.SearchResultRows = len(docs)
 	status.SearchResultTotal = int(total)
@@ -228,6 +263,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 	for _, f := range s.facets {
 		vals := f.Restrict
 		facet := f.Field
+		status.Facet[facet] = map[string]FacetCountField{}
 		for val, _ := range vals {
 			id := fmt.Sprintf("facet_%s_%s", facet, val)
 			count := 0
@@ -238,14 +274,35 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 					}
 				}
 			}
-			selected, ok := facets[facet][val]
+			selected, ok := facets[facet].selected[val]
 			if !ok {
 				selected = false
 			}
-			status.FacetCount[id] = FacetCountField{
+			status.Facet[facet][id] = FacetCountField{
 				Id:        id,
 				Name:      fmt.Sprintf("%s (%d)", val, count),
 				ShortName: val,
+				Selected:  selected,
+			}
+			status.FacetCount[id] = status.Facet[facet][id]
+		}
+	}
+	for facet, _ := range facets {
+		if InList(status.CoreFacets, facet) {
+			continue
+		}
+		status.Facet[facet] = map[string]FacetCountField{}
+		for v, c := range facetFieldCount[facet] {
+			//			re := regexp.MustCompile("([^a-zA-Z0-9])+")
+			id := fmt.Sprintf("facet_%s_%s", facet, fmt.Sprintf("%x", md5.Sum([]byte(v))))
+			selected, ok := facets[facet].selected[v]
+			if !ok {
+				selected = false
+			}
+			status.Facet[facet][id] = FacetCountField{
+				Id:        id,
+				Name:      fmt.Sprintf("%s (%d)", v, c),
+				ShortName: v,
 				Selected:  selected,
 			}
 		}
@@ -261,7 +318,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	default:
-		w.Header().Set("Cache-Control", "max-age=14400, s-maxage=12200, stale-while-revalidate=9000, public")
+		w.Header().Set("Cac	he-Control", "max-age=14400, s-maxage=12200, stale-while-revalidate=9000, public")
 		if tpl, ok := s.templates["search.amp.gohtml"]; ok {
 			if err := tpl.Execute(w, status); err != nil {
 				s.DoPanicf(w, http.StatusInternalServerError, "cannot render template: %v", false, err)

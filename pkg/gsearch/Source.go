@@ -94,6 +94,7 @@ type Source interface {
 	GetAbstract() string
 	GetReferences() []Reference
 	GetMeta() map[string]string
+	GetExtra() map[string]string
 	GetType() string
 	GetQueries() []Query
 	GetSolrDoc() *solr.Document
@@ -115,6 +116,7 @@ type SourceData struct {
 	Abstract        string               `json:"abstract"`
 	HasMedia        bool                 `json:"hasmedia"`
 	References      []Reference          `json:"references"`
+	Extra           map[string]string    `json:"extra"`
 	Meta            map[string]string    `json:"meta"`
 	Type            string               `json:"type"`
 	Queries         []Query              `json:"queries"`

@@ -76,6 +76,11 @@ func (cdk *SourceCDK) GetMeta() map[string]string {
 	return result
 }
 
+func (cdk *SourceCDK) GetExtra() map[string]string {
+	var result = make(map[string]string)
+	return result
+}
+
 func (cdk *SourceCDK) GetAbstract() string {
 	return "strings.TrimSpace(cdk.DData.Beschreibung)"
 }
