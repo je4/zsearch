@@ -27,9 +27,11 @@ limitations under the License.
     <script async="" src="https://cdn.ampproject.org/v0.js"></script>
 
     <!-- preload the hero image -->
+    <!--
     <link rel="preload" as="image"
           href="{{.BaseUrl}}/static/img/wide-mediathek-hero_1280w.webp"
           media="(min-width:40.06rem)">
+    -->
 
     <!-- preload standart font -->
     <link rel="preload" as="font"
@@ -52,8 +54,20 @@ limitations under the License.
     <script async custom-element="amp-list" src="https://cdn.ampproject.org/v0/amp-list-0.1.js"></script>
 
     <style amp-custom="">
+        {{template "darkmode.inc.min.css" . }}
+        {{template "lightmode.inc.min.css" . }}
+        {{template "headings.inc.min.css" . }}
+        {{template "buttons.inc.min.css" . }}
+        {{template "commerce.inc.min.css" . }}
+        {{template "table.inc.min.css" . }}
+        {{template "col.inc.min.css" . }}
+        {{template "text.inc.min.css" . }}
+        {{template "margin.inc.min.css" . }}
+        {{template "flexbox.inc.min.css" . }}
+        {{template "padding.inc.min.css" . }}
         {{template "main.inc.min.css" . }}
-        {{template "inter.inc.css" . }}
+        {{template "inter.inc.min.css" . }}
+        {{template "gsearch.inc.min.css" . }}
     </style>
 
     <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
@@ -119,7 +133,7 @@ limitations under the License.
                 data-persist-dismissal="false">
             <div class="h4 md-h4 message">
                 {{$notification.Message}}&nbsp;
-                <button class="ampstart-btn ampstart-btn-seemore caps" on="tap:amp-user-{{$notification.Id}}.dismiss">OK</button>
+                <button class="gsearch-btn gsearch-btn-seemore caps" on="tap:amp-user-{{$notification.Id}}.dismiss">OK</button>
             </div>
         </amp-user-notification>
     {{end}}
@@ -161,31 +175,49 @@ limitations under the License.
        {{.SearchResultVisible}}
         </script>
     </amp-state>
+    <!--
+    <amp-state id="MediatypeFacets">
+        <script type="application/json">
+       {{.Facet.mediatype}}
+        </script>
+    </amp-state>
+    -->
     <amp-state id="SearchFacets">
         <script type="application/json">
-       {{.FacetCount}}
+       {{.Facet}}
         </script>
     </amp-state>
     <!-- END - virtual states for search interaction -->
     <section class="commerce-listing-content mx-auto flex flex-wrap pb4">
             <!-- BEGIN - Facets wide -->
-            <div class="col-3 xs-hide sm-hide flex flex-column">
+            <div class="col-3 flex flex-column xs-hide sm-hide">
                 <div class="commerce-side-panel pt4 pr4 self-center">
+                    {{range $key, $type := .Facet}}
+                        {{if not (eq $key "mediatype")}}
+                            {{range $type}}
+                                <div class="gsearch-w100 gsearch-input gsearch-input-radio inline-block relative m0 p0 mb3">
+                                    <button
+                                            class="gsearch-facet{{if .Selected}}-inv{{end}} caps full-width"
+                                            on="tap:AMP.setState({SearchResultStart:0, SearchFacets: { {{js $key}}: { {{js .Id}}: { Selected: !(SearchFacets['{{js $key}}'].{{js .Id}}.Selected)}}}}),search.submit">
+                                        {{.Name}}
+                                    </button>
+                                </div>
+                            {{end}}
+                        {{end}}
+                    {{end}}
                     <h2 class="h5 mb2">Media</h2>
-                    {{range .FacetCount}}
-                            <div class="ampstart-w100 ampstart-input ampstart-input-radio inline-block relative m0 p0 mb3">
+                    {{range .Facet.mediatype}}
+                            <div class="gsearch-w100 gsearch-input gsearch-input-radio inline-block relative m0 p0 mb3">
                                 <button
-                                        style="width:100%;"
-                                        class="ampstart-btn-facet{{if .Selected}}-inv{{end}} ampstart-btn caps"
-                                        on="tap:AMP.setState({SearchResultStart:0, SearchFacets: { {{js .Id}}: { Selected: !(SearchFacets.{{js .Id}}.Selected)}}}),search.submit">
+                                        class="gsearch-facet{{if .Selected}}-inv{{end}} caps full-width"
+                                        on="tap:AMP.setState({SearchResultStart:0, SearchFacets: { mediatype: { {{js .Id}}: { Selected: !(SearchFacets['mediatype'].{{js .Id}}.Selected)}}}}),search.submit">
                                     {{.Name}}
                                 </button>
                             </div>
                     {{end}}
-                    <div class="ampstart-w100 ampstart-input ampstart-input-radio inline-block relative m0 p0 mb3">
+                    <div class="gsearch-w100 gsearch-input gsearch-input-radio inline-block relative m0 p0 mb3">
                         <button
-                                style="width:100%;"
-                                class="ampstart-btn-facet{{if .SearchResultVisible}}-inv{{end}} ampstart-btn caps"
+                                class="gsearch-facet{{if .SearchResultVisible}}-inv{{end}} caps full-width"
                                 on="tap:AMP.setState({SearchResultStart:0, SearchResultVisible:!SearchResultVisible}),search.submit">
                             Visible Media
                         </button>
@@ -204,12 +236,14 @@ limitations under the License.
                         <input type="hidden" name="start" value="0" [value]="SearchResultStart"/>
                         <input type="hidden" name="lastsearch" value="" [value]="SearchResultSearch"/>
                         <input type="hidden" name="visible" value="" [value]="SearchResultVisible"/>
-                        {{range $facet,$val := .FacetCount}}
-                            <input type="hidden"
-                                   name="{{$facet}}"
-                                   id="{{$facet}}"
-                                   value="{{$val.Selected}}"
-                                   [value]="SearchFacets.{{js $val.Id}}.Selected?'true':'false'"/>
+                        {{range $key, $type := .Facet}}
+                            {{range $facet,$val := $type}}
+                                <input type="hidden"
+                                       name="{{$facet}}"
+                                       id="{{$facet}}"
+                                       value="{{$val.ShortName}}.{{$val.Selected}}"
+                                       [value]="'{{$val.ShortName}}.' + (SearchFacets['{{js $key}}'].{{js $val.Id}}.Selected ?'true':'false')"/>
+                            {{end}}
                         {{end}}
                         <h1 class="h3 mb2 md-mt2 md-mb2 md-ml0 flex-auto px2">
                             <span class="sm-hide md-hide lg-hide">Mediathek - </span><span class="md-hide lg-hide">{{if not (eq .Title "")}}{{.Title}}<br />{{end}}</span>
@@ -240,16 +274,29 @@ limitations under the License.
                     <div class="commerce-listing-filters pt2 pb2 mb3 md-mb0">
                         <!-- BEGIN - Facets small -->
                         <div class="commerce-select-wrapper inline-block md-mr1 pl2 md-hide lg-hide">
+                            {{range $key, $type := .Facet}}
+                                {{if not (eq $key "mediatype")}}
+                                    <div class="gsearch-w100 gsearch-input gsearch-input-radio inline-block relative m0 p0 mb3">
+                                    {{range $type}}
+                                            <button
+                                                    class="gsearch-facet{{if .Selected}}-inv{{end}} gsearch-btn caps"
+                                                    on="tap:AMP.setState({SearchResultStart:0, SearchFacets: { {{js $key}}: { {{js .Id}}: { Selected: !(SearchFacets['{{js $key}}'].{{js .Id}}.Selected)}}}}),search.submit">
+                                                {{.Name}}
+                                            </button>
+                                    {{end}}
+                                    </div>
+                                {{end}}
+                            {{end}}
                             <h2 class="h5 mb2">Media</h2>
-                            {{range .FacetCount}}
+                            {{range .Facet.mediatype}}
                                 <button
-                                        class="ampstart-btn-facet{{if .Selected}}-inv{{end}} ampstart-btn caps"
-                                        on="tap:AMP.setState({SearchResultStart:0, SearchFacets: { {{js .Id}}: { Selected: !(SearchFacets.{{js .Id}}.Selected)}}}),search.submit">
+                                        class="gsearch-facet{{if .Selected}}-inv{{end}} gsearch-btn caps"
+                                        on="tap:AMP.setState({SearchResultStart:0, SearchFacets: { mediatype: { {{js .Id}}: { Selected: !(SearchFacets['mediatype'].{{js .Id}}.Selected)}}}}),search.submit">
                                     {{.Name}}
                                 </button>
                             {{end}}
                             <button
-                                    class="ampstart-btn-facet{{if .SearchResultVisible}}-inv{{end}} ampstart-btn caps"
+                                    class="gsearch-facet{{if .SearchResultVisible}}-inv{{end}} gsearch-btn caps"
                                     on="tap:AMP.setState({SearchResultStart:0, SearchResultVisible:!SearchResultVisible}),search.submit">
                                 Visible Media
                             </button>
@@ -258,7 +305,7 @@ limitations under the License.
                     </div>
                 </div>
                 <div>
-                    <h2 style="padding-left:16px;" class="commerce-listing-product-name h6">
+                    <h2 style="padding-left:16px;" class="h6">
                         <div class="inline">{{.SearchResultTotal}}</div> items
                         [<div class="inline">{{add .SearchResultStart 1}}</div> -
                         <div class="inline">{{add .SearchResultStart .SearchResultRows}}</div>]
@@ -275,14 +322,14 @@ limitations under the License.
                 -------------------------------- -->
                 <div class="xs-hide sm-hide">
                     {{range $key, $field := .Result.Items}}
-                        <div style="padding-left:16px; padding-bottom:10px; overflow:hidden; margin-bottom: 2px;" class="md-result-list relative md-flex flex-wrap items-center md-mx0">
-                            <a style="text-decoration: none;" href="{{$field.Link}}">
-                            <div style="display:table;">
-                                <div style="display:table-row; width:100%;">
-                                    <div style="display:table-cell; width:130px; vertical-align: top;">
+                        <div style="margin-bottom: 2px;" class="md-result-list relative md-flex flex-wrap items-center md-mx0 pl2 pb1 overflow-hidden">
+                            <a class="text-decoration-none" href="{{$field.Link}}">
+                            <div class="table">
+                                <div class="tr full-width">
+                                    <div class="td align-top" style="width:130px;">
                                         <b>{{$field.AuthorText}}</b>
                                     </div>
-                                    <div style="display:table-cell; width:24px; vertical-align: top; padding-left: 5px; padding-right: 15px;">
+                                    <div class="td align-top" style="width:24px; padding-left: 5px; padding-right: 15px;">
                                         <svg
                                              aria-label="Icon {{$field.Type}}"
                                                 id="svg12"
@@ -294,7 +341,7 @@ limitations under the License.
                                             <desc>{{$field.Type}}</desc>
                                         </svg>
                                     </div>
-                                    <div style="display:table-cell; vertical-align: top;">
+                                    <div class="td align-top">
                                         <div style="">
                                             <b>{{$field.Title}}</b>
                                         </div>
@@ -343,11 +390,11 @@ limitations under the License.
                 -------------------------------- -->
                 <div class="md-hide lg-hide">
                     {{range $key, $field := .Result.Items}}
-                            <div style="padding-left:16px; height:6.5em; overflow:hidden; margin-bottom: 2px;" class="md-result-list relative md-flex flex-wrap items-center md-mx0">
-                                <a style="text-decoration: none;" href="{{$field.Link}}">
-                                <div style="display:table;">
-                                    <div style="display:table-row;">
-                                        <div style="display:table-cell; width:24px; vertical-align: top; padding-left: 5px; padding-right: 15px;">
+                            <div class="md-result-list relative md-flex flex-wrap items-center md-mx0 pl2 overflow-hidden" style="height:6.5em; margin-bottom: 2px;">
+                                <a class="text-decoration-none" href="{{$field.Link}}">
+                                <div class="table">
+                                    <div class="tr">
+                                        <div class="td align-top" style="width:24px; padding-left: 5px; padding-right: 15px;">
                                             <svg
                                                  aria-label="Icon {{$field.Type}}"
                                                  version="1.1"
@@ -358,8 +405,8 @@ limitations under the License.
                                                 <desc>{{$field.Type}}</desc>
                                             </svg>
                                         </div>
-                                        <div style="display:table-cell;">
-                                            <h2 style="height:18px; overflow:hidden;" class="commerce-listing-product-name h6">
+                                        <div class="td">
+                                            <h2 class="h6 overflow-hidden" style="height:18px;">
                                                 {{$field.Title}}
                                             </h2>
                                             {{if not (eq $field.Date "")}}{{$field.Date}}<br />{{end}}

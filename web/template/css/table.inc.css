@@ -1,0 +1,14 @@
+.table {
+    display: table;
+}
+.tr {
+    display: table-row;
+    border-collapse:collapse;
+}
+.td {
+    display: table-cell;
+}
+
+.header-table {
+    width: calc(100% - 24px);
+}

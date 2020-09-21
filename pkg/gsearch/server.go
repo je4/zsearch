@@ -97,11 +97,11 @@ type SearchStatus struct {
 	SearchResultTotal   int
 	SearchString        string
 	SearchResultVisible bool
-	FacetCount          map[string]FacetCountField
-	Facet               map[string]map[string]FacetCountField
-	CoreFacets          []string
-	Menu                []Menu
-	MetaDescription     string
+	//FacetCount          map[string]FacetCountField
+	Facet           map[string]map[string]FacetCountField
+	CoreFacets      []string
+	Menu            []Menu
+	MetaDescription string
 }
 
 type CollectionsStatus struct {

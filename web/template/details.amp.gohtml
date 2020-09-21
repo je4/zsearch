@@ -66,8 +66,20 @@ limitations under the License.
 
 
     <style amp-custom="">
+        {{template "gsearch.inc.min.css" . }}
+        {{template "darkmode.inc.min.css" . }}
+        {{template "lightmode.inc.min.css" . }}
+        {{template "headings.inc.min.css" . }}
+        {{template "buttons.inc.min.css" . }}
+        {{template "commerce.inc.min.css" . }}
+        {{template "table.inc.min.css" . }}
+        {{template "col.inc.min.css" . }}
+        {{template "text.inc.min.css" . }}
+        {{template "margin.inc.min.css" . }}
+        {{template "flexbox.inc.min.css" . }}
+        {{template "padding.inc.min.css" . }}
         {{template "main.inc.min.css" . }}
-        {{template "inter.inc.css" . }}
+        {{template "inter.inc.min.css" . }}
     </style>
 
     <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
@@ -104,7 +116,7 @@ limitations under the License.
                 data-persist-dismissal="false">
             <div class="h4 md-h4 message">
                 {{$notification.Message}}&nbsp;
-                <button class="ampstart-btn ampstart-btn-seemore caps" on="tap:amp-user-{{$notification.Id}}.dismiss">OK</button>
+                <button class="gsearch-btn gsearch-btn-seemore caps" on="tap:amp-user-{{$notification.Id}}.dismiss">OK</button>
             </div>
         </amp-user-notification>
     {{end}}
@@ -115,13 +127,13 @@ limitations under the License.
         <div class="col-12 md-col-6 flex flex-wrap content-start px2 md-pl5 md-pr7 md-pt4">
             <div class="col-12 self-start pb2">
                 <h1 class="h3 md-h2">{{.Doc.Content.Title}}</h1>
-                <div class="h4 md-h3">{{range $key, $person := .Doc.Content.Persons}}{{ if $key }}; {{ end }}<a class="nobreak"href="{{$user.LinkSearch (printf "author:%s" $person.Name)}}">{{$person.Name}}{{if ne $person.Role "author"}} ({{$person.Role}}){{end}}</a>{{end}}</div>
+                <div class="h4 md-h3">{{range $key, $person := .Doc.Content.Persons}}{{ if $key }}; {{ end }}<a class="nobreak"href="{{$user.LinkSearch (printf "author:\"%s\"" $person.Name)}}">{{$person.Name}}{{if ne $person.Role "author"}} ({{$person.Role}}){{end}}</a>{{end}}</div>
             </div>
             <div class="col-12 self-start pb4">
                 {{if len .Doc.Content.Abstract}}
                     <amp-truncate-text layout="fixed-height" height="8em">
                         {{.Doc.Content.Abstract}}
-                        <button class="ampstart-btn ampstart-btn-seemore caps" slot="collapsed">See more</button>
+                        <button class="gsearch-btn gsearch-btn-seemore caps" slot="collapsed">See more</button>
                     </amp-truncate-text>
                 {{end}}
                 <div>
@@ -146,7 +158,7 @@ limitations under the License.
                         <h2 class="h5 md-h4">Tags</h2>
                             <p class="mt2 mb3">
                             {{range $key,$tag := .Doc.Content.Tags}}
-                                <a href="{{$user.LinkSearch (printf "tag:\"%s\"" $tag)}}"><span class="ampstart-btn ampstart-btn-seemore caps">{{$tag}}</span></a>
+                                <a href="{{$user.LinkSearch (printf "tag:\"%s\"" $tag)}}"><span class="gsearch-btn gsearch-btn-seemore caps">{{$tag}}</span></a>
                             {{end}}
                             </p>
                     </section>
@@ -185,7 +197,7 @@ limitations under the License.
         <div class="col-12 mt3 md-mt4">
             <h2 class="h5 md-h4">You may also like</h2>
             {{range $query := .Doc.Content.Queries}}
-                <a href="{{$user.LinkSearch $query.Search}}"><span class="ampstart-btn ampstart-btn-seemore caps">{{$query.Label}}</span></a><br />
+                <a href="{{$user.LinkSearch $query.Search}}"><span class="gsearch-btn gsearch-btn-seemore caps">{{$query.Label}}</span></a><br />
             {{end}}
         </div>
     </section>

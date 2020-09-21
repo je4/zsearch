@@ -1,6 +1,6 @@
-<header style="white-space: nowrap;" class="ampstart-headerbar fixed flex justify-start items-center top-0 left-0 right-0 pl2 pr4 pt2 md-pt0">
-    <div class="table" style="width:calc(100% - 24px);">
-        <div class="tr absolute top-0" style="width:calc(100% - 24px);">
+<header style="white-space: nowrap;" class="gsearch-headerbar fixed flex justify-start items-center top-0 left-0 right-0 pl2 pr4 pt2 md-pt0">
+    <div class="table header-table">
+        <div class="tr absolute top-0 header-table">
             <div class="td align-middle pr0" style="width:48px;" role="button" aria-label="Open Sidebar" on="tap:header-sidebar.toggle" tabindex="0">
                 <svg
                         version="1.1"
@@ -19,13 +19,13 @@
                             d="m 3,17.5 h 18 v -1 H 3 Z m 0,-5 h 18 v -1 H 3 Z m 0,-6 v 1 h 18 v -1 z" />
                 </svg>
             </div>
-            <div class="td center middle" style="width:calc(100%);">
-                <a aria-label="Search Page" href="{{.BaseUrl}}/search{{if not (eq .Token "")}}?token={{.Token}}{{end}}" class="text-decoration-none inline-block mx-auto ampstart-headerbar-home-link mb1 md-mb0">
-                    <div class="table" style="height: 100%;">
+            <div class="td center middle full-width">
+                <a aria-label="Search Page" href="{{.BaseUrl}}/search{{if not (eq .Token "")}}?token={{.Token}}{{end}}" class="text-decoration-none inline-block mx-auto gsearch-headerbar-home-link mb1 md-mb0">
+                    <div class="table full-height">
                         <div class="td">
                             <div class="td align-middle"  style="height: 70px;">
                                 <h3 class="heading">
-                                    <div style="white-space:normal; display:inline-block; white-space: normal; transform: translateY(-5px); height: 100%;">
+                                    <div class="header-text">
                                         <svg style="transform: translateY(5px)"
                                                 id="svg910"
                                                 version="1.1"
@@ -65,7 +65,7 @@
             </div>
             <div style="width:48px;" class="td align-middle pr0">
                 {{if not .User.LoggedIn}}
-                    <a aria-label="Login" href="{{.LoginUrl}}?callback={{.Self}}?token=_JWT_" class="text-decoration-none mr2 ampstart-headerbar-fixed-link ">
+                    <a aria-label="Login" href="{{.LoginUrl}}?callback={{.Self}}?token=_JWT_" class="text-decoration-none mr2 gsearch-headerbar-fixed-link ">
                         <svg
                                 viewBox="0 0 24 24"
                                 fill="black"
@@ -111,9 +111,9 @@
                     {{if eq .Type "search"}}
                         {{$url = .Self}}
                     {{end}}
-                    <a aria-label="Logout" href="{{$url}}" class="text-decoration-none mr2 ampstart-headerbar-fixed-link ">
+                    <a aria-label="Logout" href="{{$url}}" class="text-decoration-none mr2 gsearch-headerbar-fixed-link ">
 
-                        <div class="ampstart-headerbar-icon-wrapper relative">
+                        <div class="gsearch-headerbar-icon-wrapper relative">
                             <svg
                                     viewBox="0 0 24 24"
                                     fill="black"

@@ -438,7 +438,7 @@ func (mts *MTSolr) Search(text string, filters []string, facets map[string]termF
 		query.FilterQuery("mediatype:[* TO *]")
 	}
 
-	filterQuery := ""
+	filterQuery := map[string]string{}
 	// build facets with filter exclusion
 	for field, vals := range facets {
 		solrJSONTermsFacet := CreateJSONTermsFacetMap(field)
@@ -448,7 +448,7 @@ func (mts *MTSolr) Search(text string, filters []string, facets map[string]termF
 		if vals.prefix != "" {
 			solrJSONTermsFacet.SetTermPrefix(vals.prefix)
 		}
-		solrJSONDomainMap := CreateJSONDomainMap().WithTagsToExclude("facet")
+		solrJSONDomainMap := CreateJSONDomainMap().WithTagsToExclude("facet_" + field)
 		solrJSONTermsFacet.JSONFacetMap().withDomain(solrJSONDomainMap)
 		json, err := json.Marshal(map[string]*JSONFacetMap{field: solrJSONTermsFacet.JSONFacetMap()})
 		if err != nil {
@@ -465,15 +465,12 @@ func (mts *MTSolr) Search(text string, filters []string, facets map[string]termF
 		}
 		if len(selected) > 0 {
 			q := orQuery(field, selected)
-			if filterQuery != "" {
-				filterQuery += " AND "
-			}
-			filterQuery += fmt.Sprintf("(%s)", q)
+			filterQuery[field] = q
 		}
 	}
-	if filterQuery != "" {
-		mts.log.Infof("Filterquery: %s", filterQuery)
-		query.FilterQuery(fmt.Sprintf("{!tag=%s}%s", "facet", filterQuery))
+	for field, q := range filterQuery {
+		mts.log.Infof("Filterquery %s: %s", field, q)
+		query.FilterQuery(fmt.Sprintf("{!tag=facet_%s}%s", field, q))
 	}
 
 	// filter query

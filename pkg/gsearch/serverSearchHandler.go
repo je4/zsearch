@@ -17,7 +17,6 @@ limitations under the License.
 package gsearch
 
 import (
-	"crypto/md5"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
@@ -30,22 +29,28 @@ import (
 )
 
 var facetDefRegexp = regexp.MustCompile("^([^:]+):(.+:)?([0-9]+)$")
+var facetValRegexp = regexp.MustCompile("^(.+)\\.(true|false)$")
+var facetRegex = regexp.MustCompile("^facet_([^_]+)_(.+)$")
 
 func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
+	var facetCounter int64 = 1000
 	var err error
 	vars := mux.Vars(req)
 
 	if pusher, ok := w.(http.Pusher); ok {
-		// Push is supported.
-		furl := "/" + s.staticPrefix + "/font/inter/Inter-roman.var.woff2?v=3.15"
-		s.log.Infof("pushing font %s", furl)
-		if err := pusher.Push(furl, nil); err != nil {
-			s.log.Errorf("Failed to push %s: %v", furl, err)
+		pushfonts := []string{
+			"/" + s.staticPrefix + "/font/inter/Inter-ExtraLight.woff2?v=3.15",
+			"/" + s.staticPrefix + "/font/inter/Inter-Regular.woff2?v=3.15",
+			"/" + s.staticPrefix + "/font/inter/Inter-Light.woff2?v=3.15",
+			"/" + s.staticPrefix + "/font/inter/Inter-Bold.woff2?v=3.15",
+			"/" + s.staticPrefix + "/font/inter/Inter-roman.var.woff2?v=3.15",
 		}
-		furl = "/" + s.staticPrefix + "/font/inter/Inter-Bold.woff2?v=3.15"
-		s.log.Infof("pushing font %s", furl)
-		if err := pusher.Push(furl, nil); err != nil {
-			s.log.Errorf("Failed to push %s: %v", furl, err)
+
+		for _, furl := range pushfonts {
+			s.log.Infof("pushing font %s", furl)
+			if err := pusher.Push(furl, nil); err != nil {
+				s.log.Errorf("Failed to push %s: %v", furl, err)
+			}
 		}
 	}
 
@@ -58,10 +63,10 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		LoginUrl:      s.loginUrl,
 		Title:         "Search",
 		QueryApi:      "api/search",
-		FacetCount:    make(map[string]FacetCountField),
-		Facet:         make(map[string]map[string]FacetCountField),
-		Menu:          s.menu,
-		CoreFacets:    []string{},
+		//FacetCount:    make(map[string]FacetCountField),
+		Facet:      make(map[string]map[string]FacetCountField),
+		Menu:       s.menu,
+		CoreFacets: []string{},
 	}
 
 	jwt, ok := req.URL.Query()["token"]
@@ -129,8 +134,6 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 	var rows int64 = 10
 	var search, lastsearch string
 
-	facetRegex := regexp.MustCompile("^facet_([^_]+)_([^_]+)$")
-
 	for key, vals := range req.URL.Query() {
 		if len(vals) == 0 {
 			continue
@@ -148,11 +151,9 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		case "visible":
 			status.SearchResultVisible = val == "true"
 		default:
-			found := facetRegex.FindAllStringSubmatch(key, -1)
-			if len(found) > 0 {
-				if len(found[0]) == 3 {
-					fld := found[0][1]
-					v := found[0][2]
+			if found := facetRegex.FindStringSubmatch(key); found != nil {
+				fld := found[1]
+				if m := facetValRegexp.FindStringSubmatch(val); m != nil {
 					if _, ok := facets[fld]; !ok {
 						facets[fld] = termFacet{
 							selected: map[string]bool{},
@@ -160,13 +161,13 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 							limit:    0,
 						}
 					}
-					if val == "true" {
+					v := m[1]
+					if m[2] == "true" {
 						facets[fld].selected[v] = true
 					} else {
 						facets[fld].selected[v] = false
 					}
 				}
-
 			}
 		}
 	}
@@ -265,7 +266,14 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		facet := f.Field
 		status.Facet[facet] = map[string]FacetCountField{}
 		for val, _ := range vals {
-			id := fmt.Sprintf("facet_%s_%s", facet, val)
+			if len(val) == 0 {
+				continue
+			}
+			if val[0] == '\u0001' {
+				continue
+			}
+			id := fmt.Sprintf("facet_%v_%v", facet, facetCounter)
+			facetCounter++
 			count := 0
 			if _, ok := facetFieldCount[facet]; ok {
 				for v, c := range facetFieldCount[facet] {
@@ -284,7 +292,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 				ShortName: val,
 				Selected:  selected,
 			}
-			status.FacetCount[id] = status.Facet[facet][id]
+			//status.FacetCount[id] = status.Facet[facet][id]
 		}
 	}
 	for facet, _ := range facets {
@@ -292,17 +300,27 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 			continue
 		}
 		status.Facet[facet] = map[string]FacetCountField{}
-		for v, c := range facetFieldCount[facet] {
+		for val, c := range facetFieldCount[facet] {
+			if len(val) == 0 {
+				continue
+			}
+			if val[0] == '\u0001' {
+				continue
+			}
+
 			//			re := regexp.MustCompile("([^a-zA-Z0-9])+")
-			id := fmt.Sprintf("facet_%s_%s", facet, fmt.Sprintf("%x", md5.Sum([]byte(v))))
-			selected, ok := facets[facet].selected[v]
+			//id := fmt.Sprintf("facet_%s_%s", facet, fmt.Sprintf("%x", md5.Sum([]byte(val))))
+			//id := "facet_" + fmt.Sprintf("%x", crc32.Checksum([]byte(facet+val), crc32q))
+			id := fmt.Sprintf("facet_%v_%v", facet, facetCounter)
+			facetCounter++
+			selected, ok := facets[facet].selected[val]
 			if !ok {
 				selected = false
 			}
 			status.Facet[facet][id] = FacetCountField{
 				Id:        id,
-				Name:      fmt.Sprintf("%s (%d)", v, c),
-				ShortName: v,
+				Name:      fmt.Sprintf("%s (%d)", val, c),
+				ShortName: val,
 				Selected:  selected,
 			}
 		}
@@ -318,7 +336,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	default:
-		w.Header().Set("Cac	he-Control", "max-age=14400, s-maxage=12200, stale-while-revalidate=9000, public")
+		w.Header().Set("Cache-Control", "max-age=14400, s-maxage=12200, stale-while-revalidate=9000, public")
 		if tpl, ok := s.templates["search.amp.gohtml"]; ok {
 			if err := tpl.Execute(w, status); err != nil {
 				s.DoPanicf(w, http.StatusInternalServerError, "cannot render template: %v", false, err)

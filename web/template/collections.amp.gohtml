@@ -54,8 +54,20 @@ limitations under the License.
     <script async custom-element="amp-list" src="https://cdn.ampproject.org/v0/amp-list-0.1.js"></script>
 
     <style amp-custom="">
+        {{template "gsearch.inc.min.css" . }}
+        {{template "darkmode.inc.min.css" . }}
+        {{template "lightmode.inc.min.css" . }}
+        {{template "headings.inc.min.css" . }}
+        {{template "buttons.inc.min.css" . }}
+        {{template "commerce.inc.min.css" . }}
+        {{template "table.inc.min.css" . }}
+        {{template "col.inc.min.css" . }}
+        {{template "text.inc.min.css" . }}
+        {{template "margin.inc.min.css" . }}
+        {{template "flexbox.inc.min.css" . }}
+        {{template "padding.inc.min.css" . }}
         {{template "main.inc.min.css" . }}
-        {{template "inter.inc.css" . }}
+        {{template "inter.inc.min.css" . }}
     </style>
 
     <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
@@ -85,7 +97,7 @@ limitations under the License.
                 data-persist-dismissal="false">
             <div class="h4 md-h4 message">
                 {{$notification.Message}}&nbsp;
-                <button class="ampstart-btn ampstart-btn-seemore caps" on="tap:amp-user-{{$notification.Id}}.dismiss">OK</button>
+                <button class="gsearch-btn gsearch-btn-seemore caps" on="tap:amp-user-{{$notification.Id}}.dismiss">OK</button>
             </div>
         </amp-user-notification>
     {{end}}

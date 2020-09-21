@@ -1,11 +1,11 @@
 <!-- Media area -->
 {{if not .ContentOK}}
     {{if .Doc.Content.HasMedia}}
-    <div class="ampstart-card" style="min-height: 300px;position:relative;">
+    <div class="gsearch-card" style="min-height: 300px;position:relative;">
         <div class="box-center">
             <h4 class="h3">insufficient rights for media display</h4>
             {{if not .User.LoggedIn}}
-                <div><a class="ampstart-btn ampstart-btn-secondary caps" href="{{.LoginUrl}}?callback={{print .Self "?token=_JWT_"}}">Login</a></div>
+                <div><a class="gsearch-btn gsearch-btn-secondary caps" href="{{.LoginUrl}}?callback={{print .Self "?token=_JWT_"}}">Login</a></div>
             {{end}}
         </div>
     </div>
@@ -74,7 +74,7 @@
                     <ul class="list-reset inline-block">
                         {{range $key, $video := .Doc.Content.Media.video}}
                             <li class="inline-block">
-                                <div option="{{$key}}" class="ampstart-btn ampstart-btn-selectlist caps">{{add $key 1}}</div>
+                                <div option="{{$key}}" class="gsearch-btn gsearch-btn-selectlist caps">{{add $key 1}}</div>
                             </li>
                         {{end}}
                     </ul>
@@ -143,7 +143,7 @@
                         <ul class="list-reset inline-block">
                             {{range $key, $audio := .Doc.Content.Media.audio}}
                                 <li class="inline-block">
-                                    <div option="{{$key}}" class="ampstart-btn ampstart-btn-selectlist caps">{{add $key 1}}</div>
+                                    <div option="{{$key}}" class="gsearch-btn gsearch-btn-selectlist caps">{{add $key 1}}</div>
                                 </li>
                             {{end}}
                         </ul>
@@ -248,7 +248,7 @@
                     <ul class="list-reset inline-block">
                     {{range $key, $pdf := .Doc.Content.Media.pdf}}
                             <li class="inline-block">
-                                <div option="{{$key}}" class="ampstart-btn ampstart-btn-selectlist caps">{{add $key 1}}</div>
+                                <div option="{{$key}}" class="gsearch-btn gsearch-btn-selectlist caps">{{add $key 1}}</div>
                             </li>
                     {{end}}
                     </ul>
