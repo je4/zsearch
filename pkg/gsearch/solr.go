@@ -421,7 +421,7 @@ func (mts *MTSolr) LoadEntities(ids []string) (map[string]*Document, error) {
 	return result, nil
 }
 
-func (mts *MTSolr) Search(text string, filters []string, facets map[string]termFacet, groups []string, contentVisible bool, start, rows int) ([]*Document, int64, FacetCountResult, error) {
+func (mts *MTSolr) Search(text string, filters []string, facets map[string]termFacet, groups []string, contentVisible bool, start, rows int, isAdmin bool) ([]*Document, int64, FacetCountResult, error) {
 	//qstr := EscapeSolrString(text)
 	qstr := text
 	if qstr == "" {
@@ -430,19 +430,24 @@ func (mts *MTSolr) Search(text string, filters []string, facets map[string]termF
 	query := solr.NewQuery()
 
 	// build acl query
-	metaacl := orQuery("acl_meta", groups)
-	query.FilterQuery(metaacl)
+	if !isAdmin {
+		metaacl := orQuery("acl_meta", groups)
+		query.FilterQuery(metaacl)
+	}
 	if contentVisible {
-		contentacl := orQuery("acl_content", groups)
-		query.FilterQuery(contentacl)
-		query.FilterQuery("mediatype:[* TO *]")
+		var contentacl string = "mediatype:[* TO *]"
+		if !isAdmin {
+			contentacl = fmt.Sprintf("(%s) AND (%s)", contentacl, orQuery("acl_content", groups))
+		}
+		query.FilterQuery(fmt.Sprintf("{!tag=facet_mediatype}%s", contentacl))
+		//query.FilterQuery("mediatype:[* TO *]")
 	}
 
 	filterQuery := map[string]string{}
 	// build facets with filter exclusion
 	for field, vals := range facets {
 		solrJSONTermsFacet := CreateJSONTermsFacetMap(field)
-		if vals.limit > 0 {
+		if vals.limit != 0 {
 			solrJSONTermsFacet.setLimit(vals.limit)
 		}
 		if vals.prefix != "" {

@@ -28,7 +28,7 @@ import (
 	"strings"
 )
 
-var facetDefRegexp = regexp.MustCompile("^([^:]+):(.+:)?([0-9]+)$")
+var facetDefRegexp = regexp.MustCompile("^([^:]+):(.+:)?([0-9-]+)$")
 var facetValRegexp = regexp.MustCompile("^(.+)\\.(true|false)$")
 var facetRegex = regexp.MustCompile("^facet_([^_]+)_(.+)$")
 
@@ -165,7 +165,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 					if m[2] == "true" {
 						facets[fld].selected[v] = true
 					} else {
-						facets[fld].selected[v] = false
+						//facets[fld].selected[v] = false
 					}
 				}
 			}
@@ -243,7 +243,8 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		status.User.Groups,
 		status.SearchResultVisible,
 		int(start),
-		int(rows))
+		int(rows),
+		status.User.inGroup(s.adminGroup))
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot execute solr query: %v", false, err)
 		return
