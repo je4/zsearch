@@ -1,4 +1,4 @@
-package gsearch
+package zsearch
 
 import (
 	"github.com/vanng822/go-solr/solr"

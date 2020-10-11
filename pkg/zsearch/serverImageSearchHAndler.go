@@ -14,7 +14,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package gsearch
+package zsearch
 
 import (
 	"encoding/json"
@@ -23,42 +23,24 @@ import (
 	"html/template"
 	"net"
 	"net/http"
-	"regexp"
+	"strconv"
 	"strings"
 )
 
-var tagFieldRegexp = regexp.MustCompile("^(area|field):(.+)$")
-
-func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
+func (s *Server) imageSearchHandler(w http.ResponseWriter, req *http.Request) {
 	var err error
 	vars := mux.Vars(req)
-	subfiltername, ok := vars["subfilter"]
 
-	if pusher, ok := w.(http.Pusher); ok {
-		// Push is supported.
-		furl := "/" + s.staticPrefix + "/font/inter/Inter-roman.var.woff2?v=3.15"
-		s.log.Infof("pushing font %s", furl)
-		if err := pusher.Push(furl, nil); err != nil {
-			s.log.Errorf("Failed to push %s: %v", furl, err)
-		}
-		furl = "/" + s.staticPrefix + "/font/inter/Inter-Bold.woff2?v=3.15"
-		s.log.Infof("pushing font %s", furl)
-		if err := pusher.Push(furl, nil); err != nil {
-			s.log.Errorf("Failed to push %s: %v", furl, err)
-		}
-	}
-
-	status := CollectionsStatus{
-		Type:          "Collections",
+	status := ImageSearchStatus{
+		Type:          "imagesearch",
 		Notifications: []Notification{},
 		Self:          fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(req.URL.Path, "/")),
 		BaseUrl:       s.addrExt,
 		SelfPath:      req.URL.Path,
 		LoginUrl:      s.loginUrl,
-		Title:         "Collections",
+		Title:         "Image Search",
 		QueryApi:      "api/search",
 		Menu:          s.menu,
-		Result:        map[string][]*Document{},
 	}
 
 	jwt, ok := req.URL.Query()["token"]
@@ -107,40 +89,91 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 		status.User.Groups = append(status.User.Groups, grp)
 	}
 
-	qstr := "*:*"
+	var start int64 = 0
+	var rows int64 = 10
+	var search, lastsearch string
+
+	for key, vals := range req.URL.Query() {
+		if len(vals) == 0 {
+			continue
+		}
+		val := vals[0]
+		switch key {
+		case "start":
+			start, _ = strconv.ParseInt(val, 10, 64)
+		case "rows":
+			rows, _ = strconv.ParseInt(val, 10, 64)
+		case "lastsearch":
+			lastsearch = val
+		case "searchtext":
+			search = val
+		default:
+		}
+	}
+
+	if start < 0 {
+		start = 0
+	}
+	if search != lastsearch {
+		start = 0
+	}
+
+	qstr := s.string2Query(search)
 	s.log.Infof("Query: %s", qstr)
 
-	filters := []string{fmt.Sprintf("catalog:\"%s\"", s.collectionsCatalog)}
+	filters := []string{s.baseFilter, "mediatype:image"}
+	subfiltername, ok := vars["subfilter"]
+	if ok {
+		var f *SubFilter = nil
+		// check for configured subfilter
+		for _, sf := range s.subFilters {
+			if sf.Label == subfiltername {
+				f = &sf
+				break
+			}
+		}
+		if f == nil {
+			// load as collection
+			doc, err := s.mts.LoadEntity(subfiltername)
+			if err != nil {
+				s.DoPanicf(w, http.StatusNotFound, "error loading signature %s: %v", false, subfiltername, err)
+				return
+			}
+			if doc == nil {
+				s.DoPanicf(w, http.StatusInternalServerError, "data of signature %s is nil", false, subfiltername)
+				return
+			}
+			for _, q := range doc.Content.Queries {
+				if strings.ToLower(q.Label) == "group" {
+					filters = append(filters, s.string2Query(q.Search))
+					status.Title = doc.Content.Title
+				}
+			}
+		} else {
+			filters = append(filters, f.Filter)
+			status.Title = f.Name
+		}
 
+	}
 	var facets map[string]termFacet
-	docs, total, _, err := s.mts.Search(qstr, filters, facets, status.User.Groups, status.SearchResultVisible, int(0), int(1000), false)
+	docs, total, facetFieldCount, err := s.mts.Search(qstr, filters, facets, status.User.Groups, true, int(start), int(rows), false)
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot execute solr query: %v", false, err)
 		return
 	}
-
-	// sort documents into result sets
-	for _, doc := range docs {
-		for _, tag := range doc.Content.Tags {
-			if r := tagFieldRegexp.FindStringSubmatch(tag); r != nil {
-				field := r[2]
-				if _, ok := status.Result[field]; !ok {
-					status.Result[field] = []*Document{}
-				}
-				if srch, ok := doc.Content.Meta["Archive"]; ok && strings.TrimSpace(srch) != "" {
-					status.Result[field] = append(status.Result[field], doc)
-					break
-				}
-			}
-		}
+	status.Result, err = s.doc2result("", "", docs, total, facetFieldCount, facets, 0, status.User, "")
+	if err != nil {
+		s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal result: %v", false, err)
+		return
 	}
 
 	//status.SearchResult = template.JS(json)
 	status.SearchResultRows = len(docs)
 	status.SearchResultTotal = int(total)
-	status.SearchResultStart = int(0)
+	status.SearchResultStart = int(start)
+	status.SearchString = search
 
-	status.MetaDescription = "Collections of Mediathek HGK FHNW"
+	status.MetaDescription = "Integrated Catalogue of Mediathek HGK FHNW"
 	switch subfiltername {
 	case "data":
 		enc := json.NewEncoder(w)
@@ -151,7 +184,7 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	default:
 		w.Header().Set("Cache-Control", "max-age=14400, s-maxage=12200, stale-while-revalidate=9000, public")
-		if tpl, ok := s.templates["collections.amp.gohtml"]; ok {
+		if tpl, ok := s.templates["imagesearch"]; ok {
 			if err := tpl.Execute(w, status); err != nil {
 				s.DoPanicf(w, http.StatusInternalServerError, "cannot render template: %v", false, err)
 				return

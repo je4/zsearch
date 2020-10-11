@@ -14,7 +14,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package gsearch
+package zsearch
 
 import (
 	"bufio"
@@ -31,9 +31,8 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/htfy96/reformism"
+	"github.com/je4/zsearch/pgk/amp"
 	"github.com/op/go-logging"
-	"github.com/traefik/traefik/pkg/tls/generate"
-	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/amp"
 	"html/template"
 	"io"
 	"net"
@@ -771,17 +770,19 @@ func (s *Server) ListenAndServe(cert, key string) error {
 		Addr:    addr,
 	}
 	if cert == "auto" || key == "auto" {
-		cert, err := generate.DefaultCertificate()
+		s.log.Info("generating new certificate")
+		cert, err := DefaultCertificate()
 		if err != nil {
 			return emperror.Wrap(err, "cannot generate default certificate")
 		}
 		s.srv.TLSConfig = &tls.Config{Certificates: []tls.Certificate{*cert}}
+		s.log.Infof("starting HTTPS zsearch at https://%v", addr)
 		return s.srv.ListenAndServeTLS("", "")
 	} else if cert != "" && key != "" {
-		s.log.Infof("starting HTTPS memoServer at https://%v", addr)
+		s.log.Infof("starting HTTPS zsearch at https://%v", addr)
 		return s.srv.ListenAndServeTLS(cert, key)
 	} else {
-		s.log.Infof("starting HTTP memoServer at http://%v", addr)
+		s.log.Infof("starting HTTP zsearch at http://%v", addr)
 		return s.srv.ListenAndServe()
 	}
 }

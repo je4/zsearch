@@ -1,4 +1,4 @@
-package gsearch
+package zsearch
 
 type JSONDomainMap map[string]interface{}
 
