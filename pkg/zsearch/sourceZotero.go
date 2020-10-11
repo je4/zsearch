@@ -2,7 +2,6 @@ package zsearch
 
 import (
 	"github.com/vanng822/go-solr/solr"
-	"gitlab.fhnw.ch/hgk-dima/zotero-sync/pkg/zotero"
 	"reflect"
 	"strings"
 )
