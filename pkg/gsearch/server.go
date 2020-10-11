@@ -20,6 +20,7 @@ import (
 	"bufio"
 	"context"
 	"crypto/rsa"
+	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
 	"encoding/pem"
@@ -31,6 +32,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/htfy96/reformism"
 	"github.com/op/go-logging"
+	"github.com/traefik/traefik/pkg/tls/generate"
 	"gitlab.fhnw.ch/mediathek/search/gsearch/pkg/amp"
 	"html/template"
 	"io"
@@ -768,7 +770,14 @@ func (s *Server) ListenAndServe(cert, key string) error {
 		Handler: loggedRouter,
 		Addr:    addr,
 	}
-	if cert != "" && key != "" {
+	if cert == "auto" || key == "auto" {
+		cert, err := generate.DefaultCertificate()
+		if err != nil {
+			return emperror.Wrap(err, "cannot generate default certificate")
+		}
+		s.srv.TLSConfig = &tls.Config{Certificates: []tls.Certificate{*cert}}
+		return s.srv.ListenAndServeTLS("", "")
+	} else if cert != "" && key != "" {
 		s.log.Infof("starting HTTPS memoServer at https://%v", addr)
 		return s.srv.ListenAndServeTLS(cert, key)
 	} else {

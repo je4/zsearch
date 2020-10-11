@@ -107,7 +107,7 @@ func (mts *MTSolr) GetContent(entry *cacheEntry) (Source, error) {
 	var err error
 	switch entry.Source {
 	case "zotero":
-		content, err = NewSourceZotero(entry, mts)
+		content, err = NewSourceZoteroDeprecated(entry, mts)
 	case "diplomhgk":
 		content, err = NewSourceDiplomHGK(entry, mts)
 	case "cdk":
@@ -385,7 +385,7 @@ func (mts *MTSolr) LoadEntities(ids []string) (map[string]*Document, error) {
 			Place:           content.GetPlace(),
 			Date:            content.GetDate(),
 			CollectionTitle: content.GetCollectionTitle(),
-			Persons:         content.GetNames(),
+			Persons:         content.GetPersons(),
 			Tags:            content.GetTags(),
 			Media:           content.GetMedia(),
 			Poster:          content.GetPoster(),
@@ -394,7 +394,7 @@ func (mts *MTSolr) LoadEntities(ids []string) (map[string]*Document, error) {
 			References:      content.GetReferences(),
 			Extra:           content.GetExtra(),
 			Meta:            content.GetMeta(),
-			Type:            content.GetType(),
+			Type:            content.GetContentType(),
 			Queries:         content.GetQueries(),
 			ContentStr:      content.GetContentString(),
 			ContentMime:     content.GetContentMime(),
@@ -562,7 +562,7 @@ func (mts *MTSolr) Search(text string, filters []string, facets map[string]termF
 					Place:           content.GetPlace(),
 					Date:            content.GetDate(),
 					CollectionTitle: content.GetCollectionTitle(),
-					Persons:         content.GetNames(),
+					Persons:         content.GetPersons(),
 					Tags:            content.GetTags(),
 					Media:           content.GetMedia(),
 					Poster:          content.GetPoster(),
@@ -571,7 +571,7 @@ func (mts *MTSolr) Search(text string, filters []string, facets map[string]termF
 					References:      content.GetReferences(),
 					Extra:           content.GetExtra(),
 					Meta:            content.GetMeta(),
-					Type:            content.GetType(),
+					Type:            content.GetContentType(),
 					Queries:         content.GetQueries(),
 				}
 				sourceData.HasMedia = len(sourceData.Media) > 0

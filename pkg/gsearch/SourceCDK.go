@@ -85,11 +85,11 @@ func (cdk *SourceCDK) GetAbstract() string {
 	return "strings.TrimSpace(cdk.DData.Beschreibung)"
 }
 
-func (cdk *SourceCDK) GetType() string {
+func (cdk *SourceCDK) GetContentType() string {
 	return "project"
 }
 
-func (cdk *SourceCDK) GetNames() []Person {
+func (cdk *SourceCDK) GetPersons() []Person {
 	persons := []Person{}
 	return persons
 }

@@ -158,11 +158,11 @@ func (dhgk *SourceDiplomHGK) GetAbstract() string {
 	return strings.TrimSpace(dhgk.DData.Beschreibung)
 }
 
-func (dhgk *SourceDiplomHGK) GetType() string {
+func (dhgk *SourceDiplomHGK) GetContentType() string {
 	return "project"
 }
 
-func (dhgk *SourceDiplomHGK) GetNames() []Person {
+func (dhgk *SourceDiplomHGK) GetPersons() []Person {
 	persons := []Person{
 		{
 			Name: fmt.Sprintf("%s, %s", dhgk.DData.Nachname, dhgk.DData.Vornamen),

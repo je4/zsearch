@@ -204,7 +204,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 				s.DoPanicf(w, http.StatusInternalServerError, "data of signature %s is nil", false, subfiltername)
 				return
 			}
-			if filter, ok := doc.Content.Meta["ArchiveLocation"]; ok {
+			if filter, ok := doc.Content.Meta["Archive"]; ok {
 				filters = append(filters, s.string2Query(filter))
 				status.Title = doc.Content.Title
 			}

@@ -127,8 +127,10 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 				if _, ok := status.Result[field]; !ok {
 					status.Result[field] = []*Document{}
 				}
-				status.Result[field] = append(status.Result[field], doc)
-				break
+				if srch, ok := doc.Content.Meta["Archive"]; ok && strings.TrimSpace(srch) != "" {
+					status.Result[field] = append(status.Result[field], doc)
+					break
+				}
 			}
 		}
 	}

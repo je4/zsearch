@@ -29,7 +29,7 @@ import (
 	"strings"
 )
 
-type SourceZotero struct {
+type SourceZoteroDeprecated struct {
 	mts        *MTSolr
 	ZData      ZoteroData           `json:"ZData"`
 	CollMeta   map[string]string    `json:"collmeta"`
@@ -38,7 +38,7 @@ type SourceZotero struct {
 	medias     map[string]MediaList `jsnon:"-"`
 }
 
-var zoteroIgnoreMetaFields = []string{
+var zoteroDeprecatedIgnoreMetaFields = []string{
 	"AbstractNote",
 	"Collections",
 	"Creators",
@@ -53,10 +53,10 @@ var zoteroIgnoreMetaFields = []string{
 }
 
 // name:value
-var zoteroTagVariable = regexp.MustCompile(`^(acl_meta|acl_content):(.+)$`)
+var zoteroDeprecatedTagVariable = regexp.MustCompile(`^(acl_meta|acl_content):(.+)$`)
 
-func NewSourceZotero(entry *cacheEntry, mts *MTSolr) (*SourceZotero, error) {
-	zot := &SourceZotero{
+func NewSourceZoteroDeprecated(entry *cacheEntry, mts *MTSolr) (*SourceZoteroDeprecated, error) {
+	zot := &SourceZoteroDeprecated{
 		ZData:      ZoteroData{},
 		CollMeta:   map[string]string{},
 		mts:        mts,
@@ -65,7 +65,7 @@ func NewSourceZotero(entry *cacheEntry, mts *MTSolr) (*SourceZotero, error) {
 	return zot, zot.Init(entry)
 }
 
-func (zot *SourceZotero) Init(entry *cacheEntry) error {
+func (zot *SourceZoteroDeprecated) Init(entry *cacheEntry) error {
 	err := json.Unmarshal([]byte(entry.ContentStr), &zot.ZData)
 	if err != nil {
 		return emperror.Wrapf(err, "cannot unmarshal json\n%s", zot.ZData)
@@ -79,21 +79,21 @@ func (zot *SourceZotero) Init(entry *cacheEntry) error {
 	return nil
 }
 
-func (zot *SourceZotero) Name() string { return "zotero" }
+func (zot *SourceZoteroDeprecated) Name() string { return "zotero" }
 
-func (zot *SourceZotero) GetContentString() string {
+func (zot *SourceZoteroDeprecated) GetContentString() string {
 	return zot.contentStr
 }
 
-func (zot *SourceZotero) GetContentMime() string {
+func (zot *SourceZoteroDeprecated) GetContentMime() string {
 	return "text/json"
 }
 
-func (zot *SourceZotero) GetSolrDoc() *solr.Document {
+func (zot *SourceZoteroDeprecated) GetSolrDoc() *solr.Document {
 	return zot.doc
 }
 
-func (zot *SourceZotero) GetCollectionTitle() string {
+func (zot *SourceZoteroDeprecated) GetCollectionTitle() string {
 	t, ok := zot.CollMeta["title"]
 	if !ok {
 		return strings.ReplaceAll(zot.ZData.Group.Data.Name, `_`, ` `)
@@ -101,19 +101,19 @@ func (zot *SourceZotero) GetCollectionTitle() string {
 	return t
 }
 
-func (zot *SourceZotero) GetTitle() string {
+func (zot *SourceZoteroDeprecated) GetTitle() string {
 	return zot.ZData.Data.Title
 }
 
-func (zot *SourceZotero) GetPlace() string {
+func (zot *SourceZoteroDeprecated) GetPlace() string {
 	return zot.ZData.Data.Place
 }
 
-func (zot *SourceZotero) GetDate() string {
+func (zot *SourceZoteroDeprecated) GetDate() string {
 	return zot.ZData.Data.Date
 }
 
-func (zot *SourceZotero) GetMeta() map[string]string {
+func (zot *SourceZoteroDeprecated) GetMeta() map[string]string {
 	var result = make(map[string]string)
 	s := reflect.ValueOf(&zot.ZData.Data).Elem()
 	typeOfT := s.Type()
@@ -141,10 +141,10 @@ func (zot *SourceZotero) GetMeta() map[string]string {
 	return result
 }
 
-func (zot *SourceZotero) GetExtra() map[string]string {
+func (zot *SourceZoteroDeprecated) GetExtra() map[string]string {
 	var result = make(map[string]string)
 	for key, val := range zot.GetMeta() {
-		if InList(zoteroIgnoreMetaFields, key) {
+		if InList(zoteroDeprecatedIgnoreMetaFields, key) {
 			continue
 		}
 		result[key] = val
@@ -152,11 +152,11 @@ func (zot *SourceZotero) GetExtra() map[string]string {
 	return result
 }
 
-func (zot *SourceZotero) GetAbstract() string {
+func (zot *SourceZoteroDeprecated) GetAbstract() string {
 	return strings.TrimSpace(zot.ZData.Data.AbstractNote + "\n" + zot.ZData.Data.Extra)
 }
 
-func (zot *SourceZotero) GetType() string {
+func (zot *SourceZoteroDeprecated) GetContentType() string {
 	am := strings.TrimSpace(zot.ZData.Data.ArtworkMedium)
 	if am != "" {
 		return strings.ToLower(am)
@@ -169,7 +169,7 @@ func (zot *SourceZotero) GetType() string {
 	return strings.ToLower(zot.ZData.Data.ItemDataBase.ItemType)
 }
 
-func (zot *SourceZotero) GetNames() []Person {
+func (zot *SourceZoteroDeprecated) GetPersons() []Person {
 	var persons []Person
 	for _, c := range zot.ZData.Data.ItemDataBase.Creators {
 		name := strings.Trim(fmt.Sprintf("%s, %s", c.LastName, c.FirstName), " ,")
@@ -183,7 +183,7 @@ func (zot *SourceZotero) GetNames() []Person {
 	return persons
 }
 
-func (zot *SourceZotero) getColl(key string) (*ZoteroCollection, error) {
+func (zot *SourceZoteroDeprecated) getColl(key string) (*ZoteroCollection, error) {
 	if key == "" {
 		return nil, errors.New("empty collection key")
 	}
@@ -197,11 +197,11 @@ func (zot *SourceZotero) getColl(key string) (*ZoteroCollection, error) {
 	return nil, fmt.Errorf("collection %s not found", key)
 }
 
-func (zot *SourceZotero) GetTags() []string {
+func (zot *SourceZoteroDeprecated) GetTags() []string {
 	var tags []string
 	for _, t := range zot.ZData.Data.Tags {
 		// ignore variables (i.e. <name>:<value>
-		if !zoteroTagVariable.MatchString(t.Tag) {
+		if !zoteroDeprecatedTagVariable.MatchString(t.Tag) {
 			tags = AppendIfMissing(tags, strings.ToLower(t.Tag))
 		}
 	}
@@ -225,7 +225,7 @@ func (zot *SourceZotero) GetTags() []string {
 	return tags
 }
 
-func (zot *SourceZotero) GetChildren(itemType, linkMode string) []ZoteroData {
+func (zot *SourceZoteroDeprecated) GetChildren(itemType, linkMode string) []ZoteroData {
 	var children []ZoteroData
 	for _, child := range zot.ZData.Children {
 		if child.Data.ItemType != itemType {
@@ -239,7 +239,7 @@ func (zot *SourceZotero) GetChildren(itemType, linkMode string) []ZoteroData {
 	return children
 }
 
-func (zot *SourceZotero) GetNotes() []Note {
+func (zot *SourceZoteroDeprecated) GetNotes() []Note {
 	var notes []Note
 	if zot.ZData.Data.Note != "" {
 		notes = append(notes, Note{
@@ -267,7 +267,7 @@ func (zot *SourceZotero) GetNotes() []Note {
 
 var zoterolinkregexp = regexp.MustCompile("^https?://zotero.org/groups/([^/]+)/items/([^/]+)$")
 
-func (zot *SourceZotero) GetReferences() []Reference {
+func (zot *SourceZoteroDeprecated) GetReferences() []Reference {
 	var references []Reference
 	for key, values := range zot.ZData.Data.ItemDataBase.Relations {
 		for _, value := range values {
@@ -283,7 +283,7 @@ func (zot *SourceZotero) GetReferences() []Reference {
 	return references
 }
 
-func (zot *SourceZotero) GetMedia() map[string]MediaList {
+func (zot *SourceZoteroDeprecated) GetMedia() map[string]MediaList {
 	if zot.medias != nil {
 		return zot.medias
 	}
@@ -323,7 +323,7 @@ func (zot *SourceZotero) GetMedia() map[string]MediaList {
 	return zot.medias
 }
 
-func (zot *SourceZotero) GetPoster() *Media {
+func (zot *SourceZoteroDeprecated) GetPoster() *Media {
 	medias := zot.GetMedia()
 	images, ok := medias["image"]
 	if !ok {
@@ -335,7 +335,7 @@ func (zot *SourceZotero) GetPoster() *Media {
 	return &images[0]
 }
 
-func (zot *SourceZotero) GetQueries() []Query {
+func (zot *SourceZoteroDeprecated) GetQueries() []Query {
 	queries := []Query{}
 	catBase := `fhnw!!hgk!!pub`
 	catGroup := catBase + `!!` + zot.ZData.Group.Data.Name

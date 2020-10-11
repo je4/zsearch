@@ -86,7 +86,7 @@ type Source interface {
 	GetPlace() string
 	GetDate() string
 	GetCollectionTitle() string
-	GetNames() []Person
+	GetPersons() []Person
 	GetTags() []string
 	GetMedia() map[string]MediaList
 	GetPoster() *Media
@@ -95,7 +95,7 @@ type Source interface {
 	GetReferences() []Reference
 	GetMeta() map[string]string
 	GetExtra() map[string]string
-	GetType() string
+	GetContentType() string
 	GetQueries() []Query
 	GetSolrDoc() *solr.Document
 	GetContentString() string
