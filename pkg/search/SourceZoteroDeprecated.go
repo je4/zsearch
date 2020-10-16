@@ -14,7 +14,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package zsearch
+package search
 
 import (
 	"encoding/json"
@@ -265,13 +265,13 @@ func (zot *SourceZoteroDeprecated) GetNotes() []Note {
 	return notes
 }
 
-var zoterolinkregexp = regexp.MustCompile("^https?://zotero.org/groups/([^/]+)/items/([^/]+)$")
+var zoteroDeprecatedlinkregexp = regexp.MustCompile("^https?://zotero.org/groups/([^/]+)/items/([^/]+)$")
 
 func (zot *SourceZoteroDeprecated) GetReferences() []Reference {
 	var references []Reference
 	for key, values := range zot.ZData.Data.ItemDataBase.Relations {
 		for _, value := range values {
-			if matches := zoterolinkregexp.FindStringSubmatch(value); matches != nil {
+			if matches := zoteroDeprecatedlinkregexp.FindStringSubmatch(value); matches != nil {
 				signature := fmt.Sprintf("zotero-%s.%s", matches[1], matches[2])
 				references = append(references, Reference{
 					Type:      key,

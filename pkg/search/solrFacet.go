@@ -1,4 +1,4 @@
-package zsearch
+package search
 
 type SolrFacet struct {
 	Label    string          `json:"label,omitempty"`

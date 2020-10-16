@@ -1,13 +1,18 @@
-package zsearch
+package search
 
 import (
+	"fmt"
+	"github.com/je4/zsync/pkg/zotero"
+	"github.com/je4/zsync/pkg/zotmedia"
 	"github.com/vanng822/go-solr/solr"
+	"html/template"
 	"reflect"
+	"regexp"
 	"strings"
 )
 
 /* *******************************
-Functions of gsearch.Source interface
+Functions of Source interface
 ******************************* */
 
 var zoteroIgnoreMetaFields = []string{
@@ -24,36 +29,51 @@ var zoteroIgnoreMetaFields = []string{
 	"Note",
 }
 
-func (item *zotero.Item) Name() string {
+type Item zotero.Item
+
+func (item *Item) GetChildrenLocal() (*[]Item, error) {
+	zItem := (*zotero.Item)(item)
+	result, err := zItem.GetChildrenLocal()
+	if err != nil {
+		return nil, err
+	}
+	returns := []Item{}
+	for _, i := range *result {
+		returns = append(returns, Item(i))
+	}
+	return &returns, nil
+}
+
+func (item *Item) Name() string {
 	return "zotero2"
 }
 
-func (item *zotero.Item) GetTitle() string {
+func (item *Item) GetTitle() string {
 	return item.Data.Title
 
 }
 
-func (item *zotero.Item) GetPlace() string {
+func (item *Item) GetPlace() string {
 	return item.Data.Place
 
 }
 
-func (item *zotero.Item) GetDate() string {
+func (item *Item) GetDate() string {
 	return item.Data.Date
 
 }
 
-func (item *zotero.Item) GetCollectionTitle() string {
+func (item *Item) GetCollectionTitle() string {
 	return item.Group.Data.Name
 
 }
 
-func (item *zotero.Item) GetPersons() []gsearch.Person {
-	var persons []gsearch.Person
+func (item *Item) GetPersons() []Person {
+	var persons []Person
 	for _, c := range item.Data.Creators {
 		name := strings.Trim(fmt.Sprintf("%s, %s", c.LastName, c.FirstName), " ,")
 		if name != "" {
-			persons = append(persons, gsearch.Person{
+			persons = append(persons, Person{
 				Name: name,
 				Role: c.CreatorType,
 			})
@@ -65,9 +85,9 @@ func (item *zotero.Item) GetPersons() []gsearch.Person {
 // name:value
 var zoteroTagVariable = regexp.MustCompile(`^(acl_meta|acl_content):(.+)$`)
 
-func (item *zotero.Item) GetACL() map[string][]string {
-	meta := Text2Metadata(item.Group.Data.Description)
-	meta2 := Text2Metadata(item.Data.AbstractNote)
+func (item *Item) GetACL() map[string][]string {
+	meta := zotero.Text2Metadata(item.Group.Data.Description)
+	meta2 := zotero.Text2Metadata(item.Data.AbstractNote)
 	for key, val := range meta2 {
 		meta[key] = val
 	}
@@ -83,9 +103,9 @@ func (item *zotero.Item) GetACL() map[string][]string {
 	return acls
 }
 
-func (item *zotero.Item) GetCatalogs() []string {
-	meta := Text2Metadata(item.Group.Data.Description)
-	meta2 := Text2Metadata(item.Data.AbstractNote)
+func (item *Item) GetCatalogs() []string {
+	meta := zotero.Text2Metadata(item.Group.Data.Description)
+	meta2 := zotero.Text2Metadata(item.Data.AbstractNote)
 	for key, val := range meta2 {
 		meta[key] = val
 	}
@@ -98,7 +118,7 @@ func (item *zotero.Item) GetCatalogs() []string {
 	return catalogs
 }
 
-func (item *zotero.Item) GetCategories() []string {
+func (item *Item) GetCategories() []string {
 	categories := []string{}
 	for _, collection := range item.Data.Collections {
 		coll, err := item.Group.GetCollectionByKeyLocal(collection)
@@ -118,7 +138,7 @@ func (item *zotero.Item) GetCategories() []string {
 	return categories
 }
 
-func (item *zotero.Item) GetTags() []string {
+func (item *Item) GetTags() []string {
 	var tags []string
 	for _, t := range item.Data.Tags {
 		// ignore variables (i.e. <name>:<value>
@@ -132,7 +152,7 @@ func (item *zotero.Item) GetTags() []string {
 		for _, collKey := range item.Data.Collections {
 			coll, err := item.Group.GetCollectionByKeyLocal(collKey)
 			if err != nil {
-				item.Group.Zot.logger.Errorf("could not load collection #%v.%v", item.Group.Data.Id, collKey)
+				item.Group.Zot.Logger.Errorf("could not load collection #%v.%v", item.Group.Data.Id, collKey)
 				continue
 			}
 			if coll.Key == c {
@@ -150,10 +170,10 @@ func (item *zotero.Item) GetTags() []string {
 	return tags
 }
 
-func (item *zotero.Item) GetMedia(ms *zotmedia.MediaserverMySQL) map[string]gsearch.MediaList {
-	medias := make(map[string]gsearch.MediaList)
+func (item *Item) GetMedia(ms *zotmedia.MediaserverMySQL) map[string]MediaList {
+	medias := make(map[string]MediaList)
 	//var types []string
-	children, err := item.getChildrenLocal()
+	children, err := item.GetChildrenLocal()
 	if err != nil {
 		return medias
 	}
@@ -171,7 +191,7 @@ func (item *zotero.Item) GetMedia(ms *zotmedia.MediaserverMySQL) map[string]gsea
 				collection = fmt.Sprintf("zotero_%v", item.Group.Id)
 				signature = fmt.Sprintf("%v.%v_url", item.Group.Id, child.Key)
 				if err := ms.CreateMasterUrl(collection, signature, child.Data.Url); err != nil {
-					item.Group.Zot.logger.Errorf("cannot create mediaserver entry for item #%v.%s %s/%s",
+					item.Group.Zot.Logger.Errorf("cannot create mediaserver entry for item #%v.%s %s/%s",
 						item.Group.Id,
 						child.Key,
 						collection,
@@ -184,22 +204,22 @@ func (item *zotero.Item) GetMedia(ms *zotmedia.MediaserverMySQL) map[string]gsea
 			signature = fmt.Sprintf("%v.%v_enclosure", item.Group.Id, child.Key)
 			folder, err := item.Group.GetFolder()
 			if err != nil {
-				item.Group.Zot.logger.Errorf("cannot get folder of attachment file: %v", err)
+				item.Group.Zot.Logger.Errorf("cannot get folder of attachment file: %v", err)
 				continue
 			}
 			filepath := fmt.Sprintf("%s/%s", folder, child.Key)
-			found, err := item.Group.Zot.fs.FileExists(folder, child.Key)
+			found, err := item.Group.Zot.Fs.FileExists(folder, child.Key)
 			if err != nil {
-				item.Group.Zot.logger.Errorf("cannot check existence of file %s: %v", filepath, err)
+				item.Group.Zot.Logger.Errorf("cannot check existence of file %s: %v", filepath, err)
 				continue
 			}
 			if !found {
-				item.Group.Zot.logger.Warningf("file %s does not exist", filepath)
+				item.Group.Zot.Logger.Warningf("file %s does not exist", filepath)
 				continue
 			}
-			url := fmt.Sprintf("%s/%s", item.Group.Zot.fs.Protocol(), filepath)
+			url := fmt.Sprintf("%s/%s", item.Group.Zot.Fs.Protocol(), filepath)
 			if err := ms.CreateMasterUrl(collection, signature, url); err != nil {
-				item.Group.Zot.logger.Errorf("cannot create mediaserver entry for item #%s.%s %s/%s",
+				item.Group.Zot.Logger.Errorf("cannot create mediaserver entry for item #%s.%s %s/%s",
 					item.Group.Id,
 					item.Key,
 					collection,
@@ -211,14 +231,14 @@ func (item *zotero.Item) GetMedia(ms *zotmedia.MediaserverMySQL) map[string]gsea
 		if collection != "" && signature != "" {
 			metadata, err := ms.GetMetadata(collection, signature)
 			if err != nil {
-				item.Group.Zot.logger.Errorf("cannot get metadata for %s/%s", collection, signature)
+				item.Group.Zot.Logger.Errorf("cannot get metadata for %s/%s", collection, signature)
 				continue
 			}
 			name := child.Data.Title
 			if name == "" {
 				name = fmt.Sprintf("#%v.%v", item.Group.Id, child.Key)
 			}
-			media := gsearch.Media{
+			media := Media{
 				Name:     name,
 				Mimetype: metadata.Mimetype,
 				Type:     metadata.Type,
@@ -228,7 +248,7 @@ func (item *zotero.Item) GetMedia(ms *zotmedia.MediaserverMySQL) map[string]gsea
 				Duration: metadata.Duration,
 			}
 			if _, ok := medias[media.Type]; !ok {
-				medias[media.Type] = []gsearch.Media{}
+				medias[media.Type] = []Media{}
 			}
 			medias[media.Type] = append(medias[media.Type], media)
 		}
@@ -238,7 +258,7 @@ func (item *zotero.Item) GetMedia(ms *zotmedia.MediaserverMySQL) map[string]gsea
 
 var mediaserverRegexp = regexp.MustCompile("^mediaserver:([^/]+)/(.+)$")
 
-func (item *zotero.Item) GetPoster(ms *zotmedia.MediaserverMySQL) *gsearch.Media {
+func (item *Item) GetPoster(ms *zotmedia.MediaserverMySQL) *Media {
 	medias := item.GetMedia(ms)
 	if _, ok := medias["video"]; ok {
 		if len(medias["video"]) > 0 {
@@ -248,7 +268,7 @@ func (item *zotero.Item) GetPoster(ms *zotmedia.MediaserverMySQL) *gsearch.Media
 				signature := fmt.Sprintf("%s$$timeshot03", matches[2])
 				metadata, err := ms.GetMetadata(collection, signature)
 				if err == nil {
-					return &gsearch.Media{
+					return &Media{
 						Name:     "poster",
 						Mimetype: metadata.Mimetype,
 						Type:     metadata.Type,
@@ -274,19 +294,19 @@ func (item *zotero.Item) GetPoster(ms *zotmedia.MediaserverMySQL) *gsearch.Media
 	return nil
 }
 
-func (item *zotero.Item) GetNotes() []gsearch.Note {
-	notes := []gsearch.Note{}
+func (item *Item) GetNotes() []Note {
+	notes := []Note{}
 	note := strings.TrimSpace(item.Data.Note)
 	if note != "" {
-		notes = append(notes, gsearch.Note{
+		notes = append(notes, Note{
 			Title: item.Data.Title,
 			Note:  template.HTML(note),
 		})
 	}
 
-	children, err := item.getChildrenLocal()
+	children, err := item.GetChildrenLocal()
 	if err != nil {
-		item.Group.Zot.logger.Errorf("cannot load children of #%v.%v", item.Group.Id, item.Key)
+		item.Group.Zot.Logger.Errorf("cannot load children of #%v.%v", item.Group.Id, item.Key)
 		return notes
 	}
 	for _, child := range *children {
@@ -294,7 +314,7 @@ func (item *zotero.Item) GetNotes() []gsearch.Note {
 		if note == "" {
 			continue
 		}
-		notes = append(notes, gsearch.Note{
+		notes = append(notes, Note{
 			Title: child.Data.Title,
 			Note:  template.HTML(note),
 		})
@@ -302,19 +322,19 @@ func (item *zotero.Item) GetNotes() []gsearch.Note {
 	return notes
 }
 
-func (item *zotero.Item) GetAbstract() string {
-	return TextNoMeta(item.Data.AbstractNote + "\n" + item.Data.Extra)
+func (item *Item) GetAbstract() string {
+	return zotero.TextNoMeta(item.Data.AbstractNote + "\n" + item.Data.Extra)
 }
 
-var zoterolinkregexp = regexp.MustCompile("^https?://zotero.org/groups/([^/]+)/items/([^/]+)$")
+var zoterolinkregexp = regexp.MustCompile("^https?://org/groups/([^/]+)/items/([^/]+)$")
 
-func (item *zotero.Item) GetReferences() []gsearch.Reference {
-	var references []gsearch.Reference
+func (item *Item) GetReferences() []Reference {
+	var references []Reference
 	for key, values := range item.Data.ItemDataBase.Relations {
 		for _, value := range values {
 			if matches := zoterolinkregexp.FindStringSubmatch(value); matches != nil {
 				signature := fmt.Sprintf("zotero-%s.%s", matches[1], matches[2])
-				references = append(references, gsearch.Reference{
+				references = append(references, Reference{
 					Type:      key,
 					Signature: signature,
 				})
@@ -324,7 +344,7 @@ func (item *zotero.Item) GetReferences() []gsearch.Reference {
 	return references
 }
 
-func (item *zotero.Item) GetMeta() map[string]string {
+func (item *Item) GetMeta() map[string]string {
 	var result = make(map[string]string)
 	s := reflect.ValueOf(&item.Data).Elem()
 	typeOfT := s.Type()
@@ -352,10 +372,10 @@ func (item *zotero.Item) GetMeta() map[string]string {
 	return result
 }
 
-func (item *zotero.Item) GetExtra() map[string]string {
+func (item *Item) GetExtra() map[string]string {
 	var result = make(map[string]string)
 	for key, val := range item.GetMeta() {
-		if gsearch.InList(zoteroIgnoreMetaFields, key) {
+		if InList(zoteroIgnoreMetaFields, key) {
 			continue
 		}
 		result[key] = val
@@ -363,7 +383,7 @@ func (item *zotero.Item) GetExtra() map[string]string {
 	return result
 }
 
-func (item *zotero.Item) GetContentType() string {
+func (item *Item) GetContentType() string {
 	am := strings.TrimSpace(item.Data.ArtworkMedium)
 	if am != "" {
 		return strings.ToLower(am)
@@ -376,20 +396,20 @@ func (item *zotero.Item) GetContentType() string {
 	return strings.ToLower(item.Data.ItemDataBase.ItemType)
 }
 
-func (item *zotero.Item) GetQueries() []gsearch.Query {
+func (item *Item) GetQueries() []Query {
 	return nil
 }
 
-func (item *zotero.Item) GetSolrDoc() *solr.Document {
+func (item *Item) GetSolrDoc() *solr.Document {
 	return nil
 }
 
-func (item *zotero.Item) GetContentString() string {
+func (item *Item) GetContentString() string {
 	return ""
 
 }
 
-func (item *zotero.Item) GetContentMime() string {
+func (item *Item) GetContentMime() string {
 	return ""
 
 }

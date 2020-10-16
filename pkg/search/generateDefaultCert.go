@@ -1,4 +1,4 @@
-package zsearch
+package search
 
 // this file im imported from traefik proxy code
 // https://github.com/traefik/traefik

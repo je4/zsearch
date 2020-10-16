@@ -14,7 +14,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package zsearch
+package search
 
 import (
 	"bufio"
@@ -31,7 +31,7 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/htfy96/reformism"
-	"github.com/je4/zsearch/pgk/amp"
+	"github.com/je4/zsearch/pkg/amp"
 	"github.com/op/go-logging"
 	"html/template"
 	"io"

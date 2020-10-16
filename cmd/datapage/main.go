@@ -20,7 +20,7 @@ import (
 	"context"
 	"flag"
 	"github.com/dgraph-io/badger"
-	"github.com/je4/zsearch/pkg/zsearch"
+	"github.com/je4/zsearch/pkg/search"
 	"io"
 	"net"
 	"os"
@@ -83,7 +83,7 @@ func main() {
 	config := LoadConfig(*cfgfile)
 
 	// create logger instance
-	log, lf := zsearch.CreateLogger("memostream", config.Logfile, config.Loglevel)
+	log, lf := search.CreateLogger("memostream", config.Logfile, config.Loglevel)
 	defer lf.Close()
 
 	var accesslog io.Writer
@@ -152,7 +152,7 @@ func main() {
 	}
 	defer db.Close()
 
-	mts, err := zsearch.NewMTSolr(
+	mts, err := search.NewMTSolr(
 		config.Solr.Url,
 		config.Solr.Core,
 		config.Solr.CacheExpiration.Duration,
@@ -163,14 +163,14 @@ func main() {
 		log.Panic(err)
 	}
 
-	uc, err := zsearch.NewUserCache(config.IdleTimeout.Duration, config.UserCacheSize)
+	uc, err := search.NewUserCache(config.IdleTimeout.Duration, config.UserCacheSize)
 	if err != nil {
 		log.Panic(err)
 	}
 
-	facets := zsearch.SolrFacetList{}
+	facets := search.SolrFacetList{}
 	for _, facet := range config.Facets {
-		facets[facet.Name] = zsearch.SolrFacet{
+		facets[facet.Name] = search.SolrFacet{
 			Label:    facet.Name,
 			Name:     facet.Name,
 			Field:    facet.Field,
@@ -179,14 +179,14 @@ func main() {
 		}
 	}
 
-	locations := zsearch.NetGroups{}
+	locations := search.NetGroups{}
 	for _, loc := range config.Locations {
 		locations[loc.Group] = []*net.IPNet{}
 		for _, n := range loc.Networks {
 			locations[loc.Group] = append(locations[loc.Group], &n.IPNet)
 		}
 	}
-	menu := []zsearch.Menu{}
+	menu := []search.Menu{}
 
 	for _, m := range config.Menu {
 		sub := map[string]string{}
@@ -195,23 +195,23 @@ func main() {
 				sub[k] = v
 			}
 		}
-		menu = append(menu, zsearch.Menu{
+		menu = append(menu, search.Menu{
 			Label: m.Label,
 			Url:   m.Url,
 			Sub:   sub,
 		})
 	}
 
-	subfilters := []zsearch.SubFilter{}
+	subfilters := []search.SubFilter{}
 	for _, sf := range config.Query.SubFilter {
-		subfilters = append(subfilters, zsearch.SubFilter{
+		subfilters = append(subfilters, search.SubFilter{
 			Name:   sf.Name,
 			Label:  sf.Label,
 			Filter: sf.Filter,
 		})
 	}
 
-	srv, err := zsearch.NewServer(
+	srv, err := search.NewServer(
 		mts,
 		uc,
 		config.Template,

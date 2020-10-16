@@ -1,4 +1,4 @@
-package zsearch
+package search
 
 type JSONTermsFacetMap JSONFacetMap // https://github.com/apache/lucene-solr/blob/master/solr/solrj/src/java/org/apache/solr/client/solrj/request/json/TermsFacetMap.java
 
