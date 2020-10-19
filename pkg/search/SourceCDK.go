@@ -3,6 +3,7 @@ package search
 import (
 	"encoding/json"
 	"github.com/goph/emperror"
+	"github.com/je4/zsync/pkg/zotmedia"
 	"github.com/vanng822/go-solr/solr"
 )
 
@@ -12,6 +13,18 @@ type SourceCDK struct {
 	doc        *solr.Document `json:"-"`
 	contentStr string
 	medias     map[string]MediaList `json:"-"`
+}
+
+func (cdk *SourceCDK) GetACL() map[string][]string {
+	panic("implement me")
+}
+
+func (cdk *SourceCDK) GetCatalogs() []string {
+	panic("implement me")
+}
+
+func (cdk *SourceCDK) GetCategories() []string {
+	panic("implement me")
 }
 
 type SourceCDKData struct {
@@ -104,7 +117,7 @@ func (cdk *SourceCDK) GetReferences() []Reference {
 	return references
 }
 
-func (cdk *SourceCDK) GetMedia() map[string]MediaList {
+func (cdk *SourceCDK) GetMedia(ms zotmedia.Mediaserver) map[string]MediaList {
 	if cdk.medias != nil {
 		return cdk.medias
 	}
@@ -112,8 +125,8 @@ func (cdk *SourceCDK) GetMedia() map[string]MediaList {
 	return cdk.medias
 }
 
-func (cdk *SourceCDK) GetPoster() *Media {
-	medias := cdk.GetMedia()
+func (cdk *SourceCDK) GetPoster(ms zotmedia.Mediaserver) *Media {
+	medias := cdk.GetMedia(ms)
 	images, ok := medias["image"]
 	if !ok {
 		return nil

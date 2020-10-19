@@ -170,7 +170,7 @@ func (item *Item) GetTags() []string {
 	return tags
 }
 
-func (item *Item) GetMedia(ms *zotmedia.MediaserverMySQL) map[string]MediaList {
+func (item *Item) GetMedia(ms zotmedia.Mediaserver) map[string]MediaList {
 	medias := make(map[string]MediaList)
 	//var types []string
 	children, err := item.GetChildrenLocal()
@@ -258,7 +258,7 @@ func (item *Item) GetMedia(ms *zotmedia.MediaserverMySQL) map[string]MediaList {
 
 var mediaserverRegexp = regexp.MustCompile("^mediaserver:([^/]+)/(.+)$")
 
-func (item *Item) GetPoster(ms *zotmedia.MediaserverMySQL) *Media {
+func (item *Item) GetPoster(ms zotmedia.Mediaserver) *Media {
 	medias := item.GetMedia(ms)
 	if _, ok := medias["video"]; ok {
 		if len(medias["video"]) > 0 {

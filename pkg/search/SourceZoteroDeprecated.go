@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/goph/emperror"
+	"github.com/je4/zsync/pkg/zotmedia"
 	"github.com/vanng822/go-solr/solr"
 	"html/template"
 	"reflect"
@@ -36,6 +37,18 @@ type SourceZoteroDeprecated struct {
 	doc        *solr.Document       `json:"-"`
 	contentStr string               `json:"-"`
 	medias     map[string]MediaList `jsnon:"-"`
+}
+
+func (zot *SourceZoteroDeprecated) GetACL() map[string][]string {
+	panic("implement me")
+}
+
+func (zot *SourceZoteroDeprecated) GetCatalogs() []string {
+	panic("implement me")
+}
+
+func (zot *SourceZoteroDeprecated) GetCategories() []string {
+	panic("implement me")
 }
 
 var zoteroDeprecatedIgnoreMetaFields = []string{
@@ -283,7 +296,7 @@ func (zot *SourceZoteroDeprecated) GetReferences() []Reference {
 	return references
 }
 
-func (zot *SourceZoteroDeprecated) GetMedia() map[string]MediaList {
+func (zot *SourceZoteroDeprecated) GetMedia(ms zotmedia.Mediaserver) map[string]MediaList {
 	if zot.medias != nil {
 		return zot.medias
 	}
@@ -323,8 +336,8 @@ func (zot *SourceZoteroDeprecated) GetMedia() map[string]MediaList {
 	return zot.medias
 }
 
-func (zot *SourceZoteroDeprecated) GetPoster() *Media {
-	medias := zot.GetMedia()
+func (zot *SourceZoteroDeprecated) GetPoster(ms zotmedia.Mediaserver) *Media {
+	medias := zot.GetMedia(ms)
 	images, ok := medias["image"]
 	if !ok {
 		return nil

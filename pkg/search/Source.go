@@ -21,6 +21,7 @@ import (
 	"compress/gzip"
 	"encoding/base64"
 	"github.com/goph/emperror"
+	"github.com/je4/zsync/pkg/zotmedia"
 	"github.com/vanng822/go-solr/solr"
 	"html/template"
 	"io"
@@ -87,9 +88,12 @@ type Source interface {
 	GetDate() string
 	GetCollectionTitle() string
 	GetPersons() []Person
+	GetACL() map[string][]string
+	GetCatalogs() []string
+	GetCategories() []string
 	GetTags() []string
-	GetMedia() map[string]MediaList
-	GetPoster() *Media
+	GetMedia(ms zotmedia.Mediaserver) map[string]MediaList
+	GetPoster(ms zotmedia.Mediaserver) *Media
 	GetNotes() []Note
 	GetAbstract() string
 	GetReferences() []Reference

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/goph/emperror"
+	"github.com/je4/zsync/pkg/zotmedia"
 	"github.com/vanng822/go-solr/solr"
 	"sort"
 	"strings"
@@ -15,6 +16,18 @@ type SourceDiplomHGK struct {
 	doc        *solr.Document      `json:"-"`
 	contentStr string
 	medias     map[string]MediaList `json:"-"`
+}
+
+func (dhgk *SourceDiplomHGK) GetACL() map[string][]string {
+	panic("implement me")
+}
+
+func (dhgk *SourceDiplomHGK) GetCatalogs() []string {
+	panic("implement me")
+}
+
+func (dhgk *SourceDiplomHGK) GetCategories() []string {
+	panic("implement me")
 }
 
 type SourceDiplomHGKFileMeta struct {
@@ -208,7 +221,7 @@ func (dhgk *SourceDiplomHGK) GetReferences() []Reference {
 	return references
 }
 
-func (dhgk *SourceDiplomHGK) GetMedia() map[string]MediaList {
+func (dhgk *SourceDiplomHGK) GetMedia(ms zotmedia.Mediaserver) map[string]MediaList {
 	if dhgk.medias != nil {
 		return dhgk.medias
 	}
@@ -242,8 +255,8 @@ func (dhgk *SourceDiplomHGK) GetMedia() map[string]MediaList {
 	return dhgk.medias
 }
 
-func (dhgk *SourceDiplomHGK) GetPoster() *Media {
-	medias := dhgk.GetMedia()
+func (dhgk *SourceDiplomHGK) GetPoster(ms zotmedia.Mediaserver) *Media {
+	medias := dhgk.GetMedia(ms)
 	images, ok := medias["image"]
 	if !ok {
 		return nil
