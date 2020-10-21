@@ -2,8 +2,9 @@ package search
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/goph/emperror"
-	"github.com/je4/zsync/pkg/zotmedia"
+	"github.com/je4/zsearch/pkg/mediaserver"
 	"github.com/vanng822/go-solr/solr"
 )
 
@@ -58,6 +59,10 @@ func (cdk *SourceCDK) GetContentMime() string {
 
 func (cdk *SourceCDK) Name() string { return "diplomhgk" }
 
+func (cdk *SourceCDK) GetSignature() string {
+	return fmt.Sprintf("%s-%v.%v", cdk.Name(), "cdk.DData.ID")
+}
+
 func (cdk *SourceCDK) GetSolrDoc() *solr.Document {
 	return cdk.doc
 }
@@ -84,12 +89,12 @@ func (cdk *SourceCDK) GetDate() string {
 	return "cdk.DData.Year"
 }
 
-func (cdk *SourceCDK) GetMeta() map[string]string {
-	var result = make(map[string]string)
+func (cdk *SourceCDK) GetMeta() Metalist {
+	var result = make(Metalist)
 	return result
 }
 
-func (cdk *SourceCDK) GetExtra() map[string]string {
+func (cdk *SourceCDK) GetExtra() Metalist {
 	var result = make(map[string]string)
 	return result
 }
@@ -117,7 +122,7 @@ func (cdk *SourceCDK) GetReferences() []Reference {
 	return references
 }
 
-func (cdk *SourceCDK) GetMedia(ms zotmedia.Mediaserver) map[string]MediaList {
+func (cdk *SourceCDK) GetMedia(ms mediaserver.Mediaserver) map[string]MediaList {
 	if cdk.medias != nil {
 		return cdk.medias
 	}
@@ -125,7 +130,7 @@ func (cdk *SourceCDK) GetMedia(ms zotmedia.Mediaserver) map[string]MediaList {
 	return cdk.medias
 }
 
-func (cdk *SourceCDK) GetPoster(ms zotmedia.Mediaserver) *Media {
+func (cdk *SourceCDK) GetPoster(ms mediaserver.Mediaserver) *Media {
 	medias := cdk.GetMedia(ms)
 	images, ok := medias["image"]
 	if !ok {

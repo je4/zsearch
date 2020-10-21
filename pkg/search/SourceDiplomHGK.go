@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/goph/emperror"
-	"github.com/je4/zsync/pkg/zotmedia"
+	"github.com/je4/zsearch/pkg/mediaserver"
 	"github.com/vanng822/go-solr/solr"
 	"sort"
 	"strings"
@@ -131,6 +131,10 @@ func (dhgk *SourceDiplomHGK) GetContentMime() string {
 
 func (dhgk *SourceDiplomHGK) Name() string { return "diplomhgk" }
 
+func (dhgk *SourceDiplomHGK) GetSignature() string {
+	return fmt.Sprintf("%s-%v.%v", dhgk.Name(), dhgk.DData.IDPerson, dhgk.DData.Slug)
+}
+
 func (dhgk *SourceDiplomHGK) GetSolrDoc() *solr.Document {
 	return dhgk.doc
 }
@@ -157,12 +161,12 @@ func (dhgk *SourceDiplomHGK) GetDate() string {
 	return dhgk.DData.Year
 }
 
-func (dhgk *SourceDiplomHGK) GetMeta() map[string]string {
+func (dhgk *SourceDiplomHGK) GetMeta() Metalist {
 	var result = make(map[string]string)
 	return result
 }
 
-func (dhgk *SourceDiplomHGK) GetExtra() map[string]string {
+func (dhgk *SourceDiplomHGK) GetExtra() Metalist {
 	var result = make(map[string]string)
 	return result
 }
@@ -221,7 +225,7 @@ func (dhgk *SourceDiplomHGK) GetReferences() []Reference {
 	return references
 }
 
-func (dhgk *SourceDiplomHGK) GetMedia(ms zotmedia.Mediaserver) map[string]MediaList {
+func (dhgk *SourceDiplomHGK) GetMedia(ms mediaserver.Mediaserver) map[string]MediaList {
 	if dhgk.medias != nil {
 		return dhgk.medias
 	}
@@ -255,7 +259,7 @@ func (dhgk *SourceDiplomHGK) GetMedia(ms zotmedia.Mediaserver) map[string]MediaL
 	return dhgk.medias
 }
 
-func (dhgk *SourceDiplomHGK) GetPoster(ms zotmedia.Mediaserver) *Media {
+func (dhgk *SourceDiplomHGK) GetPoster(ms mediaserver.Mediaserver) *Media {
 	medias := dhgk.GetMedia(ms)
 	images, ok := medias["image"]
 	if !ok {

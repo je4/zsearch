@@ -20,8 +20,9 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/base64"
+	"encoding/json"
 	"github.com/goph/emperror"
-	"github.com/je4/zsync/pkg/zotmedia"
+	"github.com/je4/zsearch/pkg/mediaserver"
 	"github.com/vanng822/go-solr/solr"
 	"html/template"
 	"io"
@@ -60,8 +61,8 @@ type Media struct {
 }
 
 type Query struct {
-	Label  string
-	Search string
+	Label  string `json:"label"`
+	Search string `json:"search"`
 }
 
 type MediaList []Media
@@ -71,17 +72,50 @@ func (ml MediaList) Swap(i, j int)      { ml[i], ml[j] = ml[j], ml[i] }
 func (ml MediaList) Less(i, j int) bool { return ml[i].Name < ml[j].Name }
 
 type Note struct {
-	Title string
-	Note  template.HTML
+	Title string        `json:"title"`
+	Note  template.HTML `json:"note"`
 }
 
 type Reference struct {
-	Type      string
-	Title     string
-	Signature string
+	Type      string `json:"type"`
+	Title     string `json:"title"`
+	Signature string `json:"signature"`
+}
+
+type Metalist map[string]string
+
+func (ml Metalist) UnmarshalJSON(b []byte) error {
+	type kv struct {
+		Key   string `json:"key"`
+		Value string `json:"value"`
+	}
+	var arr []kv
+
+	ml = map[string]string{}
+	if err := json.Unmarshal(b, &arr); err != nil {
+		return err
+	}
+	for _, val := range arr {
+		(ml)[val.Key] = val.Value
+	}
+
+	return nil
+}
+
+func (ml Metalist) MarshalJSON() ([]byte, error) {
+	type kv struct {
+		Key   string `json:"key"`
+		Value string `json:"value"`
+	}
+	var arr []kv
+	for key, val := range ml {
+		arr = append(arr, kv{Key: key, Value: val})
+	}
+	return json.Marshal(arr)
 }
 
 type Source interface {
+	GetSignature() string
 	Name() string
 	GetTitle() string
 	GetPlace() string
@@ -92,13 +126,13 @@ type Source interface {
 	GetCatalogs() []string
 	GetCategories() []string
 	GetTags() []string
-	GetMedia(ms zotmedia.Mediaserver) map[string]MediaList
-	GetPoster(ms zotmedia.Mediaserver) *Media
+	GetMedia(ms mediaserver.Mediaserver) map[string]MediaList
+	GetPoster(ms mediaserver.Mediaserver) *Media
 	GetNotes() []Note
 	GetAbstract() string
 	GetReferences() []Reference
-	GetMeta() map[string]string
-	GetExtra() map[string]string
+	GetMeta() Metalist
+	GetExtra() Metalist
 	GetContentType() string
 	GetQueries() []Query
 	GetSolrDoc() *solr.Document
@@ -107,23 +141,56 @@ type Source interface {
 }
 
 type SourceData struct {
-	Source          string               `json:"Source"`
+	Signature       string               `json:"signature"`
+	Source          string               `json:"source"`
 	Title           string               `json:"title"`
 	Place           string               `json:"place"`
 	Date            string               `json:"date"`
 	CollectionTitle string               `json:"collectiontitle"`
 	Persons         []Person             `json:"persons"`
+	ACL             map[string][]string  `json:"acl"`
+	Catalog         []string             `json:"catalog"`
+	Category        []string             `json:"category"`
 	Tags            []string             `json:"tags"`
 	Media           map[string]MediaList `json:"media"`
-	Poster          *Media               `json:poster`
+	Poster          *Media               `json:"poster"`
 	Notes           []Note               `json:"notes"`
 	Abstract        string               `json:"abstract"`
-	HasMedia        bool                 `json:"hasmedia"`
 	References      []Reference          `json:"references"`
-	Extra           map[string]string    `json:"extra"`
-	Meta            map[string]string    `json:"meta"`
+	Meta            Metalist             `json:"meta"`
+	Extra           Metalist             `json:"extra"`
 	Type            string               `json:"type"`
 	Queries         []Query              `json:"queries"`
-	ContentStr      string
-	ContentMime     string
+	ContentStr      string               `json:"-"`
+	ContentMime     string               `json:"-"`
+	HasMedia        bool                 `json:"hasmedia"`
+}
+
+func InitSourceData(source Source, ms mediaserver.Mediaserver) *SourceData {
+	sd := &SourceData{
+		Signature:       source.GetSignature(),
+		Source:          source.Name(),
+		Title:           source.GetTitle(),
+		Place:           source.GetPlace(),
+		Date:            source.GetDate(),
+		CollectionTitle: source.GetCollectionTitle(),
+		Persons:         source.GetPersons(),
+		ACL:             source.GetACL(),
+		Catalog:         source.GetCatalogs(),
+		Category:        source.GetCategories(),
+		Tags:            source.GetTags(),
+		Media:           source.GetMedia(ms),
+		Poster:          source.GetPoster(ms),
+		Notes:           source.GetNotes(),
+		Abstract:        source.GetAbstract(),
+		References:      source.GetReferences(),
+		Meta:            source.GetMeta(),
+		Extra:           source.GetExtra(),
+		Type:            source.GetContentType(),
+		Queries:         source.GetQueries(),
+		ContentStr:      source.GetContentString(),
+		ContentMime:     source.GetContentMime(),
+	}
+	sd.HasMedia = len(sd.Media) > 0
+	return sd
 }

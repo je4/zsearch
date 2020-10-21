@@ -2,8 +2,8 @@ package search
 
 import (
 	"fmt"
+	"github.com/je4/zsearch/pkg/mediaserver"
 	"github.com/je4/zsync/pkg/zotero"
-	"github.com/je4/zsync/pkg/zotmedia"
 	"github.com/vanng822/go-solr/solr"
 	"html/template"
 	"reflect"
@@ -46,6 +46,10 @@ func (item *Item) GetChildrenLocal() (*[]Item, error) {
 
 func (item *Item) Name() string {
 	return "zotero2"
+}
+
+func (item *Item) GetSignature() string {
+	return fmt.Sprintf("%s-%v.%v", item.Name(), item.Group.Id, item.Key)
 }
 
 func (item *Item) GetTitle() string {
@@ -157,7 +161,7 @@ func (item *Item) GetTags() []string {
 			}
 			if coll.Key == c {
 				tags = AppendIfMissing(tags, strings.ToLower(coll.Data.Name))
-				for ok := true; ok; ok = (coll.Data.ParentCollection == "") {
+				if coll.Data.ParentCollection != "" {
 					coll2, err := item.Group.GetCollectionByKeyLocal(string(coll.Data.ParentCollection))
 					if err != nil {
 						break
@@ -170,7 +174,13 @@ func (item *Item) GetTags() []string {
 	return tags
 }
 
-func (item *Item) GetMedia(ms zotmedia.Mediaserver) map[string]MediaList {
+// https://mediathek.hgk.fhnw.ch/indexer.ng/media.php?id=4.4419.2211214
+// http://hdl.handle.net/20.500.11806/mediathek/inventory/B0000078520/4.4421.2227476
+
+func (item *Item) GetMedia(ms mediaserver.Mediaserver) map[string]MediaList {
+	if ms == nil {
+		return map[string]MediaList{}
+	}
 	medias := make(map[string]MediaList)
 	//var types []string
 	children, err := item.GetChildrenLocal()
@@ -183,23 +193,28 @@ func (item *Item) GetMedia(ms zotmedia.Mediaserver) map[string]MediaList {
 		}
 		var collection, signature string
 		if child.Data.LinkMode == "linked_url" || child.Data.LinkMode == "imported_url" {
+
 			// check for mediaserver url
 			var ok bool
 			collection, signature, ok = ms.IsMediaserverURL(child.Data.Url)
 			if !ok {
-				// if not, create mediaserver entry
-				collection = fmt.Sprintf("zotero_%v", item.Group.Id)
-				signature = fmt.Sprintf("%v.%v_url", item.Group.Id, child.Key)
-				if err := ms.CreateMasterUrl(collection, signature, child.Data.Url); err != nil {
-					item.Group.Zot.Logger.Errorf("cannot create mediaserver entry for item #%v.%s %s/%s",
-						item.Group.Id,
-						child.Key,
-						collection,
-						signature)
-					continue
-				}
+				collection = ""
+				signature = ""
+				/*
+					// if not, create mediaserver entry
+					collection = fmt.Sprintf("zotero_%v", item.Group.Id)
+					signature = fmt.Sprintf("%v.%v_url", item.Group.Id, child.Key)
+					if err := ms.CreateMasterUrl(collection, signature, child.Data.Url); err != nil {
+						item.Group.Zot.Logger.Errorf("cannot create mediaserver entry for item #%v.%s %s/%s",
+							item.Group.Id,
+							child.Key,
+							collection,
+							signature)
+						continue
+					}
+				*/
 			}
-		} else {
+		} else { // not only url
 			collection = fmt.Sprintf("zotero_%v", item.Group.Id)
 			signature = fmt.Sprintf("%v.%v_enclosure", item.Group.Id, child.Key)
 			folder, err := item.Group.GetFolder()
@@ -258,14 +273,17 @@ func (item *Item) GetMedia(ms zotmedia.Mediaserver) map[string]MediaList {
 
 var mediaserverRegexp = regexp.MustCompile("^mediaserver:([^/]+)/(.+)$")
 
-func (item *Item) GetPoster(ms zotmedia.Mediaserver) *Media {
+func (item *Item) GetPoster(ms mediaserver.Mediaserver) *Media {
+	if ms == nil {
+		return nil
+	}
 	medias := item.GetMedia(ms)
 	if _, ok := medias["video"]; ok {
 		if len(medias["video"]) > 0 {
 			vid := medias["video"][0]
 			if matches := mediaserverRegexp.FindStringSubmatch(vid.Uri); matches != nil {
 				collection := matches[1]
-				signature := fmt.Sprintf("%s$$timeshot03", matches[2])
+				signature := fmt.Sprintf("%s$$timeshot$$3", matches[2])
 				metadata, err := ms.GetMetadata(collection, signature)
 				if err == nil {
 					return &Media{
@@ -344,7 +362,7 @@ func (item *Item) GetReferences() []Reference {
 	return references
 }
 
-func (item *Item) GetMeta() map[string]string {
+func (item *Item) GetMeta() Metalist {
 	var result = make(map[string]string)
 	s := reflect.ValueOf(&item.Data).Elem()
 	typeOfT := s.Type()
@@ -372,7 +390,7 @@ func (item *Item) GetMeta() map[string]string {
 	return result
 }
 
-func (item *Item) GetExtra() map[string]string {
+func (item *Item) GetExtra() Metalist {
 	var result = make(map[string]string)
 	for key, val := range item.GetMeta() {
 		if InList(zoteroIgnoreMetaFields, key) {

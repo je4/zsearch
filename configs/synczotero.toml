@@ -1,0 +1,50 @@
+logfile = "" # log file location
+loglevel = "DEBUG" # CRITICAL|ERROR|WARNING|NOTICE|INFO|DEBUG
+cachedir = "C:/temp/badger"
+groups = [
+    # 2483850, # Albena
+    # 2545256, # HGK Collections
+    # 2553473, # HGK Publikationen
+    # 2512784, # HGK Events
+    # 2206003, # ACT Basel  // indexer - not yet implemented
+    # 2486551, # ACT 2020
+    # 2329831, # HGK Fotoarchiv
+    # 2317722, # archive_des_ephemeren
+    # 2474728, # armin
+    # 2561875, # company_cultures__leitbilder
+    # 2327162, # digitalbrainstorming
+    # 2358931, # julia
+    # 1624911, # pcb_basel
+    # 2514673, # rimab
+    # 2068924, # summe2017
+]
+
+
+[elasticsearch]
+    endpoint = ["http://localhost:9201"]
+    index = "test"
+
+[zotero]
+    endpoint = "https://api.zotero.org"
+    apikey = "XxuGdxZuXiB1epXH8B9XX2oR"
+    [zotero.database]
+        servertype = "postgres"
+        dsn = "postgres://zotero:zZLOpCuHylgRATkCnNL0@localhost:5433/zotero"
+        connection_max = 5000
+        schema = "s3"
+
+[mediaserver]
+    url = "https://ba14ns21403-sec1.fhnw.ch/mediasrv"
+    [mediaserver.database]
+        servertype = "mysql"
+        # dsn = "mediaserver:kn6Iy4mLuzH7HWPo@tcp(v000306.adm.ds.fhnw.ch:3306)/mediaserver?charset=utf8"
+        dsn = "mediaserver:kn6Iy4mLuzH7HWPo@tcp(localhost:3306)/mediaserver?charset=utf8"
+        connection_max = 5000
+        schema = "mediaserver"
+
+
+[s3]
+    endpoint = "minio.campusderkuenste.ch"
+    accessKeyId = "zotero"
+    secretAccessKey = "zXbJKxnYZP708Ni84Lep"
+    useSSL = true

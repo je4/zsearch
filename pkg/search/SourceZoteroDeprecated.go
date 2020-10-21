@@ -21,7 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/goph/emperror"
-	"github.com/je4/zsync/pkg/zotmedia"
+	"github.com/je4/zsearch/pkg/mediaserver"
 	"github.com/vanng822/go-solr/solr"
 	"html/template"
 	"reflect"
@@ -94,6 +94,10 @@ func (zot *SourceZoteroDeprecated) Init(entry *cacheEntry) error {
 
 func (zot *SourceZoteroDeprecated) Name() string { return "zotero" }
 
+func (zot *SourceZoteroDeprecated) GetSignature() string {
+	return fmt.Sprintf("%s-%v.%v", zot.Name(), zot.ZData.Group.Id, zot.ZData.Key)
+}
+
 func (zot *SourceZoteroDeprecated) GetContentString() string {
 	return zot.contentStr
 }
@@ -126,7 +130,7 @@ func (zot *SourceZoteroDeprecated) GetDate() string {
 	return zot.ZData.Data.Date
 }
 
-func (zot *SourceZoteroDeprecated) GetMeta() map[string]string {
+func (zot *SourceZoteroDeprecated) GetMeta() Metalist {
 	var result = make(map[string]string)
 	s := reflect.ValueOf(&zot.ZData.Data).Elem()
 	typeOfT := s.Type()
@@ -154,7 +158,7 @@ func (zot *SourceZoteroDeprecated) GetMeta() map[string]string {
 	return result
 }
 
-func (zot *SourceZoteroDeprecated) GetExtra() map[string]string {
+func (zot *SourceZoteroDeprecated) GetExtra() Metalist {
 	var result = make(map[string]string)
 	for key, val := range zot.GetMeta() {
 		if InList(zoteroDeprecatedIgnoreMetaFields, key) {
@@ -296,7 +300,7 @@ func (zot *SourceZoteroDeprecated) GetReferences() []Reference {
 	return references
 }
 
-func (zot *SourceZoteroDeprecated) GetMedia(ms zotmedia.Mediaserver) map[string]MediaList {
+func (zot *SourceZoteroDeprecated) GetMedia(ms mediaserver.Mediaserver) map[string]MediaList {
 	if zot.medias != nil {
 		return zot.medias
 	}
@@ -336,7 +340,7 @@ func (zot *SourceZoteroDeprecated) GetMedia(ms zotmedia.Mediaserver) map[string]
 	return zot.medias
 }
 
-func (zot *SourceZoteroDeprecated) GetPoster(ms zotmedia.Mediaserver) *Media {
+func (zot *SourceZoteroDeprecated) GetPoster(ms mediaserver.Mediaserver) *Media {
 	medias := zot.GetMedia(ms)
 	images, ok := medias["image"]
 	if !ok {

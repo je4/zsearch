@@ -32,7 +32,6 @@ import (
 type MTSolr struct {
 	si *solr.SolrInterface
 	db *badger.DB
-	//cache gcache.Cache
 	sync.Mutex
 	log *logging.Logger
 }
