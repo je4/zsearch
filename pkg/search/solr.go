@@ -26,7 +26,6 @@ import (
 	"github.com/vanng822/go-solr/solr"
 	"regexp"
 	"sync"
-	"time"
 )
 
 type MTSolr struct {
@@ -71,7 +70,7 @@ func andQuery(field string, values []string) string {
 	return q
 }
 
-func NewMTSolr(url, core string, expiration time.Duration, cachesize int, db *badger.DB, log *logging.Logger) (*MTSolr, error) {
+func NewMTSolr(url, core string, db *badger.DB, log *logging.Logger) (*MTSolr, error) {
 	si, err := solr.NewSolrInterface(url, core)
 	if err != nil {
 		return nil, emperror.Wrapf(err, "cannot create solr interface for %s/%s", url, core)
@@ -278,6 +277,8 @@ func (mts *MTSolr) LoadEntity(id string) (*Document, error) {
 }
 
 func (mts *MTSolr) storeCache(doc *Document) error {
+	return nil
+
 	// marshal entry
 	jsonstr, err := json.Marshal(*doc)
 	if err != nil {
@@ -295,6 +296,8 @@ func (mts *MTSolr) storeCache(doc *Document) error {
 }
 
 func (mts *MTSolr) getFromCache(id string) (*Document, error) {
+	return nil, fmt.Errorf("item %s not found", id)
+
 	var result *Document
 	if err := mts.db.View(func(txn *badger.Txn) error {
 		it, err := txn.Get([]byte(id))

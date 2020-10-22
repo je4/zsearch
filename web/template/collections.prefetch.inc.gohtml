@@ -2,7 +2,7 @@
 {{range $area, $items := .Result}}
     {{range $key, $item := $items}}
         {{if $item.Content.Poster}}
-            {{$image := $item.Content.Poster}}
+            {{$image := $item.Poster}}
             <link rel="preload" as="image"
                   href="{{medialink $image.Uri "resize" "size260x260/formatWEBP" false}}">
         {{end}}

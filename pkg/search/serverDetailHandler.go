@@ -81,50 +81,6 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 		status.User.Groups = append(status.User.Groups, grp)
 	}
 
-	if sub == "solr" {
-		doc, err := s.mts.getSolrDocRaw(signature)
-		if err != nil {
-			s.DoPanicf(w, http.StatusNotFound, "error loading signature %s: %v", false, signature, err)
-			return
-		}
-		if doc == nil {
-			s.DoPanicf(w, http.StatusInternalServerError, "data of signature %s is nil", false, signature)
-			return
-		}
-		metaOK := false
-		if !doc.Has("acl_meta") {
-			s.DoPanicf(w, http.StatusInternalServerError, "id %s has no acl_meta field", true, signature)
-			return
-		}
-		acl_metaI := doc.Get("acl_meta")
-		acl_meta := interface2StringSlice(acl_metaI)
-		for _, group := range acl_meta {
-			for _, ugroup := range status.User.Groups {
-				if group == ugroup {
-					metaOK = true
-				}
-			}
-		}
-
-		for _, ugroup := range status.User.Groups {
-			if s.adminGroup == ugroup {
-				metaOK = true
-			}
-		}
-		if !metaOK {
-			s.DoPanicf(w, http.StatusForbidden, "no access to document %v metadata for %v", true, signature, status.User.Groups)
-			return
-		}
-
-		enc := json.NewEncoder(w)
-		w.Header().Set("Content-type", "text/json")
-		if err := enc.Encode(doc); err != nil {
-			s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal solr doc", true, signature)
-			return
-		}
-		return
-	}
-
 	doc, err := s.mts.LoadEntity(signature)
 	if err != nil {
 		s.DoPanicf(w, http.StatusNotFound, "error loading signature %s: %v", false, signature, err)
@@ -169,7 +125,7 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 	// load all references
 	// title only if rights ok
 	removeRefs := []int{}
-	for key, ref := range status.Doc.Content.References {
+	for key, ref := range status.Doc.References {
 		if ref.Title == "" {
 			doc, err := s.mts.LoadEntity(ref.Signature)
 			if err != nil {
@@ -181,9 +137,9 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 				}
 				sect := intersect.Simple(status.User.Groups, acl_meta)
 				if ok && len([]interface{}{sect}) > 0 {
-					status.Doc.Content.References[key].Title = doc.Content.Title
+					status.Doc.References[key].Title = doc.Title
 				} else {
-					status.Doc.Content.References[key].Title = doc.Id
+					status.Doc.References[key].Title = doc.Signature
 					// remove reference if no rights
 					// removeRefs = append(removeRefs, key)
 				}
@@ -192,7 +148,7 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	// remove references, which failed on load
 	for _, key := range removeRefs {
-		status.Doc.Content.References = append(status.Doc.Content.References[:key], status.Doc.Content.References[key+1:]...)
+		status.Doc.References = append(status.Doc.References[:key], status.Doc.References[key+1:]...)
 	}
 
 	if !status.MetaOK {
@@ -204,22 +160,22 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	status.Title = status.Doc.Content.CollectionTitle
+	status.Title = status.Doc.CollectionTitle
 	status.IsAmp = !status.User.LoggedIn && !status.User.LoggedOut && status.MetaOK
 
 	metadescription := ""
-	metadescription = fmt.Sprintf("Title: %s", doc.Content.Title)
-	if len(doc.Content.Persons) > 0 {
+	metadescription = fmt.Sprintf("Title: %s", doc.Title)
+	if len(doc.Persons) > 0 {
 		metadescription += fmt.Sprintf("\nAuthor: ")
-		for k, p := range doc.Content.Persons {
+		for k, p := range doc.Persons {
 			if k > 0 {
 				metadescription += "; "
 			}
 			metadescription += p.Name
 		}
 	}
-	if doc.Content.Abstract != "" {
-		metadescription += "\nAbstract: " + doc.Content.Abstract
+	if doc.Abstract != "" {
+		metadescription += "\nAbstract: " + doc.Abstract
 	}
 	status.MetaDescription = strings.ReplaceAll(metadescription, "\"", "'")
 
@@ -246,8 +202,8 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	case "meta":
-		w.Header().Set("Content-type", doc.Content.ContentMime)
-		w.Write([]byte(doc.Content.ContentStr))
+		w.Header().Set("Content-type", doc.ContentMime)
+		w.Write([]byte(doc.ContentStr))
 	default:
 		if tpl, ok := s.templates["details.amp.gohtml"]; ok {
 			err = tpl.Execute(w, status)

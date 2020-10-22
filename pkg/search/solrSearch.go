@@ -1,0 +1,72 @@
+package search
+
+import (
+	"context"
+	"fmt"
+	"github.com/dgraph-io/badger"
+	"github.com/goph/emperror"
+	"github.com/je4/zsearch/pkg/mediaserver"
+	"github.com/op/go-logging"
+)
+
+type MTSOLRSearch struct {
+	ss    *MTSolr
+	index string
+	log   *logging.Logger
+}
+
+func NewMTSOLRSearch(urls []string, index string, db *badger.DB, log *logging.Logger) (*MTSOLRSearch, error) {
+	if len(urls) < 1 {
+		return nil, fmt.Errorf("no url's")
+	}
+	ss, err := NewMTSolr(urls[0], index, db, log)
+	if err != nil {
+		return nil, emperror.Wrapf(err, "cannot create solr interface for %v", urls)
+	}
+	mts := &MTSOLRSearch{
+		ss:    ss,
+		index: index,
+		log:   log,
+	}
+	return mts, nil
+}
+
+func (mte *MTSOLRSearch) Update(source Source, ms mediaserver.Mediaserver) error {
+	panic("implement me")
+}
+
+func (mte *MTSOLRSearch) LoadDocs(ids []string, ctx context.Context) (map[string]*SourceData, error) {
+	docs, err := mte.ss.LoadEntities(ids)
+	if err != nil {
+		return nil, emperror.Wrap(err, "cannot load docs")
+	}
+	var result = make(map[string]*SourceData)
+	for id, doc := range docs {
+		src := doc.Content
+		src.Signature = id
+		src.ACL = make(map[string][]string)
+		for key, val := range doc.ACL {
+			src.ACL[key] = val
+		}
+		result[id] = src
+	}
+	return result, nil
+}
+
+func (mte *MTSOLRSearch) Search(text string, filters []string, facets map[string]termFacet, groups []string, contentVisible bool, start, rows int, isAdmin bool) ([]*SourceData, int64, FacetCountResult, error) {
+	docs, num, fts, err := mte.ss.Search(text, filters, facets, groups, contentVisible, start, rows, isAdmin)
+	if err != nil {
+		return nil, 0, nil, emperror.Wrap(err, "cannot search docs")
+	}
+	var result []*SourceData
+	for _, doc := range docs {
+		src := doc.Content
+		src.Signature = doc.Id
+		src.ACL = make(map[string][]string)
+		for key, val := range doc.ACL {
+			src.ACL[key] = val
+		}
+		result = append(result, src)
+	}
+	return result, num, fts, nil
+}

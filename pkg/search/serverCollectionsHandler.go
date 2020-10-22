@@ -58,7 +58,7 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 		Title:         "Collections",
 		QueryApi:      "api/search",
 		Menu:          s.menu,
-		Result:        map[string][]*Document{},
+		Result:        map[string][]*SourceData{},
 	}
 
 	jwt, ok := req.URL.Query()["token"]
@@ -121,13 +121,13 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 
 	// sort documents into result sets
 	for _, doc := range docs {
-		for _, tag := range doc.Content.Tags {
+		for _, tag := range doc.Tags {
 			if r := tagFieldRegexp.FindStringSubmatch(tag); r != nil {
 				field := r[2]
 				if _, ok := status.Result[field]; !ok {
-					status.Result[field] = []*Document{}
+					status.Result[field] = []*SourceData{}
 				}
-				if srch, ok := doc.Content.Meta["Archive"]; ok && strings.TrimSpace(srch) != "" {
+				if srch, ok := doc.Meta["Archive"]; ok && strings.TrimSpace(srch) != "" {
 					status.Result[field] = append(status.Result[field], doc)
 					break
 				}

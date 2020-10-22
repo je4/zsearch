@@ -204,11 +204,11 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 				s.DoPanicf(w, http.StatusInternalServerError, "data of signature %s is nil", false, subfiltername)
 				return
 			}
-			if filter, ok := doc.Content.Meta["Archive"]; ok {
+			if filter, ok := doc.Meta["Archive"]; ok {
 				filters = append(filters, s.string2Query(filter))
-				status.Title = doc.Content.Title
+				status.Title = doc.Title
 			}
-			if facetstring, ok := doc.Content.Meta["Extra"]; ok {
+			if facetstring, ok := doc.Meta["Extra"]; ok {
 				if fl := facetDefRegexp.FindStringSubmatch(facetstring); fl != nil {
 					s.log.Infof("%v", fl)
 					facetField := fl[1]

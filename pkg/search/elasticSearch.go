@@ -5,8 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/dgraph-io/badger"
-	elasticsearch8 "github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
+	elasticsearch8 "github.com/elastic/go-elasticsearch/v8"
 	"github.com/goph/emperror"
 	"github.com/je4/zsearch/pkg/mediaserver"
 	"github.com/op/go-logging"
@@ -14,31 +14,57 @@ import (
 )
 
 type tElasticFieldValue map[string]interface{}
+type tElasticQuery map[string]interface{}
+type tElasticQueryContext map[string]interface{}
+type tElasticFilterContext map[string]interface{}
+type tElasticFieldValueList []tElasticFieldValue
+
 func elasticFieldValue(field string, value interface{}) tElasticFieldValue {
-	return tElasticFieldValue{field:value}
+	return tElasticFieldValue{field: value}
 }
-func elasticTerm(field string, value interface{}) tElasticFieldValue {
-	return tElasticFieldValue{ "term": elasticFieldValue(field, value)}
+func elasticTerm(field string, value interface{}, boost float64) tElasticFieldValue {
+	return tElasticFieldValue{"term": elasticFieldValue(field, tElasticFieldValue{"value": value, "boost": boost})}
 }
-func elasticShould(vals... tElasticFieldValue) tElasticFieldValue {
-	return tElasticFieldValue{"should" : vals}
+func elasticShould(vals ...tElasticFieldValue) tElasticFieldValue {
+	return tElasticFieldValue{"should": vals}
 }
-func elasticMust(vals... tElasticFieldValue) tElasticFieldValue {
-	return tElasticFieldValue{"must" : vals}
-}
-func elasticMatch(field string, value interface{}) tElasticFieldValue {
-	return tElasticFieldValue{ "match": elasticFieldValue(field, value)}
+func elasticMust(vals ...tElasticFieldValue) tElasticFieldValue {
+	return tElasticFieldValue{"must": vals}
 }
 func elasticBool(field string, value interface{}) tElasticFieldValue {
-	return tElasticFieldValue{ "bool": elasticFieldValue(field, value)}
+	return tElasticFieldValue{"bool": elasticFieldValue(field, value)}
 }
 
+/* ***********************************
+Queries
+*********************************** */
 
+/*
+Match Query
+https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-match-query.html
+*/
+func elasticMatchQuery(field string, value interface{}) tElasticQuery {
+	return tElasticQuery{"match": elasticFieldValue(field, value)}
+}
+
+/*
+Basic query
+*/
+func elasticBaseQuery(query tElasticQueryContext, filter tElasticFilterContext) tElasticFieldValue {
+	var queryDSL tElasticFieldValue
+	if query != nil {
+		queryDSL["query"] = query
+	}
+	if filter != nil {
+		queryDSL["filter"] = filter
+	}
+	return queryDSL
+}
 
 type MTElasticSearch struct {
 	es    *elasticsearch8.Client
 	index string
-	log *logging.Logger
+	log   *logging.Logger
 }
 
 func NewMTElasticSearch(urls []string, index string, db *badger.DB, log *logging.Logger) (*MTElasticSearch, error) {
@@ -91,7 +117,9 @@ func (mte *MTElasticSearch) Update(source Source, ms mediaserver.Mediaserver) er
 }
 
 func (mte *MTElasticSearch) LoadDocs(ids []string, ctx context.Context) (map[string]*SourceData, error) {
-	jsonstr, err := json.Marshal(struct {ids []string `json:"ids"`}{ids:ids})
+	jsonstr, err := json.Marshal(struct {
+		ids []string `json:"ids"`
+	}{ids: ids})
 	if err != nil {
 		return nil, emperror.Wrapf(err, "cannot marshal idq's %v", ids)
 	}
@@ -100,7 +128,7 @@ func (mte *MTElasticSearch) LoadDocs(ids []string, ctx context.Context) (map[str
 		buf,
 		mte.es.Mget.WithIndex(mte.index),
 		mte.es.Mget.WithContext(ctx),
-		)
+	)
 	if err != nil {
 		return nil, emperror.Wrapf(err, "cannot search documents %v", jsonstr)
 	}
@@ -111,30 +139,16 @@ func (mte *MTElasticSearch) LoadDocs(ids []string, ctx context.Context) (map[str
 	}
 	return nil, nil
 	/*
-	res, err := mte.es.Search(
-		mte.es.Search.WithIndex(mte.index),
-		mte.es.Search.WithContext(ctx),
-		mte.es.Search.WithTrackTotalHits(true),
+		res, err := mte.es.Search(
+			mte.es.Search.WithIndex(mte.index),
+			mte.es.Search.WithContext(ctx),
+			mte.es.Search.WithTrackTotalHits(true),
 
-		)
+			)
 
-	 */
+	*/
 }
 
 func (mte *MTElasticSearch) Search(text string, filters []string, facets map[string]termFacet, groups []string, contentVisible bool, start, rows int, isAdmin bool) ([]*SourceData, int64, FacetCountResult, error) {
-	query := map[string]interface{}{
-		"query": map[string]interface{}{
-			"bool": map[string]interface{}{
-				"must": []map[string]interface{}{
-					[
-					 map[string]interface{}{
-					 	"match": map[string]interface{}{
-
-						}
-					 },
-					]
-				},
-			},
-		},
-	}
+	return nil, 0, nil, nil
 }

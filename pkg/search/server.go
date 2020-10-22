@@ -54,7 +54,7 @@ type Notification struct {
 type DetailStatus struct {
 	Type            string
 	Notifications   []Notification
-	Doc             *Document
+	Doc             *SourceData
 	User            *User
 	Token           string
 	MetaPublic      bool
@@ -117,7 +117,7 @@ type CollectionsStatus struct {
 	LoginUrl            string
 	Title               string
 	SearchResult        template.JS
-	Result              map[string][]*Document
+	Result              map[string][]*SourceData
 	QueryApi            template.URL
 	SearchResultStart   int
 	SearchResultRows    int
@@ -218,7 +218,7 @@ func (ng NetGroups) Contains(str string) []string {
 }
 
 type Server struct {
-	mts                *MTSolr
+	mts                *Search
 	srv                *http.Server
 	userCache          *UserCache
 	host               string
@@ -261,7 +261,7 @@ type Server struct {
 }
 
 func NewServer(
-	mts *MTSolr,
+	mts *Search,
 	uc *UserCache,
 	templates map[string][]string,
 	templateDev bool,
@@ -893,7 +893,7 @@ func (s *Server) string2Query(search string) string {
 
 func (s *Server) doc2result(search string,
 	query string,
-	docs []*Document,
+	docs []*SourceData,
 	total int64,
 	facetFieldCount FacetCountResult,
 	facets map[string]termFacet,
@@ -935,35 +935,32 @@ func (s *Server) doc2result(search string,
 		if doc == nil {
 			return nil, fmt.Errorf("empty document %v", key)
 		}
-		link := user.LinkSignature(doc.Id)
+		link := user.LinkSignature(doc.Signature)
 		if !strings.HasPrefix(strings.ToLower(link), "http") {
 			link = "detail/" + link
 		}
-		if doc.Content == nil {
-			return nil, fmt.Errorf("no content in document %v", doc)
-		}
-		icon, ok := s.icons[strings.ToLower(doc.Content.Type)]
+		icon, ok := s.icons[strings.ToLower(doc.Type)]
 		if !ok {
 			icon = "#ion-open-outline"
 		}
 		item := SearchResultItem{
-			Id:         doc.Id,
-			Type:       doc.Content.Type,
-			Title:      doc.Content.Title,
+			Id:         doc.Signature,
+			Type:       doc.Type,
+			Title:      doc.Title,
 			Text:       "",
-			Collection: doc.Content.CollectionTitle,
+			Collection: doc.CollectionTitle,
 			Authors:    []string{},
 			Link:       link,
-			Date:       doc.Content.Date,
+			Date:       doc.Date,
 			Icon:       icon,
 			Media:      map[string]int{},
-			Poster:     doc.Content.Poster,
+			Poster:     doc.Poster,
 		}
 		if key == 0 {
 			item.FirstItem = true
 			item.Total = total
 		}
-		for _, p := range doc.Content.Persons {
+		for _, p := range doc.Persons {
 			name := p.Name
 			if p.Role != "author" && p.Role != "director" && p.Role != "artist" {
 				name += fmt.Sprintf(" (%s)", p.Role)
@@ -976,7 +973,7 @@ func (s *Server) doc2result(search string,
 		if len(item.Authors) > 1 {
 			item.AuthorText += " et al."
 		}
-		for mtype, medialist := range doc.Content.Media {
+		for mtype, medialist := range doc.Media {
 			if mtype == "default" {
 				continue
 			}
@@ -1020,7 +1017,7 @@ func (s *Server) doc2result(search string,
 
 func (s *Server) doc2json(search string,
 	query string,
-	docs []*Document,
+	docs []*SourceData,
 	total int64,
 	facetFieldCount FacetCountResult,
 	facets map[string]termFacet,

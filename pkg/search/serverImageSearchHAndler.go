@@ -143,10 +143,10 @@ func (s *Server) imageSearchHandler(w http.ResponseWriter, req *http.Request) {
 				s.DoPanicf(w, http.StatusInternalServerError, "data of signature %s is nil", false, subfiltername)
 				return
 			}
-			for _, q := range doc.Content.Queries {
+			for _, q := range doc.Queries {
 				if strings.ToLower(q.Label) == "group" {
 					filters = append(filters, s.string2Query(q.Search))
-					status.Title = doc.Content.Title
+					status.Title = doc.Title
 				}
 			}
 		} else {

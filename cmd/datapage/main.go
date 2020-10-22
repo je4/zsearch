@@ -152,15 +152,27 @@ func main() {
 	}
 	defer db.Close()
 
-	mts, err := search.NewMTSolr(
-		config.Solr.Url,
-		config.Solr.Core,
-		config.Solr.CacheExpiration.Duration,
-		config.Solr.CacheSize,
-		db,
-		log)
+	/*
+		mts, err := search.NewMTSolr(
+			config.Solr.Url,
+			config.Solr.Core,
+			db,
+			log)
+		if err != nil {
+			log.Panic(err)
+		}
+	*/
+
+	mtSolrWrapper, err := search.NewMTSOLRSearch([]string{config.Solr.Url}, config.Solr.Core, db, log)
 	if err != nil {
-		log.Panic(err)
+		log.Panicf("cannot initialize solr search wrapper: %v", err)
+		return
+	}
+
+	searchEngine, err := search.NewSearch(mtSolrWrapper, config.Solr.CacheExpiration.Duration, config.Solr.CacheSize, db, log)
+	if err != nil {
+		log.Panicf("cannot initialize solr search engine: %v", err)
+		return
 	}
 
 	uc, err := search.NewUserCache(config.IdleTimeout.Duration, config.UserCacheSize)
@@ -212,7 +224,7 @@ func main() {
 	}
 
 	srv, err := search.NewServer(
-		mts,
+		searchEngine,
 		uc,
 		config.Template,
 		config.TemplateDev,

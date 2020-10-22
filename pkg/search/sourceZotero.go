@@ -98,10 +98,8 @@ func (item *Item) GetACL() map[string][]string {
 	acls := make(map[string][]string)
 	for key, val := range meta {
 		if strings.Index(key, "acl_") == 0 {
-			if _, ok := acls[key]; !ok {
-				acls[key] = []string{}
-			}
-			acls[key] = val
+			acltype := key[4:] // get rid of acl_
+			acls[acltype] = val
 		}
 	}
 	return acls
