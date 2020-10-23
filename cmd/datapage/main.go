@@ -163,13 +163,20 @@ func main() {
 		}
 	*/
 
-	mtSolrWrapper, err := search.NewMTSOLRSearch([]string{config.Solr.Url}, config.Solr.Core, db, log)
+	/*
+		mtSolrWrapper, err := search.NewMTSOLRSearch([]string{config.Solr.Url}, config.Solr.Core, db, log)
+		if err != nil {
+			log.Panicf("cannot initialize solr search wrapper: %v", err)
+			return
+		}
+	*/
+	mtElasticWrapper, err := search.NewMTElasticSearch(config.ElasticSearch.Endpoint, config.ElasticSearch.Index, db, log)
 	if err != nil {
 		log.Panicf("cannot initialize solr search wrapper: %v", err)
 		return
 	}
 
-	searchEngine, err := search.NewSearch(mtSolrWrapper, config.Solr.CacheExpiration.Duration, config.Solr.CacheSize, db, log)
+	searchEngine, err := search.NewSearch(mtElasticWrapper, config.Solr.CacheExpiration.Duration, config.Solr.CacheSize, db, log)
 	if err != nil {
 		log.Panicf("cannot initialize solr search engine: %v", err)
 		return

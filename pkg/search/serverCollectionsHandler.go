@@ -113,7 +113,16 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 	filters := []string{fmt.Sprintf("catalog:\"%s\"", s.collectionsCatalog)}
 
 	var facets map[string]termFacet
-	docs, total, _, err := s.mts.Search(qstr, filters, facets, status.User.Groups, status.SearchResultVisible, int(0), int(1000), false)
+	cfg := &SearchConfig{
+		filters:        filters,
+		facets:         facets,
+		groups:         status.User.Groups,
+		contentVisible: status.SearchResultVisible,
+		start:          int(0),
+		rows:           int(1000),
+		isAdmin:        status.User.inGroup(s.adminGroup),
+	}
+	docs, total, _, err := s.mts.Search(qstr, cfg)
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot execute solr query: %v", false, err)
 		return

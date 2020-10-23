@@ -14,38 +14,13 @@ import (
 )
 
 type tElasticFieldValue map[string]interface{}
-type tElasticQuery map[string]interface{}
 type tElasticQueryContext map[string]interface{}
 type tElasticFilterContext map[string]interface{}
 type tElasticFieldValueList []tElasticFieldValue
 
-func elasticFieldValue(field string, value interface{}) tElasticFieldValue {
-	return tElasticFieldValue{field: value}
-}
-func elasticTerm(field string, value interface{}, boost float64) tElasticFieldValue {
-	return tElasticFieldValue{"term": elasticFieldValue(field, tElasticFieldValue{"value": value, "boost": boost})}
-}
-func elasticShould(vals ...tElasticFieldValue) tElasticFieldValue {
-	return tElasticFieldValue{"should": vals}
-}
-func elasticMust(vals ...tElasticFieldValue) tElasticFieldValue {
-	return tElasticFieldValue{"must": vals}
-}
-func elasticBool(field string, value interface{}) tElasticFieldValue {
-	return tElasticFieldValue{"bool": elasticFieldValue(field, value)}
-}
-
 /* ***********************************
 Queries
 *********************************** */
-
-/*
-Match Query
-https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-match-query.html
-*/
-func elasticMatchQuery(field string, value interface{}) tElasticQuery {
-	return tElasticQuery{"match": elasticFieldValue(field, value)}
-}
 
 /*
 Basic query
@@ -149,6 +124,40 @@ func (mte *MTElasticSearch) LoadDocs(ids []string, ctx context.Context) (map[str
 	*/
 }
 
-func (mte *MTElasticSearch) Search(text string, filters []string, facets map[string]termFacet, groups []string, contentVisible bool, start, rows int, isAdmin bool) ([]*SourceData, int64, FacetCountResult, error) {
+func (mte *MTElasticSearch) Search(text string, cfg *SearchConfig) ([]*SourceData, int64, FacetCountResult, error) {
+
+	query := elasticQuery()
+	if text == "" {
+		query.withMatchAllQuery(elasticMatchAllQuery(1.0))
+	} else {
+		query.withBooleanQuery(
+			elasticBooleanQuery(1, 1.0).
+				withShould(
+					elasticMatchQuery("title", text).FieldValue(),
+					elasticMatchQuery("persons.name", text).FieldValue(),
+					elasticMatchQuery("abstract", text).FieldValue(),
+					elasticMatchQuery("notes", text).FieldValue(),
+				))
+	}
+	fq := map[string]interface{}{"query": query}
+	jsonstr, err := json.MarshalIndent(fq, "", "   ")
+	if err != nil {
+		return nil, 0, nil, emperror.Wrapf(err, "cannot marshal %v", fq)
+	}
+	buf := bytes.NewBuffer(jsonstr)
+	res, err := mte.es.Search(
+		mte.es.Search.WithIndex(mte.index),
+		mte.es.Search.WithBody(buf),
+		mte.es.Search.WithTrackTotalHits(true),
+	)
+	if err != nil {
+		return nil, 0, nil, emperror.Wrapf(err, "cannot query %v", jsonstr)
+	}
+	defer res.Body.Close()
+	var mapResp map[string]interface{}
+	if err := json.NewDecoder(res.Body).Decode(&mapResp); err != nil {
+		return nil, 0, nil, emperror.Wrap(err, "cannot unmarshal result")
+	}
+
 	return nil, 0, nil, nil
 }

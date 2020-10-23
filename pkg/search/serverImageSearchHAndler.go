@@ -156,7 +156,16 @@ func (s *Server) imageSearchHandler(w http.ResponseWriter, req *http.Request) {
 
 	}
 	var facets map[string]termFacet
-	docs, total, facetFieldCount, err := s.mts.Search(qstr, filters, facets, status.User.Groups, true, int(start), int(rows), false)
+	cfg := &SearchConfig{
+		filters:        filters,
+		facets:         facets,
+		groups:         status.User.Groups,
+		contentVisible: true,
+		start:          int(start),
+		rows:           int(rows),
+		isAdmin:        status.User.inGroup(s.adminGroup),
+	}
+	docs, total, facetFieldCount, err := s.mts.Search(qstr, cfg)
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot execute solr query: %v", false, err)
 		return

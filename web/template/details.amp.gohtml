@@ -49,13 +49,13 @@ limitations under the License.
     <script async custom-template="amp-mustache" src="https://cdn.ampproject.org/v0/amp-mustache-0.2.js"></script>
 
     <!-- BEGIN custom elements -->
-    {{if len .Doc.Content.Abstract}}<script async custom-element="amp-truncate-text" src="https://cdn.ampproject.org/v0/amp-truncate-text-0.1.js"></script>{{end}}
+    {{if len .Doc.Abstract}}<script async custom-element="amp-truncate-text" src="https://cdn.ampproject.org/v0/amp-truncate-text-0.1.js"></script>{{end}}
     <script async custom-element="amp-lightbox-gallery" src="https://cdn.ampproject.org/v0/amp-lightbox-gallery-0.1.js"></script>
     <script async custom-element="amp-accordion" src="https://cdn.ampproject.org/v0/amp-accordion-0.1.js"></script>
     <script async custom-element="amp-video" src="https://cdn.ampproject.org/v0/amp-video-0.1.js"></script>
     <script async custom-element="amp-audio" src="https://cdn.ampproject.org/v0/amp-audio-0.1.js"></script>
     <script async custom-element="amp-image-lightbox" src="https://cdn.ampproject.org/v0/amp-image-lightbox-0.1.js"></script>
-    {{if .Doc.Content.Media.pdf}}<script async custom-element="amp-iframe" src="https://cdn.ampproject.org/v0/amp-iframe-0.1.js"></script>{{end}}
+    {{if .Doc.Media.pdf}}<script async custom-element="amp-iframe" src="https://cdn.ampproject.org/v0/amp-iframe-0.1.js"></script>{{end}}
     <script async custom-element="amp-access" src="https://cdn.ampproject.org/v0/amp-access-0.1.js"></script>
     <script async custom-element="amp-video-docking" src="https://cdn.ampproject.org/v0/amp-video-docking-0.1.js"></script>
     <script async custom-element="amp-user-notification" src="https://cdn.ampproject.org/v0/amp-user-notification-0.1.js"></script>
@@ -84,7 +84,7 @@ limitations under the License.
 
     <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
 
-    <title>Mediathek - {{.Doc.Content.Title}}</title>
+    <title>Mediathek - {{.Doc.Title}}</title>
     {{if and .MetaPublic .ContentPublic}}<link rel="canonical" href="{{.Self}}">{{end}}
 </head>
 
@@ -126,18 +126,18 @@ limitations under the License.
         </div>
         <div class="col-12 md-col-6 flex flex-wrap content-start px2 md-pl5 md-pr7 md-pt4">
             <div class="col-12 self-start pb2">
-                <h1 class="h3 md-h2">{{.Doc.Content.Title}}</h1>
-                <div class="h4 md-h3">{{range $key, $person := .Doc.Content.Persons}}{{ if $key }}; {{ end }}<a class="nobreak"href="{{$user.LinkSearch (printf "author:\"%s\"" $person.Name)}}">{{$person.Name}}</a>{{end}}</div>
+                <h1 class="h3 md-h2">{{.Doc.Title}}</h1>
+                <div class="h4 md-h3">{{range $key, $person := .Doc.Persons}}{{ if $key }}; {{ end }}<a class="nobreak"href="{{$user.LinkSearch (printf "author:\"%s\"" $person.Name)}}">{{$person.Name}}</a>{{end}}</div>
             </div>
             <div class="col-12 self-start pb4">
-                {{if len .Doc.Content.Abstract}}
+                {{if len .Doc.Abstract}}
                     <amp-truncate-text layout="fixed-height" height="8em">
-                        {{.Doc.Content.Abstract}}
+                        {{.Doc.Abstract}}
                         <button class="gsearch-btn gsearch-btn-seemore caps" slot="collapsed">See more</button>
                     </amp-truncate-text>
                 {{end}}
                 <div>
-                    {{.Doc.Content.Place}}{{if and (gt (len .Doc.Content.Place) 0) (gt (len .Doc.Content.Date) 0)}}, {{end}}{{.Doc.Content.Date}}
+                    {{.Doc.Place}}{{if and (gt (len .Doc.Place) 0) (gt (len .Doc.Date) 0)}}, {{end}}{{.Doc.Date}}
                 </div>
             </div>
             <hr class="md-hide lg-hide">
@@ -145,19 +145,19 @@ limitations under the License.
         <div class="col-12 flex flex-wrap pb3">
             <hr class="xs-hide sm-hide mt4">
             <div class="col-12 md-col-6 px2 pt2">
-                {{if len .Doc.Content.Notes}}
+                {{if len .Doc.Notes}}
                 <section class="note pt3 md-pt4">
-                        {{range $note := .Doc.Content.Notes}}
+                        {{range $note := .Doc.Notes}}
                             <h2 class="h5 md-h4">{{$note.Title}}</h2>
                             <p class="mt2 mb3">{{$note.Note}}</p>
                         {{end}}
                 </section>
                 {{end}}
-                {{if len .Doc.Content.Tags}}
+                {{if len .Doc.Tags}}
                     <section class="pt3 md-pt4">
                         <h2 class="h5 md-h4">Tags</h2>
                             <p class="mt2 mb3">
-                            {{range $key,$tag := .Doc.Content.Tags}}
+                            {{range $key,$tag := .Doc.Tags}}
                                 <a href="{{$user.LinkSearch (printf "tag:\"%s\"" $tag)}}"><span class="gsearch-btn gsearch-btn-seemore caps">{{$tag}}</span></a>
                             {{end}}
                             </p>
@@ -165,23 +165,23 @@ limitations under the License.
                 {{end}}
             </div>
             <div class="col-12 md-col-6 flex flex-wrap content-start px2 md-pl5 md-pr7 md-pt4">
-                {{if len .Doc.Content.References}}
+                {{if len .Doc.References}}
                     <section class="pt3 pb3 md-pb4 md-pt4">
                     <h2 class="h5 md-h4">References</h2>
                     <ul>
                     {{$user := .User}}
-                    {{range $type, $ref := .Doc.Content.References}}
+                    {{range $type, $ref := .Doc.References}}
                         <li><a href="{{$user.LinkSignature $ref.Signature}}">{{$ref.Title}}</a></li>
                     {{end}}
                     </ul>
                 </section>
                 {{end}}
-                {{if len .Doc.Content.Meta}}
+                {{if len .Doc.Meta}}
                 <section class="pt3 pb3 md-pb4 md-pt4">
                     <h2 class="h5 md-h4">Full spec</h2>
                     <div class="mt2">
                         <dl class="flex flex-wrap">
-                            {{range $name,$val := .Doc.Content.Extra}}
+                            {{range $name,$val := .Doc.Extra}}
                             <dt class="h7 col-4 sm-col-3 md-col-5 lg-col-4 pb1">{{$name}}</dt>
                             <dd class="m0 col-8 sm-col-9 md-col-7 lg-col-8 pb1">{{$val}}</dd>
                             {{end}}
@@ -192,11 +192,11 @@ limitations under the License.
             </div>
         </div>
     </section>
-    {{if gt (len .Doc.Content.Queries) 0}}
+    {{if gt (len .Doc.Queries) 0}}
     <section class="commerce-related-products col-12 px2 md-mt5 md-px4 ">
         <div class="col-12 mt3 md-mt4">
             <h2 class="h5 md-h4">You may also like</h2>
-            {{range $query := .Doc.Content.Queries}}
+            {{range $query := .Doc.Queries}}
                 <a href="{{$user.LinkSearch $query.Search}}"><span class="gsearch-btn gsearch-btn-seemore caps">{{$query.Label}}</span></a><br />
             {{end}}
         </div>

@@ -32,14 +32,13 @@ func NewSearch(se SearchEngine, expiration time.Duration, cachesize int, db *bad
 store SourceData in cache
 */
 func (s *Search) storeCache(src *SourceData) error {
-	jsonstr, err := json.Marshal(*s)
+	jsonstr, err := json.Marshal(*src)
 	if err != nil {
 		return emperror.Wrapf(err, "cannot marshal source data of %v", src.Signature)
 	}
 	data := Compress([]byte(jsonstr))
 	if err := s.db.Update(func(txn *badger.Txn) error {
-		txn.Set([]byte(src.Signature), data)
-		return nil
+		return txn.Set([]byte(src.Signature), data)
 	}); err != nil {
 		return err
 	}
@@ -115,9 +114,10 @@ func (s *Search) LoadEntities(ids []string) (map[string]*SourceData, error) {
 	}
 	// store results in cache
 	for _, sdata := range entries {
+		result[sdata.Signature] = sdata
 		_ = s.storeCache(sdata)
 	}
-	return entries, nil
+	return result, nil
 }
 
 func (s *Search) LoadEntity(id string) (*SourceData, error) {
@@ -132,9 +132,9 @@ func (s *Search) LoadEntity(id string) (*SourceData, error) {
 	return e, nil
 }
 
-func (s *Search) Search(text string, filters []string, facets map[string]termFacet, groups []string, contentVisible bool, start, rows int, isAdmin bool) ([]*SourceData, int64, FacetCountResult, error) {
+func (s *Search) Search(text string, cfg *SearchConfig) ([]*SourceData, int64, FacetCountResult, error) {
 
-	result, num, fts, err := s.se.Search(text, filters, facets, groups, contentVisible, start, rows, isAdmin)
+	result, num, fts, err := s.se.Search(text, cfg)
 	if err != nil {
 		return nil, 0, nil, emperror.Wrap(err, "cannot search")
 	}

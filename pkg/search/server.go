@@ -776,7 +776,7 @@ func (s *Server) ListenAndServe(cert, key string) error {
 			return emperror.Wrap(err, "cannot generate default certificate")
 		}
 		s.srv.TLSConfig = &tls.Config{Certificates: []tls.Certificate{*cert}}
-		s.log.Infof("starting HTTPS zsearch at https://%v", addr)
+		s.log.Infof("starting HTTPS zsearch at https://%v/%v", addr, s.searchPrefix)
 		return s.srv.ListenAndServeTLS("", "")
 	} else if cert != "" && key != "" {
 		s.log.Infof("starting HTTPS zsearch at https://%v", addr)

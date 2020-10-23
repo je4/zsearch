@@ -106,6 +106,11 @@ type Query struct {
 	SubFilter  []SubFilter `toml:"subfilter"`
 }
 
+type Cfg_ElasticSearch struct {
+	Endpoint []string `toml:"endpoint"`
+	Index    string   `toml:"index"`
+}
+
 type Config struct {
 	Logfile             string              `toml:"logfile"`
 	Loglevel            string              `toml:"loglevel"`
@@ -149,6 +154,7 @@ type Config struct {
 	Locations           []Network           `toml:"locations"`
 	Menu                map[string]Menu     `toml:"menu"`
 	Icons               map[string]string   `toml:"icons"`
+	ElasticSearch       Cfg_ElasticSearch   `toml:"elasticsearch"`
 }
 
 func LoadConfig(filepath string) Config {

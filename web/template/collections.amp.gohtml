@@ -135,12 +135,12 @@ limitations under the License.
                     <h3>{{title $area}}</h3>
                     {{range $key, $item := $items}}
                         <div style="padding-left:16px; /* height:260px; */ overflow:hidden; margin-bottom: 12px;" class="md-result-list relative md-flex flex-wrap items-center md-mx0">
-                            <a style="text-decoration: none;" href="{{$baseurl}}/search/{{$item.Id}}">
+                            <a style="text-decoration: none;" href="{{$baseurl}}/search/{{$item.Signature}}">
                                 <div style="display:table;">
                                     <div style="display:table-row; width:100%;">
                                         <div style="display:table-cell; width:260px; /* height:260px; */ padding-right:16px; vertical-align: top;">
-                                            {{if $item.Content.Poster}}
-                                                {{$image := $item.Content.Poster}}
+                                            {{if $item.Poster}}
+                                                {{$image := $item.Poster}}
                                                 <amp-img
                                                         aria-label="{{$image.Name}}"
                                                         src="{{medialink $image.Uri "resize" "size260x260/formatWEBP" false}}"
@@ -163,9 +163,9 @@ limitations under the License.
                                         </div>
                                         <div style="display:table-cell; vertical-align: top;">
                                             <div style="height:100%; overflow:hidden;">
-                                                <b>{{$item.Content.Title}}</b>
-                                                {{if not (eq $item.Content.Date "")}}<br />{{$item.Content.Date}}{{end}}
-                                                {{if len $item.Content.Abstract}}<p style="padding-top:10px;">{{$item.Content.Abstract}}</p>{{end}}
+                                                <b>{{$item.Title}}</b>
+                                                {{if not (eq $item.Date "")}}<br />{{$item.Date}}{{end}}
+                                                {{if len $item.Abstract}}<p style="padding-top:10px;">{{$item.Abstract}}</p>{{end}}
                                             </div>
                                         </div>
                                     </div>
@@ -186,12 +186,12 @@ limitations under the License.
                     <h3 style="padding-bottom: 12px;">{{title $area}}</h3>
                     {{range $key, $item := $items}}
                         <div style="padding-left:16px; padding-bottom: 15px; overflow:hidden; margin-bottom: 2px;" class="md-result-list relative md-flex flex-wrap items-center md-mx0">
-                            <a style="text-decoration: none;" href="{{$baseurl}}/search/{{$item.Id}}">
+                            <a style="text-decoration: none;" href="{{$baseurl}}/search/{{$item.Signature}}">
                                 <div>
-                                    <b>{{$item.Content.Title}}</b>
-                                    {{if not (eq $item.Content.Date "")}}<br />{{$item.Content.Date}}{{end}}
-                                    {{if $item.Content.Poster}}
-                                        {{$image := $item.Content.Poster}}
+                                    <b>{{$item.Title}}</b>
+                                    {{if not (eq $item.Date "")}}<br />{{$item.Date}}{{end}}
+                                    {{if $item.Poster}}
+                                        {{$image := $item.Poster}}
                                         <amp-img
                                                 aria-label="{{$image.Name}}"
                                                 src="{{medialink $image.Uri "resize" "size260x260/formatWEBP" false}}"
@@ -213,7 +213,7 @@ limitations under the License.
                                         <br />
                                     {{end}}
 
-                                    {{if len $item.Content.Abstract}}<p style="padding-top:10px;">{{$item.Content.Abstract}}</p>{{end}}
+                                    {{if len $item.Abstract}}<p style="padding-top:10px;">{{$item.Abstract}}</p>{{end}}
                                  </div>
                             </a>
                         </div>

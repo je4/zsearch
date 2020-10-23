@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/dgraph-io/badger"
 	"github.com/goph/emperror"
 	"github.com/op/go-logging"
 	"github.com/vanng822/go-solr/solr"
@@ -30,7 +29,6 @@ import (
 
 type MTSolr struct {
 	si *solr.SolrInterface
-	db *badger.DB
 	sync.Mutex
 	log *logging.Logger
 }
@@ -70,14 +68,13 @@ func andQuery(field string, values []string) string {
 	return q
 }
 
-func NewMTSolr(url, core string, db *badger.DB, log *logging.Logger) (*MTSolr, error) {
+func NewMTSolr(url, core string, log *logging.Logger) (*MTSolr, error) {
 	si, err := solr.NewSolrInterface(url, core)
 	if err != nil {
 		return nil, emperror.Wrapf(err, "cannot create solr interface for %s/%s", url, core)
 	}
 	mts := &MTSolr{
 		si:  si,
-		db:  db,
 		log: log,
 	}
 	return mts, nil
@@ -276,91 +273,21 @@ func (mts *MTSolr) LoadEntity(id string) (*Document, error) {
 	return entry, nil
 }
 
-func (mts *MTSolr) storeCache(doc *Document) error {
-	return nil
-
-	// marshal entry
-	jsonstr, err := json.Marshal(*doc)
-	if err != nil {
-		return emperror.Wrap(err, "cannot marshal entry")
-	}
-	// compress it
-	data := Compress([]byte(jsonstr))
-	if err := mts.db.Update(func(txn *badger.Txn) error {
-		txn.Set([]byte(doc.Id), data)
-		return nil
-	}); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (mts *MTSolr) getFromCache(id string) (*Document, error) {
-	return nil, fmt.Errorf("item %s not found", id)
-
-	var result *Document
-	if err := mts.db.View(func(txn *badger.Txn) error {
-		it, err := txn.Get([]byte(id))
-		if err != nil {
-			return emperror.Wrapf(err, "cannot get item %s", id)
-		}
-		if it == nil {
-			return fmt.Errorf("item %s not in cache", id)
-		}
-		if err := it.Value(func(v []byte) error {
-			var doc = &Document{}
-
-			// decompress...
-			data, err := Decompress(v)
-			if err != nil {
-				return emperror.Wrapf(err, "cannot deocmpress %s", string(v))
-			}
-			// ...unmarshal
-			if err := json.Unmarshal(data, doc); err != nil {
-				return emperror.Wrapf(err, "cannot unmarshal json %s", string(v))
-			}
-			mts.log.Infof("document %s found in cache", id)
-			result = doc
-			return nil
-		}); err != nil {
-			return emperror.Wrapf(err, "cannot load item %s", id)
-		}
-		return nil
-	}); err != nil {
-		return nil, emperror.Wrap(err, "item not found")
-	}
-	return result, nil
-}
-
 func (mts *MTSolr) LoadEntities(ids []string) (map[string]*Document, error) {
 	// todo: need better locking stragegy
 	mts.Lock()
 	defer mts.Unlock()
 
 	var result = make(map[string]*Document)
-	var toLoad []string
-
-	//
-	// try loading from cache
-	//
-	for _, id := range ids {
-		doc, err := mts.getFromCache(id)
-		if err != nil {
-			toLoad = append(toLoad, id)
-		} else {
-			result[doc.Id] = doc
-		}
-	}
-
 	//
 	// then load the rest from index
 	//
-	entries, err := mts.getSolrDocs(toLoad)
+	entries, err := mts.getSolrDocs(ids)
 	if err != nil {
 		return nil, emperror.Wrapf(err, "cannot load entities %v", ids)
 	}
 	var doclist = make(map[string]*Document)
-	for _, id := range toLoad {
+	for _, id := range ids {
 
 		// check whether it's found
 		entry, ok := entries[id]
@@ -415,9 +342,6 @@ func (mts *MTSolr) LoadEntities(ids []string) (map[string]*Document, error) {
 		doclist[id] = doc
 	}
 	for _, doc := range doclist {
-		if err := mts.storeCache(doc); err != nil {
-			return nil, err
-		}
 		result[doc.Id] = doc
 	}
 	return result, nil
@@ -548,48 +472,41 @@ func (mts *MTSolr) Search(text string, filters []string, facets map[string]termF
 		}
 
 		var cDoc *Document
-		cDoc, err = mts.getFromCache(id)
+		content, err := mts.GetContent(entry)
 		if err != nil {
-			// load the content
-			content, err := mts.GetContent(entry)
-			if err != nil {
-				// keep error in cache as well
-				cDoc = &Document{Id: entry.Id, Error: emperror.Wrapf(err, "cannot load content of %s", entry.Id).Error()}
-			} else {
+			// keep error in cache as well
+			cDoc = &Document{Id: entry.Id, Error: emperror.Wrapf(err, "cannot load content of %s", entry.Id).Error()}
+		} else {
 
-				// build full document
-				sourceData := &SourceData{
-					Source:          content.Name(),
-					Title:           content.GetTitle(),
-					Place:           content.GetPlace(),
-					Date:            content.GetDate(),
-					CollectionTitle: content.GetCollectionTitle(),
-					Persons:         content.GetPersons(),
-					Tags:            content.GetTags(),
-					Media:           content.GetMedia(nil),
-					Poster:          content.GetPoster(nil),
-					Notes:           content.GetNotes(),
-					Abstract:        content.GetAbstract(),
-					References:      content.GetReferences(),
-					Extra:           content.GetExtra(),
-					Meta:            content.GetMeta(),
-					Type:            content.GetContentType(),
-					Queries:         content.GetQueries(),
-				}
-				sourceData.HasMedia = len(sourceData.Media) > 0
-
-				cDoc = &Document{
-					Content: sourceData,
-					ACL:     entry.Acl,
-					Catalog: entry.Catalog,
-					Tag:     entry.Tag,
-					Source:  entry.Source,
-					Id:      entry.Id,
-					Error:   "",
-				}
+			// build full document
+			sourceData := &SourceData{
+				Source:          content.Name(),
+				Title:           content.GetTitle(),
+				Place:           content.GetPlace(),
+				Date:            content.GetDate(),
+				CollectionTitle: content.GetCollectionTitle(),
+				Persons:         content.GetPersons(),
+				Tags:            content.GetTags(),
+				Media:           content.GetMedia(nil),
+				Poster:          content.GetPoster(nil),
+				Notes:           content.GetNotes(),
+				Abstract:        content.GetAbstract(),
+				References:      content.GetReferences(),
+				Extra:           content.GetExtra(),
+				Meta:            content.GetMeta(),
+				Type:            content.GetContentType(),
+				Queries:         content.GetQueries(),
 			}
-			if err := mts.storeCache(cDoc); err != nil {
-				return nil, 0, nil, emperror.Wrapf(err, "cannot store document in cache")
+			sourceData.HasMedia = len(sourceData.Media) > 0
+
+			cDoc = &Document{
+				Content: sourceData,
+				ACL:     entry.Acl,
+				Catalog: entry.Catalog,
+				Tag:     entry.Tag,
+				Source:  entry.Source,
+				Id:      entry.Id,
+				Error:   "",
 			}
 		}
 		result = append(result, cDoc)

@@ -1,6 +1,6 @@
 <!-- Media area -->
 {{if not .ContentOK}}
-    {{if .Doc.Content.HasMedia}}
+    {{if .Doc.HasMedia}}
     <div class="gsearch-card" style="min-height: 300px;position:relative;">
         <div class="box-center">
             <h4 class="h3">insufficient rights for media display</h4>
@@ -16,8 +16,8 @@
 {{$expanded := true}}
 <amp-accordion
         expand-single-section>
-    {{if .Doc.Content.Media.video}}
-        {{$len = len .Doc.Content.Media.video}}
+    {{if .Doc.Media.video}}
+        {{$len = len .Doc.Media.video}}
         <section{{if $expanded}} expanded{{end}} [data-expand]="mediasection==1">
             {{$expanded = false}}
             <h4 class="hidden">Video ({{$len}})</h4>
@@ -26,18 +26,18 @@
                     <script type="application/json">
                     {
                         "videos": [
-                        {{range $key, $video := .Doc.Content.Media.video}}
+                        {{range $key, $video := .Doc.Media.video}}
                         {{$web := mediachild $video.Uri "$$web"}}
                         {{if $key}},{{end}}"{{medialink $web "master" "" (not $contentPublic)}}"
                         {{end}}
                         ],
                         "iframes": [
-                        {{range $key, $video := .Doc.Content.Media.video}}
+                        {{range $key, $video := .Doc.Media.video}}
                         {{if $key}},{{end}}"{{medialink $video.Uri "iframe" "" (not $contentPublic)}}"
                         {{end}}
                         ],
                         "posters": [
-                        {{range $key, $video := .Doc.Content.Media.video}}
+                        {{range $key, $video := .Doc.Media.video}}
                             {{$poster := printf "%s$$timeshot$$3" $video.Uri}}
                             {{if $key}},{{end}}"{{medialink $poster "resize" "size1280x720/formatJPEG" (not $contentPublic)}}"
                         {{end}}
@@ -46,7 +46,7 @@
                     }
                     </script>
                 </amp-state>
-                {{$video := index .Doc.Content.Media.video 0}}
+                {{$video := index .Doc.Media.video 0}}
                 {{$src := mediachild $video.Uri "$$web"}}
                 {{$isMedia := (eq (substr 0 12 $video.Uri) "mediaserver:")}}
                 {{$poster := printf "%s$$timeshot$$3" $video.Uri}}
@@ -72,7 +72,7 @@
                 {{if gt $len 1}}
                 <amp-selector class="center" [selected]="video.selectedVideo" on="select:AMP.setState({video: {selectedVideo: event.targetOption}})">
                     <ul class="list-reset inline-block">
-                        {{range $key, $video := .Doc.Content.Media.video}}
+                        {{range $key, $video := .Doc.Media.video}}
                             <li class="inline-block">
                                 <div option="{{$key}}" class="gsearch-btn gsearch-btn-selectlist caps">{{add $key 1}}</div>
                             </li>
@@ -84,8 +84,8 @@
         </section>
     {{end}}
 
-    {{if .Doc.Content.Media.audio}}
-        {{$len = len .Doc.Content.Media.audio}}
+    {{if .Doc.Media.audio}}
+        {{$len = len .Doc.Media.audio}}
         <section{{if $expanded}} expanded{{end}} [data-expand]="mediasection==2">
             {{$expanded = false}}
             <h4 class="hidden">Audio ({{$len}})</h4>
@@ -94,19 +94,19 @@
                     <script type="application/json">
                     {
                         "audios": [
-                        {{range $key, $audio := .Doc.Content.Media.audio}}
+                        {{range $key, $audio := .Doc.Media.audio}}
                         {{$web := mediachild $audio.Uri "$$web$$1"}}
                         {{if $key}},{{end}}"{{medialink $web "master" "" (not $contentPublic)}}"
                         {{end}}
                         ],
                         "postersJPEG": [
-                        {{range $key, $audio := .Doc.Content.Media.audio}}
+                        {{range $key, $audio := .Doc.Media.audio}}
                         {{$poster := printf "%s$$poster" $audio.Uri}}
                         {{if $key}},{{end}}"{{medialink $poster "resize" "size1280x150/stretch/formatJPEG" (not $contentPublic)}}"
                         {{end}}
                         ],
                         "postersWEBP": [
-                        {{range $key, $audio := .Doc.Content.Media.audio}}
+                        {{range $key, $audio := .Doc.Media.audio}}
                         {{$poster := printf "%s$$poster" $audio.Uri}}
                         {{if $key}},{{end}}"{{medialink $poster "resize" "size1280x150/stretch/formatWEBP" (not $contentPublic)}}"
                         {{end}}
@@ -115,7 +115,7 @@
                     }
                     </script>
                 </amp-state>
-                {{$audio := index .Doc.Content.Media.audio 0}}
+                {{$audio := index .Doc.Media.audio 0}}
                 {{$src := printf "%s$$web$$1" $audio.Uri}}
                 {{$poster := printf "%s$$poster" $audio.Uri}}
                 <amp-img async
@@ -141,7 +141,7 @@
                 {{if gt $len 1}}
                     <amp-selector class="center" [selected]="audio.selectedAudio" on="select:AMP.setState({audio: {selectedAudio: event.targetOption}})">
                         <ul class="list-reset inline-block">
-                            {{range $key, $audio := .Doc.Content.Media.audio}}
+                            {{range $key, $audio := .Doc.Media.audio}}
                                 <li class="inline-block">
                                     <div option="{{$key}}" class="gsearch-btn gsearch-btn-selectlist caps">{{add $key 1}}</div>
                                 </li>
@@ -153,13 +153,13 @@
         </section>
     {{end}}
 
-    {{if .Doc.Content.Media.image}}
-        {{$len = len .Doc.Content.Media.image}}
+    {{if .Doc.Media.image}}
+        {{$len = len .Doc.Media.image}}
         <section{{if $expanded}} expanded{{end}} [data-expand]="mediasection==3">
             {{$expanded = false}}
             <h4 class="hidden">Image ({{$len}})</h4>
             <div>
-                {{range $key, $image := .Doc.Content.Media.image}}
+                {{range $key, $image := .Doc.Media.image}}
                 <!-- Thumbnail -->
                 <amp-img
                         id="img-{{$key}}"
@@ -180,7 +180,7 @@
                               height="720"
                               layout="responsive"
                               type="slides">
-                    {{range $key, $image := .Doc.Content.Media.image}}
+                    {{range $key, $image := .Doc.Media.image}}
                         <!-- Image -->
                         <amp-img
                                 aria-label="{{$image.Name}}"
@@ -211,8 +211,8 @@
         </section>
     {{end}}
 
-    {{if .Doc.Content.Media.pdf}}
-        {{$len = len .Doc.Content.Media.pdf}}
+    {{if .Doc.Media.pdf}}
+        {{$len = len .Doc.Media.pdf}}
         <section{{if $expanded}} expanded{{end}} [data-expand]="mediasection==4">
         {{$expanded = false}}
                 <h4 class="hidden">PDF</h4>
@@ -221,7 +221,7 @@
                 <script type="application/json">
                     {
                         "pdfs": [
-                        {{range $key, $pdf := .Doc.Content.Media.pdf}}
+                        {{range $key, $pdf := .Doc.Media.pdf}}
                             {{if $key}},{{end}}"{{medialink $pdf.Uri "iframe" "" (not $contentPublic)}}"
                         {{end}}
                         ],
@@ -231,7 +231,7 @@
             </amp-state>
                 <div>
                     <amp-iframe
-                            {{$pdf := index .Doc.Content.Media.pdf 0}}
+                            {{$pdf := index .Doc.Media.pdf 0}}
                             src="{{medialink $pdf.Uri "iframe" "" (not $contentPublic)}}"
                             [src]="pdf.pdfs[pdf.selectedPdf]"
                             sandbox="allow-scripts allow-same-origin"
@@ -246,7 +246,7 @@
                 {{if gt $len 1}}
                 <amp-selector class="center" [selected]="pdf.selectedPdf" on="select:AMP.setState({pdf: {selectedPdf: event.targetOption}})">
                     <ul class="list-reset inline-block">
-                    {{range $key, $pdf := .Doc.Content.Media.pdf}}
+                    {{range $key, $pdf := .Doc.Media.pdf}}
                             <li class="inline-block">
                                 <div option="{{$key}}" class="gsearch-btn gsearch-btn-selectlist caps">{{add $key 1}}</div>
                             </li>
@@ -265,7 +265,7 @@
               layout="container">
 -->
         <div style="text-align: center;">
-    {{if .Doc.Content.Media.video}}
+    {{if .Doc.Media.video}}
         <svg xmlns="http://www.w3.org/2000/svg"
              aria-label="Show Videos"
              height="48px"
@@ -288,7 +288,7 @@
         -->
     {{end}}
 
-    {{if .Doc.Content.Media.audio}}
+    {{if .Doc.Media.audio}}
         <svg xmlns="http://www.w3.org/2000/svg"
              aria-label="Show Audio"
              height="48px"
@@ -311,7 +311,7 @@
         -->
     {{end}}
 
-    {{if .Doc.Content.Media.image}}
+    {{if .Doc.Media.image}}
         <svg xmlns="http://www.w3.org/2000/svg"
              aria-label="Show Images"
              height="48px"
@@ -334,7 +334,7 @@
         -->
     {{end}}
 
-    {{if .Doc.Content.Media.pdf}}
+    {{if .Doc.Media.pdf}}
         <svg xmlns="http://www.w3.org/2000/svg"
              aria-label="Show PDF"
              height="48px"

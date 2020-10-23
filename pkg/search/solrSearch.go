@@ -19,7 +19,7 @@ func NewMTSOLRSearch(urls []string, index string, db *badger.DB, log *logging.Lo
 	if len(urls) < 1 {
 		return nil, fmt.Errorf("no url's")
 	}
-	ss, err := NewMTSolr(urls[0], index, db, log)
+	ss, err := NewMTSolr(urls[0], index, log)
 	if err != nil {
 		return nil, emperror.Wrapf(err, "cannot create solr interface for %v", urls)
 	}
@@ -53,8 +53,8 @@ func (mte *MTSOLRSearch) LoadDocs(ids []string, ctx context.Context) (map[string
 	return result, nil
 }
 
-func (mte *MTSOLRSearch) Search(text string, filters []string, facets map[string]termFacet, groups []string, contentVisible bool, start, rows int, isAdmin bool) ([]*SourceData, int64, FacetCountResult, error) {
-	docs, num, fts, err := mte.ss.Search(text, filters, facets, groups, contentVisible, start, rows, isAdmin)
+func (mte *MTSOLRSearch) Search(text string, cfg *SearchConfig) ([]*SourceData, int64, FacetCountResult, error) {
+	docs, num, fts, err := mte.ss.Search(text, cfg.filters, cfg.facets, cfg.groups, cfg.contentVisible, cfg.start, cfg.rows, cfg.isAdmin)
 	if err != nil {
 		return nil, 0, nil, emperror.Wrap(err, "cannot search docs")
 	}
