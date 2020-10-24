@@ -103,7 +103,7 @@
       },
       "acl": {
         "properties": {
-          "acl_content": {
+          "content": {
             "type": "text",
             "fields": {
               "keyword": {
@@ -112,7 +112,7 @@
               }
             }
           },
-          "acl_meta": {
+          "meta": {
             "type": "text",
             "fields": {
               "keyword": {
@@ -121,7 +121,7 @@
               }
             }
           },
-          "acl_preview": {
+          "preview": {
             "type": "text",
             "fields": {
               "keyword": {
@@ -483,6 +483,15 @@
         }
       },
       "type": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "mediatype": {
         "type": "text",
         "fields": {
           "keyword": {

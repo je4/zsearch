@@ -7,7 +7,7 @@ https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-term-q
 type tElasticTermQuery map[string]interface{}
 
 func (q *tElasticTermQuery) FieldValue() *tElasticFieldValue {
-	return (*tElasticFieldValue)(q)
+	return &tElasticFieldValue{"term": q}
 }
 func elasticTermQuery(field string, value string, boost float64) *tElasticTermQuery {
 	return &tElasticTermQuery{field: tElasticFieldValue{"value": value, "boost": boost}}
@@ -20,7 +20,7 @@ https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-term-q
 type tElasticTermsQuery map[string]interface{}
 
 func (q *tElasticTermsQuery) FieldValue() *tElasticFieldValue {
-	return (*tElasticFieldValue)(q)
+	return &tElasticFieldValue{"terms": q}
 }
 func elasticTermsQuery(field string, boost float64, value ...string) *tElasticTermsQuery {
 	return &tElasticTermsQuery{field: value, "boost": boost}
@@ -81,7 +81,8 @@ https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-bool-q
 */
 type tElasticBooleanQuery map[string]interface{}
 
-func (q *tElasticBooleanQuery) withShould(val ...*tElasticFieldValue) *tElasticBooleanQuery {
+func (q *tElasticBooleanQuery) withShould(minimumShouldMatch int, val ...*tElasticFieldValue) *tElasticBooleanQuery {
+	(*q)["minimum_should_match"] = minimumShouldMatch
 	(*q)["should"] = val
 	return q
 }
@@ -100,10 +101,9 @@ func (q *tElasticBooleanQuery) withFilter(val ...*tElasticFieldValue) *tElasticB
 func (q *tElasticBooleanQuery) FieldValue() *tElasticFieldValue {
 	return (*tElasticFieldValue)(q)
 }
-func elasticBooleanQuery(minimumShouldMatch int, boost float64) *tElasticBooleanQuery {
+func elasticBooleanQuery(boost float64) *tElasticBooleanQuery {
 	return &tElasticBooleanQuery{
-		"minimum_should_match": minimumShouldMatch,
-		"boost":                boost,
+		"boost": boost,
 	}
 }
 

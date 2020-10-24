@@ -164,6 +164,7 @@ type SourceData struct {
 	ContentStr      string               `json:"-"`
 	ContentMime     string               `json:"-"`
 	HasMedia        bool                 `json:"hasmedia"`
+	Mediatype       []string             `json:"mediatype"`
 }
 
 func InitSourceData(source Source, ms mediaserver.Mediaserver) *SourceData {
@@ -190,7 +191,11 @@ func InitSourceData(source Source, ms mediaserver.Mediaserver) *SourceData {
 		Queries:         source.GetQueries(),
 		ContentStr:      source.GetContentString(),
 		ContentMime:     source.GetContentMime(),
+		Mediatype:       []string{},
 	}
 	sd.HasMedia = len(sd.Media) > 0
+	for mt, _ := range sd.Media {
+		sd.Mediatype = append(sd.Mediatype, mt)
+	}
 	return sd
 }
