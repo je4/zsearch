@@ -18,6 +18,8 @@ type Search struct {
 	se  SearchEngine
 }
 
+type FacetCountResult map[string]map[string]int
+
 func NewSearch(se SearchEngine, expiration time.Duration, cachesize int, db *badger.DB, log *logging.Logger) (*Search, error) {
 	s := &Search{
 		db:    db,

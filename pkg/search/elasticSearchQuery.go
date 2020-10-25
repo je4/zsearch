@@ -10,7 +10,11 @@ func (q *tElasticTermQuery) FieldValue() *tElasticFieldValue {
 	return &tElasticFieldValue{"term": q}
 }
 func elasticTermQuery(field string, value string, boost float64) *tElasticTermQuery {
-	return &tElasticTermQuery{field: tElasticFieldValue{"value": value, "boost": boost}}
+	fldval := tElasticFieldValue{"value": value}
+	if boost > 0.0 {
+		fldval["boost"] = boost
+	}
+	return &tElasticTermQuery{field: fldval}
 }
 
 /*
@@ -23,7 +27,11 @@ func (q *tElasticTermsQuery) FieldValue() *tElasticFieldValue {
 	return &tElasticFieldValue{"terms": q}
 }
 func elasticTermsQuery(field string, boost float64, value ...string) *tElasticTermsQuery {
-	return &tElasticTermsQuery{field: value, "boost": boost}
+	etq := tElasticTermsQuery{field: value}
+	if boost > 0.0 {
+		etq["boost"] = boost
+	}
+	return &etq
 }
 
 /*
@@ -141,6 +149,21 @@ func elasticMatchQuery(field string, query interface{}) *tElasticMatchQuery {
 		field: tElasticFieldValue{
 			"query": query,
 		},
+	}
+}
+
+/*
+exists query
+https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-exists-query.html
+*/
+type tElasticMatchExists map[string]interface{}
+
+func (q *tElasticMatchExists) FieldValue() *tElasticFieldValue {
+	return &tElasticFieldValue{"exists": q}
+}
+func elasticExistsQuery(field string) *tElasticMatchExists {
+	return &tElasticMatchExists{
+		"field": field,
 	}
 }
 

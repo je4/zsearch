@@ -33,8 +33,6 @@ type MTSolr struct {
 	log *logging.Logger
 }
 
-type FacetCountResult map[string]map[string]int
-
 var replaceSolr = regexp.MustCompile(`([-\\!():^\[\]"{}~*?|&;/+]|[[:space:]])`)
 var checkQuotes = regexp.MustCompile(`^".+"$`)
 

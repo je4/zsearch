@@ -57,28 +57,43 @@ type tElasticResultHits struct {
 	Hits     []tElasticResultHitsEntry `json:"hits"`
 }
 
+type tElasticResultAggregationBucket struct {
+	Key      string `json:"key"`
+	DocCount int64  `json:"doc_count"`
+}
+
+type tElasticResultAggregation struct {
+	DocCountErrorUpperBound int64                             `json:"doc_count_error_upper_bound"`
+	SumOtherDocCount        int64                             `json:"sum_other_doc_count"`
+	Buckets                 []tElasticResultAggregationBucket `json:"buckets,omitempty"`
+}
+type tElasticResultAggregations map[string]tElasticResultAggregation
+
 type tElasticResult struct {
-	Error    tElasticResultError  `json:"error,omitempty"`
-	Took     int64                `json:"took,omitempty"`
-	TimedOut bool                 `json:"timed_out,omitempty"`
-	Shards   tElasticResultShards `json:"_shards,omitempty"`
-	Hits     tElasticResultHits   `json:"hits,omitempty"`
-	Status   float64              `json:"status"`
+	Error        tElasticResultError        `json:"error,omitempty"`
+	Took         int64                      `json:"took,omitempty"`
+	TimedOut     bool                       `json:"timed_out,omitempty"`
+	Shards       tElasticResultShards       `json:"_shards,omitempty"`
+	Hits         tElasticResultHits         `json:"hits,omitempty"`
+	Aggregations tElasticResultAggregations `json:"aggregations,omitempty"`
+	Status       float64                    `json:"status"`
 }
 
 type tElasticSearch struct {
-	From   int64                 `json:"from"`
-	Size   int64                 `json:"size"`
-	Query  *tElasticQuery        `json:"query"`
-	Facets *tElasticSearchFacets `json:"facets,omitempty"`
+	From         int64                       `json:"from"`
+	Size         int64                       `json:"size"`
+	Query        *tElasticQuery              `json:"query"`
+	Aggregations *tElasticSearchAggregations `json:"aggs,omitempty"`
+	PostFilter   *tElasticQuery              `json:"post_filter,omitempty"`
 }
 
-func elasticSearch(query *tElasticQuery, facets *tElasticSearchFacets, from, size int64) *tElasticSearch {
+func elasticSearch(query *tElasticQuery, aggregations *tElasticSearchAggregations, postfilter *tElasticQuery, from, size int64) *tElasticSearch {
 	return &tElasticSearch{
-		From:   from,
-		Size:   size,
-		Query:  query,
-		Facets: facets,
+		From:         from,
+		Size:         size,
+		Query:        query,
+		Aggregations: aggregations,
+		PostFilter:   postfilter,
 	}
 }
 
@@ -173,11 +188,17 @@ func (mte *MTElasticSearch) LoadDocs(ids []string, ctx context.Context) (map[str
 func (mte *MTElasticSearch) Search(text string, cfg *SearchConfig) ([]*SourceData, int64, FacetCountResult, error) {
 
 	query := elasticQuery()
+
+	filters := []*tElasticFieldValue{}
+	if cfg.isAdmin == false {
+		filters = append(filters, elasticTermQuery("acl.meta.keyword", cfg.groups[0], 0).FieldValue())
+	}
+	if cfg.contentVisible {
+		filters = append(filters, elasticTermQuery("acl.content.keyword", cfg.groups[0], 0).FieldValue())
+		filters = append(filters, elasticExistsQuery("mediatype").FieldValue())
+	}
 	query.withBooleanQuery(
-		elasticBooleanQuery(1.0).
-			withMust(
-				elasticTermQuery("acl.meta.keyword", cfg.groups[0], 1.0).FieldValue(),
-			),
+		elasticBooleanQuery(1.0).withFilter(filters...),
 	)
 	if text == "" {
 		//query.withMatchAllQuery(elasticMatchAllQuery(1.0))
@@ -192,12 +213,29 @@ func (mte *MTElasticSearch) Search(text string, cfg *SearchConfig) ([]*SourceDat
 					elasticMatchQuery("notes", text).FieldValue(),
 				))
 	}
-	facets := elasticSearchFacets()
+	pfterms := []*tElasticFieldValue{}
+	aggregations := elasticSearchAggregations()
 	for field, vals := range cfg.facets {
-		facets.AddFacet(field, elasticSearchFacet(field, "value", nil, vals.limit))
+		aggregations.AddAggregation(field, elasticSearchAggregation(nil).withTerms(field, vals.limit, nil))
+		values := []string{}
+		for val, selected := range vals.selected {
+			if selected {
+				values = append(values, val)
+			}
+		}
+		if len(values) > 0 {
+			pfterms = append(pfterms, elasticTermsQuery(field, 0, values...).FieldValue())
+		}
+	}
+	var postfilter *tElasticQuery = nil
+	if len(pfterms) > 0 {
+		postfilter = elasticQuery()
+		postfilter.withBooleanQuery(elasticBooleanQuery(1.0).withMust(
+			pfterms...,
+		))
 	}
 
-	fq := elasticSearch(query, facets, int64(cfg.start), int64(cfg.rows))
+	fq := elasticSearch(query, aggregations, postfilter, int64(cfg.start), int64(cfg.rows))
 	jsonstr, err := json.MarshalIndent(fq, "", "   ")
 	if err != nil {
 		return nil, 0, nil, emperror.Wrapf(err, "cannot marshal %v", fq)
@@ -238,7 +276,15 @@ func (mte *MTElasticSearch) Search(text string, cfg *SearchConfig) ([]*SourceDat
 
 	sdarr := []*SourceData{}
 	for _, sd := range result.Hits.Hits {
-		sdarr = append(sdarr, &sd.Source)
+		x := sd.Source
+		sdarr = append(sdarr, &x)
 	}
-	return sdarr, result.Hits.Total.Value, nil, nil
+	var fcr FacetCountResult = make(FacetCountResult)
+	for name, agg := range result.Aggregations {
+		fcr[name] = map[string]int{}
+		for _, bucket := range agg.Buckets {
+			fcr[name][bucket.Key] = int(bucket.DocCount)
+		}
+	}
+	return sdarr, result.Hits.Total.Value, fcr, nil
 }
