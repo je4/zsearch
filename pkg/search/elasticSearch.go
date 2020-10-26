@@ -5,13 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/dgraph-io/badger"
+	"github.com/dgraph-io/badger/v2"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	elasticsearch8 "github.com/elastic/go-elasticsearch/v8"
 	"github.com/goph/emperror"
 	"github.com/je4/zsearch/pkg/mediaserver"
 	"github.com/op/go-logging"
 	"log"
+	"strings"
 )
 
 type tElasticFieldValue map[string]interface{}
@@ -77,6 +78,21 @@ type tElasticResult struct {
 	Hits         tElasticResultHits         `json:"hits,omitempty"`
 	Aggregations tElasticResultAggregations `json:"aggregations,omitempty"`
 	Status       float64                    `json:"status"`
+}
+
+type tElasticMGetResultDoc struct {
+	Index       string     `json:"_index"`
+	Type        string     `json:"_type"`
+	Id          string     `json:"_id"`
+	Version     int64      `json:"_version"`
+	SeqNo       int64      `json:"_seq_no"`
+	PrimaryTerm int64      `json:"_primary_term"`
+	Found       bool       `json:"found"`
+	Source      SourceData `json:"_source"`
+}
+
+type tElasticMGetResult struct {
+	Docs []tElasticMGetResultDoc `json:"docs"`
 }
 
 type tElasticSearch struct {
@@ -154,8 +170,8 @@ func (mte *MTElasticSearch) Update(source Source, ms mediaserver.Mediaserver) er
 
 func (mte *MTElasticSearch) LoadDocs(ids []string, ctx context.Context) (map[string]*SourceData, error) {
 	jsonstr, err := json.Marshal(struct {
-		ids []string `json:"ids"`
-	}{ids: ids})
+		Ids []string `json:"ids"`
+	}{Ids: ids})
 	if err != nil {
 		return nil, emperror.Wrapf(err, "cannot marshal idq's %v", ids)
 	}
@@ -169,23 +185,18 @@ func (mte *MTElasticSearch) LoadDocs(ids []string, ctx context.Context) (map[str
 		return nil, emperror.Wrapf(err, "cannot search documents %v", jsonstr)
 	}
 	defer res.Body.Close()
-	var mapResp map[string]interface{}
-	if err := json.NewDecoder(res.Body).Decode(&mapResp); err != nil {
+	var mgresult tElasticMGetResult
+	if err := json.NewDecoder(res.Body).Decode(&mgresult); err != nil {
 		return nil, emperror.Wrap(err, "cannot unmarshal response")
 	}
-	return nil, nil
-	/*
-		res, err := mte.es.Search(
-			mte.es.Search.WithIndex(mte.index),
-			mte.es.Search.WithContext(ctx),
-			mte.es.Search.WithTrackTotalHits(true),
-
-			)
-
-	*/
+	result := make(map[string]*SourceData)
+	for _, doc := range mgresult.Docs {
+		result[doc.Id] = &doc.Source
+	}
+	return result, nil
 }
 
-func (mte *MTElasticSearch) Search(text string, cfg *SearchConfig) ([]*SourceData, int64, FacetCountResult, error) {
+func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]*SourceData, int64, FacetCountResult, error) {
 
 	query := elasticQuery()
 
@@ -197,22 +208,25 @@ func (mte *MTElasticSearch) Search(text string, cfg *SearchConfig) ([]*SourceDat
 		filters = append(filters, elasticTermQuery("acl.content.keyword", cfg.groups[0], 0).FieldValue())
 		filters = append(filters, elasticExistsQuery("mediatype").FieldValue())
 	}
-	query.withBooleanQuery(
-		elasticBooleanQuery(1.0).withFilter(filters...),
-	)
-	if text == "" {
-		//query.withMatchAllQuery(elasticMatchAllQuery(1.0))
-	} else {
-		query.withBooleanQuery(
-			elasticBooleanQuery(1.0).
-				withShould(
-					1,
-					elasticMatchQuery("title", text).FieldValue(),
-					elasticMatchQuery("persons.name", text).FieldValue(),
-					elasticMatchQuery("abstract", text).FieldValue(),
-					elasticMatchQuery("notes", text).FieldValue(),
-				))
+
+	matchqueries := []*tElasticFieldValue{}
+	if len(cfg.filters_fields) > 0 {
+		for fld, vals := range cfg.filters_fields {
+			for _, val := range vals {
+				matchqueries = append(matchqueries, elasticTermQuery(fld, val, 6).FieldValue())
+			}
+		}
 	}
+	if len(cfg.filters_general) > 0 {
+		qstr := ""
+		for _, slice := range cfg.filters_general {
+			slice = strings.TrimSpace(slice)
+			qstr += " " + slice
+		}
+		matchqueries = append(matchqueries, elasticSimpleQueryString(qstr).withFields([]string{"title^5", "person.name^4", "abstract^1", "notes^1"}).FieldValue())
+	}
+	query.withBooleanQuery(elasticBooleanQuery(0).withFilter(filters...).withShould(1, matchqueries...))
+
 	pfterms := []*tElasticFieldValue{}
 	aggregations := elasticSearchAggregations()
 	for field, vals := range cfg.facets {
@@ -247,7 +261,7 @@ func (mte *MTElasticSearch) Search(text string, cfg *SearchConfig) ([]*SourceDat
 		mte.es.Search.WithTrackTotalHits(true),
 	)
 	if err != nil {
-		return nil, 0, nil, emperror.Wrapf(err, "cannot query %v", jsonstr)
+		return nil, 0, nil, emperror.Wrapf(err, "cannot query %v", string(jsonstr))
 	}
 	defer res.Body.Close()
 

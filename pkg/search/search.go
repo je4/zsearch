@@ -2,11 +2,11 @@ package search
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"github.com/dgraph-io/badger"
+	"github.com/dgraph-io/badger/v2"
 	"github.com/goph/emperror"
 	"github.com/op/go-logging"
+	"go.mongodb.org/mongo-driver/bson"
 	"sync"
 	"time"
 )
@@ -34,7 +34,7 @@ func NewSearch(se SearchEngine, expiration time.Duration, cachesize int, db *bad
 store SourceData in cache
 */
 func (s *Search) storeCache(src *SourceData) error {
-	jsonstr, err := json.Marshal(*src)
+	jsonstr, err := bson.Marshal(*src)
 	if err != nil {
 		return emperror.Wrapf(err, "cannot marshal source data of %v", src.Signature)
 	}
@@ -69,7 +69,7 @@ func (s *Search) getFromCache(id string) (*SourceData, error) {
 				return emperror.Wrapf(err, "cannot deocmpress %s", string(v))
 			}
 			// ...unmarshal
-			if err := json.Unmarshal(data, doc); err != nil {
+			if err := bson.Unmarshal(data, doc); err != nil {
 				return emperror.Wrapf(err, "cannot unmarshal json %s", string(v))
 			}
 			s.log.Infof("document %s found in cache", id)
@@ -134,9 +134,9 @@ func (s *Search) LoadEntity(id string) (*SourceData, error) {
 	return e, nil
 }
 
-func (s *Search) Search(text string, cfg *SearchConfig) ([]*SourceData, int64, FacetCountResult, error) {
+func (s *Search) Search(cfg *SearchConfig) ([]*SourceData, int64, FacetCountResult, error) {
 
-	result, num, fts, err := s.se.Search(text, cfg)
+	result, num, fts, err := s.se.Search(cfg)
 	if err != nil {
 		return nil, 0, nil, emperror.Wrap(err, "cannot search")
 	}

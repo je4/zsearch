@@ -1,16 +1,22 @@
 logfile = "" # log file location
 loglevel = "DEBUG" # CRITICAL|ERROR|WARNING|NOTICE|INFO|DEBUG
 accesslog = "" # http access log file
-addr = "localhost:82"
+addr = "localhost:443"
 #addrext = "https://mediathek.hgk.fhnw.ch/amp/"
-addrext = "http://localhost:82/"
-certpem = "" # tls client certificate file in PEM format
-keypem = "" # tls client key file in PEM format
-staticdir = "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/static/"
+addrext = "https://localhost:443/"
+certpem = "auto"
+#certpem = "cert/server.crt" # tls client certificate file in PEM format
+#keypem = "cert/server.key" # tls client key file in PEM format
+staticdir = "C:/daten/go/dev/zsearch/web/static/"
 staticprefix = "/static"
+#staticcachecontrol = "max-age=2592000, s-maxage=864000, stale-while-revalidate=86400, public"
+staticcachecontrol = "max-age=31968000, s-maxage=864000, stale-while-revalidate=86400, public"
 detailprefix = "/detail"
 updateprefix = "/update"
 searchprefix = "/search"
+imagesearchprefix = "/images"
+collectionsprefix = "/collections"
+collectionscatalog = "HGK Collections"
 apiprefix = "/api"
 jwtkey = "geheim"
 jwtalg = ["HS256","HS384","HS512"]
@@ -20,12 +26,17 @@ loginissuer = "auth.hgk.fhnw.ch/localhost"
 idletimeout = "30m"
 usercachesize = 200
 mediaserver = "https://ba14ns21403-sec1.fhnw.ch/mediasrv"
-mediaserverkey = "sdfsdafsdfsdfsd"
+mediaserverkey = "swordfish"
 mediaserverexp = "6h"
 ampcache = ""
-ampapikey = "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/configs/amp.private-key.pem"
+ampapikey = "C:/daten/go/dev/zsearch/configs/amp.private-key.pem"
 cachedir = "C:/temp/badger"
 clearcacheonstartup = true # remove badger files from cachedir
+templatedev = true
+
+[elasticsearch]
+    endpoint = ["http://localhost:9201"]
+    index = "test"
 
 [icons]
     journalarticle = "#ion-document-text-outline"
@@ -55,15 +66,11 @@ url = "https://mediathek.hgk.fhnw.ch"
 
 [menu.1]
 label = "Search"
-url = "https://mediathek.hgk.fhnw.ch/amp/search"
+url = "https://localhost/search"
 
 [menu.2]
 label = "Collections"
-[menu.2.sub]
-[menu.2.sub.0]
-"Fotoarchiv HGK" = "http://localhost:82/search/hgkfotos"
-[menu.2.sub.1]
-"Diplomarchiv HGK" = "http://localhost:82/search/diplomhgk"
+url = "https://localhost/collections"
 
 [menu.3]
 label = "Institutes"
@@ -86,6 +93,7 @@ label = "Institutes"
     author = "author:__Q__"
     tag = "tag:__Q__"
     cat = "category:__Q__"
+    catalog = "catalog:__Q__"
     source = "source:__Q__"
 
 [access]
@@ -128,28 +136,121 @@ label = "Institutes"
 
 
 [template]
-    detail = [
-        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/css.inc.gohtml",
-        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/ionicons.inc.gohtml",
-        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/navbar.inc.gohtml",
-        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/header.inc.gohtml",
-        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/footer.inc.gohtml",
-        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/details.media.inc.gohtml",
-        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/details.amp.gohtml",
+    "details.amp.gohtml" = [
+        "C:/daten/go/dev/zsearch/web/template/css/gsearch.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/darkmode.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/lightmode.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/headings.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/buttons.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/commerce.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/table.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/col.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/text.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/flexbox.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/padding.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/margin.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/main.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/inter.inc.min.css",
+
+        "C:/daten/go/dev/zsearch/web/template/ionicons.inc.gohtml",
+        "C:/daten/go/dev/zsearch/web/template/navbar.inc.gohtml",
+        "C:/daten/go/dev/zsearch/web/template/header.inc.gohtml",
+        "C:/daten/go/dev/zsearch/web/template/footer.inc.gohtml",
+        "C:/daten/go/dev/zsearch/web/template/details.media.inc.gohtml",
+        "C:/daten/go/dev/zsearch/web/template/details.media.prefetch.inc.gohtml",
+        "C:/daten/go/dev/zsearch/web/template/details.amp.gohtml",
         ]
-    error = ["C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/error.gohtml"]
-    forbidden = [
-        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/css.inc.gohtml",
-        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/navbar.inc.gohtml",
-        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/header.inc.gohtml",
-        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/footer.inc.gohtml",
-        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/forbidden.amp.gohtml",
+    "error.gohtml" = ["C:/daten/go/dev/zsearch/web/template/error.gohtml"]
+    "forbidden.amp.gohtml" = [
+        "C:/daten/go/dev/zsearch/web/template/css/gsearch.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/darkmode.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/lightmode.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/headings.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/buttons.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/commerce.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/table.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/col.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/text.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/flexbox.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/padding.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/margin.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/main.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/inter.inc.min.css",
+
+        "C:/daten/go/dev/zsearch/web/template/navbar.inc.gohtml",
+        "C:/daten/go/dev/zsearch/web/template/header.inc.gohtml",
+        "C:/daten/go/dev/zsearch/web/template/footer.inc.gohtml",
+        "C:/daten/go/dev/zsearch/web/template/forbidden.amp.gohtml",
         ]
-    search = [
-        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/css.inc.gohtml",
-        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/ionicons.inc.gohtml",
-        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/navbar.inc.gohtml",
-        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/header.inc.gohtml",
-        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/footer.inc.gohtml",
-        "C:/daten/go/src/gitlab.fhnw.ch/mediathek/search/gsearch/web/template/search.amp.gohtml",
+    "search.amp.gohtml" = [
+        "C:/daten/go/dev/zsearch/web/template/css/gsearch.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/darkmode.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/lightmode.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/headings.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/buttons.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/commerce.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/table.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/col.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/text.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/flexbox.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/padding.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/margin.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/main.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/inter.inc.min.css",
+
+        "C:/daten/go/dev/zsearch/web/template/ionicons.inc.gohtml",
+        "C:/daten/go/dev/zsearch/web/template/navbar.inc.gohtml",
+        "C:/daten/go/dev/zsearch/web/template/header.inc.gohtml",
+        "C:/daten/go/dev/zsearch/web/template/footer.inc.gohtml",
+        "C:/daten/go/dev/zsearch/web/template/searchNav.inc.gohtml",
+        "C:/daten/go/dev/zsearch/web/template/search.amp.gohtml",
+    ]
+    "collections.amp.gohtml" = [
+        "C:/daten/go/dev/zsearch/web/template/css/gsearch.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/darkmode.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/lightmode.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/headings.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/buttons.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/commerce.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/table.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/col.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/text.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/flexbox.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/padding.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/margin.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/main.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/inter.inc.min.css",
+
+        "C:/daten/go/dev/zsearch/web/template/ionicons.inc.gohtml",
+        "C:/daten/go/dev/zsearch/web/template/css/darkmode.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/lightmode.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/navbar.inc.gohtml",
+        "C:/daten/go/dev/zsearch/web/template/header.inc.gohtml",
+        "C:/daten/go/dev/zsearch/web/template/footer.inc.gohtml",
+        "C:/daten/go/dev/zsearch/web/template/searchNav.inc.gohtml",
+        "C:/daten/go/dev/zsearch/web/template/collections.prefetch.inc.gohtml",
+        "C:/daten/go/dev/zsearch/web/template/collections.amp.gohtml",
+    ]
+    "imagesearch.amp.gohtml" = [
+        "C:/daten/go/dev/zsearch/web/template/css/gsearch.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/darkmode.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/lightmode.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/headings.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/buttons.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/commerce.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/table.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/col.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/text.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/flexbox.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/padding.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/margin.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/main.inc.min.css",
+        "C:/daten/go/dev/zsearch/web/template/css/inter.inc.min.css",
+
+            "C:/daten/go/dev/zsearch/web/template/ionicons.inc.gohtml",
+            "C:/daten/go/dev/zsearch/web/template/navbar.inc.gohtml",
+            "C:/daten/go/dev/zsearch/web/template/header.inc.gohtml",
+            "C:/daten/go/dev/zsearch/web/template/footer.inc.gohtml",
+            "C:/daten/go/dev/zsearch/web/template/searchNav.inc.gohtml",
+            "C:/daten/go/dev/zsearch/web/template/imagesearch.amp.gohtml",
         ]

@@ -3,7 +3,7 @@ package search
 import (
 	"context"
 	"fmt"
-	"github.com/dgraph-io/badger"
+	"github.com/dgraph-io/badger/v2"
 	"github.com/goph/emperror"
 	"github.com/je4/zsearch/pkg/mediaserver"
 	"github.com/op/go-logging"
@@ -53,8 +53,39 @@ func (mte *MTSOLRSearch) LoadDocs(ids []string, ctx context.Context) (map[string
 	return result, nil
 }
 
-func (mte *MTSOLRSearch) Search(text string, cfg *SearchConfig) ([]*SourceData, int64, FacetCountResult, error) {
-	docs, num, fts, err := mte.ss.Search(text, cfg.filters, cfg.facets, cfg.groups, cfg.contentVisible, cfg.start, cfg.rows, cfg.isAdmin)
+func solrField2String(fields map[string][]string, general []string) string {
+	qstr := ""
+	for fld, vals := range fields {
+		for _, val := range vals {
+			val := EscapeSolrString(val)
+			if qstr != "" {
+				qstr += " AND "
+			}
+			qstr += fmt.Sprintf("(%s:%s)", fld, val)
+		}
+	}
+	if len(general) > 0 {
+		qstr2 := fmt.Sprintf("%s OR %s OR %s OR %s OR %s OR %s OR %s",
+			solrOr("title", general, 10, 10),
+			solrOr("author", general, 10, 10),
+			solrOr("publisher", general, 8, 10),
+			solrOr("content", general, 0, 6),
+			solrOr("abstract", general, 0, 8),
+			solrOr("signature", general, 20, 10),
+			solrOr("cluster", general, 5, 2),
+		)
+		if qstr != "" {
+			qstr += " AND "
+		}
+		qstr += fmt.Sprintf("(%s)", qstr2)
+	}
+	return qstr
+}
+
+func (mte *MTSOLRSearch) Search(cfg *SearchConfig) ([]*SourceData, int64, FacetCountResult, error) {
+	qstr := solrField2String(cfg.fields, cfg.general)
+	filter := solrField2String(cfg.filters_fields, cfg.filters_general)
+	docs, num, fts, err := mte.ss.Search(qstr, []string{filter}, cfg.facets, cfg.groups, cfg.contentVisible, cfg.start, cfg.rows, cfg.isAdmin)
 	if err != nil {
 		return nil, 0, nil, emperror.Wrap(err, "cannot search docs")
 	}

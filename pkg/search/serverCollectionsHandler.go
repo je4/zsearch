@@ -110,19 +110,21 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 	qstr := "*:*"
 	s.log.Infof("Query: %s", qstr)
 
-	filters := []string{fmt.Sprintf("catalog:\"%s\"", s.collectionsCatalog)}
+	filters_fields := make(map[string][]string)
+	filters_fields["catalog"] = []string{s.collectionsCatalog}
 
 	var facets map[string]termFacet
 	cfg := &SearchConfig{
-		filters:        filters,
-		facets:         facets,
-		groups:         status.User.Groups,
-		contentVisible: status.SearchResultVisible,
-		start:          int(0),
-		rows:           int(1000),
-		isAdmin:        status.User.inGroup(s.adminGroup),
+		filters_fields:  filters_fields,
+		filters_general: []string{},
+		facets:          facets,
+		groups:          status.User.Groups,
+		contentVisible:  status.SearchResultVisible,
+		start:           int(0),
+		rows:            int(1000),
+		isAdmin:         status.User.inGroup(s.adminGroup),
 	}
-	docs, total, _, err := s.mts.Search(qstr, cfg)
+	docs, total, _, err := s.mts.Search(cfg)
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot execute solr query: %v", false, err)
 		return

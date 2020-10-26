@@ -10,6 +10,7 @@ require (
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/bluele/gcache v0.0.0-20190518031135-bc40bd653833
 	github.com/dgraph-io/badger v1.6.2
+	github.com/dgraph-io/badger/v2 v2.2007.2
 	github.com/dgraph-io/ristretto v0.0.3 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/drgrib/maps v0.0.0-20190206181841-390503673595
@@ -30,6 +31,7 @@ require (
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 	github.com/pkg/errors v0.9.1
 	github.com/vanng822/go-solr v0.10.0
+	go.mongodb.org/mongo-driver v1.4.2
 	golang.org/x/net v0.0.0-20201016165138-7b1cca2348c0
 	google.golang.org/api v0.33.0
 	google.golang.org/appengine v1.6.7 // indirect

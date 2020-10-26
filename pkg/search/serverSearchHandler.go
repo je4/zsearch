@@ -179,10 +179,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		start = 0
 	}
 
-	qstr := s.string2Query(search)
-	s.log.Infof("Query: %s", qstr)
-
-	filters := []string{s.baseFilter}
+	filter_field, filter_general := s.string2QList(search)
 	subfiltername, ok := vars["subfilter"]
 	if ok {
 		var f *SubFilter = nil
@@ -205,7 +202,14 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 				return
 			}
 			if filter, ok := doc.Meta["Archive"]; ok {
-				filters = append(filters, s.string2Query(filter))
+				ff, fg := s.string2QList(filter)
+				filter_general = append(filter_general, fg...)
+				for fld, vals := range ff {
+					if _, ok := filter_field[fld]; !ok {
+						filter_field[fld] = []string{}
+					}
+					filter_field[fld] = append(filter_field[fld], vals...)
+				}
 				status.Title = doc.Title
 			}
 			if facetstring, ok := doc.Meta["Extra"]; ok {
@@ -232,22 +236,32 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 			}
 
 		} else {
-			filters = append(filters, f.Filter)
+			ff, fg := s.string2QList(f.Filter)
+			filter_general = append(filter_general, fg...)
+			for fld, vals := range ff {
+				if _, ok := filter_field[fld]; !ok {
+					filter_field[fld] = []string{}
+				}
+				filter_field[fld] = append(filter_field[fld], vals...)
+			}
 			status.Title = f.Name
 		}
 	}
 
 	cfg := &SearchConfig{
-		filters:        filters,
-		facets:         facets,
-		groups:         status.User.Groups,
-		contentVisible: status.SearchResultVisible,
-		start:          int(start),
-		rows:           int(rows),
-		isAdmin:        status.User.inGroup(s.adminGroup),
+		general:         []string{},
+		fields:          make(map[string][]string),
+		filters_general: filter_general,
+		filters_fields:  filter_field,
+		facets:          facets,
+		groups:          status.User.Groups,
+		contentVisible:  status.SearchResultVisible,
+		start:           int(start),
+		rows:            int(rows),
+		isAdmin:         status.User.inGroup(s.adminGroup),
 	}
 
-	docs, total, facetFieldCount, err := s.mts.Search(qstr, cfg)
+	docs, total, facetFieldCount, err := s.mts.Search(cfg)
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot execute solr query: %v", false, err)
 		return

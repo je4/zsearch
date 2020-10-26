@@ -116,6 +116,35 @@ func elasticBooleanQuery(boost float64) *tElasticBooleanQuery {
 }
 
 /*
+Simple Query
+https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-simple-query-string-query.html
+*/
+type tElasticSimpleQueryString struct {
+	Query           string   `json:"query"`
+	Fields          []string `json:"fields,omitempty"`
+	DefaultOperator string   `json:"default_operator,omitempty"`
+}
+
+func (q *tElasticSimpleQueryString) withFields(fields []string) *tElasticSimpleQueryString {
+	q.Fields = append(q.Fields, fields...)
+	return q
+}
+func (q *tElasticSimpleQueryString) withOperatorAND() *tElasticSimpleQueryString {
+	q.DefaultOperator = "AND"
+	return q
+}
+func (q *tElasticSimpleQueryString) FieldValue() *tElasticFieldValue {
+	return &tElasticFieldValue{"simple_query_string": q}
+}
+func elasticSimpleQueryString(query string) *tElasticSimpleQueryString {
+	return &tElasticSimpleQueryString{
+		Query:           query,
+		Fields:          []string{},
+		DefaultOperator: "",
+	}
+}
+
+/*
 Match Query
 https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-match-query.html
 */

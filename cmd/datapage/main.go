@@ -19,7 +19,7 @@ package main
 import (
 	"context"
 	"flag"
-	"github.com/dgraph-io/badger"
+	"github.com/dgraph-io/badger/v2"
 	"github.com/je4/zsearch/pkg/search"
 	"io"
 	"net"

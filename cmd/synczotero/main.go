@@ -19,7 +19,7 @@ package main
 import (
 	"database/sql"
 	"flag"
-	"github.com/dgraph-io/badger"
+	"github.com/dgraph-io/badger/v2"
 	"github.com/goph/emperror"
 	"github.com/je4/zsearch/pkg/mediaserver"
 	"github.com/je4/zsearch/pkg/search"

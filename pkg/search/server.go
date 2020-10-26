@@ -678,27 +678,6 @@ func (s *Server) ListenAndServe(cert, key string) error {
 		Handler(handlers.CompressHandler(func() http.Handler { return http.HandlerFunc(s.searchHandler) }())).
 		Methods("GET")
 
-	imageSearchRegexp := regexp.MustCompile(fmt.Sprintf("/%s(/(.+))?$", s.imageSearchPrefix))
-	imageSearchMatcher := func(r *http.Request, rm *mux.RouteMatch) bool {
-		matches := imageSearchRegexp.FindSubmatch([]byte(r.URL.Path))
-		if len(matches) == 0 {
-			return false
-		}
-		rm.Vars = map[string]string{}
-		if len(matches) >= 3 {
-			if matches[2] != nil {
-				filter := string(matches[2])
-				rm.Vars = map[string]string{}
-				rm.Vars["subfilter"] = filter
-			}
-		}
-		return true
-	}
-	router.
-		MatcherFunc(imageSearchMatcher).
-		Handler(handlers.CompressHandler(func() http.Handler { return http.HandlerFunc(s.imageSearchHandler) }())).
-		Methods("GET")
-
 	collectionsRegexp := regexp.MustCompile(fmt.Sprintf("/%s(/(.+))?$", s.collectionsPrefix))
 	collectionsMatcher := func(r *http.Request, rm *mux.RouteMatch) bool {
 		matches := collectionsRegexp.FindSubmatch([]byte(r.URL.Path))
@@ -828,7 +807,7 @@ func (s *Server) GetClaimUser(claims map[string]interface{}) (*User, error) {
 
 var rexp = regexp.MustCompile(`([a-zA-Z0-9]+:([^ "]+|"[^"]+"))|([^ "]+)|"([^"]+)"`)
 
-func (s *Server) string2Query(search string) string {
+func (s *Server) __DELETE__string2Query(search string) string {
 	var qstr string
 
 	slice := rexp.FindAllString(search, -1)
@@ -889,6 +868,36 @@ func (s *Server) string2Query(search string) string {
 		}
 	}
 	return qstr
+}
+func (s *Server) string2QList(search string) (map[string][]string, []string) {
+	slice := rexp.FindAllString(search, -1)
+	if slice == nil {
+		slice = []string{}
+	}
+
+	// expand to field an generic search
+	rexp2 := regexp.MustCompile(`^(` + strings.Join(maps.GetKeysStringString(s.searchFields), `|`) + `):(.+)$`)
+	//fields := make(map[string][]string)
+	gen := []string{}
+	fldlist := make(map[string][]string)
+
+	for _, f := range slice {
+		fldq := rexp2.FindStringSubmatch(f)
+		if fldq != nil {
+			fld, ok := s.searchFields[fldq[1]]
+			if !ok {
+				continue
+			}
+			val := fldq[2]
+			if _, ok := fldlist[fld]; !ok {
+				fldlist[fld] = []string{}
+			}
+			fldlist[fld] = append(fldlist[fld], strings.Trim(val, `""''`))
+		} else {
+			gen = append(gen, f)
+		}
+	}
+	return fldlist, gen
 }
 
 func (s *Server) doc2result(search string,
