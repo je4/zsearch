@@ -68,6 +68,25 @@ func elasticDisMaxQuery(tieBreaker float64, queries ...*tElasticFieldValue) *tEl
 }
 
 /*
+Prefix Query
+https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-prefix-query.html
+*/
+type tElasticPrefixQuery map[string]interface{}
+
+func (q *tElasticPrefixQuery) withRewrite(rewrite string) *tElasticPrefixQuery {
+	(*q)["rewrite"] = rewrite
+	return q
+}
+func (q *tElasticPrefixQuery) FieldValue() *tElasticFieldValue {
+	return (*tElasticFieldValue)(q)
+}
+func elasticPrefixQuery(field, value string) *tElasticPrefixQuery {
+	return &tElasticPrefixQuery{
+		field: map[string]string{"value": value},
+	}
+}
+
+/*
 Constant Score Query
 https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-constant-score-query.html#query-dsl-constant-score-query
 */
@@ -131,6 +150,10 @@ func (q *tElasticSimpleQueryString) withFields(fields []string) *tElasticSimpleQ
 }
 func (q *tElasticSimpleQueryString) withOperatorAND() *tElasticSimpleQueryString {
 	q.DefaultOperator = "AND"
+	return q
+}
+func (q *tElasticSimpleQueryString) withOperatorOR() *tElasticSimpleQueryString {
+	q.DefaultOperator = "OR"
 	return q
 }
 func (q *tElasticSimpleQueryString) FieldValue() *tElasticFieldValue {
@@ -252,6 +275,10 @@ func (q *tElasticQuery) withTermsQuery(bq *tElasticTermsQuery) *tElasticQuery {
 }
 func (q *tElasticQuery) withTermQuery(bq *tElasticTermQuery) *tElasticQuery {
 	(*q)["term"] = bq
+	return q
+}
+func (q *tElasticQuery) withPrefixQuery(bq *tElasticPrefixQuery) *tElasticQuery {
+	(*q)["prefix"] = bq
 	return q
 }
 func (q *tElasticQuery) withMatchQuery(bq *tElasticMatchQuery) *tElasticQuery {

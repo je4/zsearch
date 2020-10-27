@@ -805,7 +805,8 @@ func (s *Server) GetClaimUser(claims map[string]interface{}) (*User, error) {
 	return u, nil
 }
 
-var rexp = regexp.MustCompile(`([a-zA-Z0-9]+:([^ "]+|"[^"]+"))|([^ "]+)|"([^"]+)"`)
+//var rexp = regexp.MustCompile(`([a-zA-Z0-9]+:([^ "]+|"[^"]+"))|([^ "]+)|"([^"]+)"`)
+var rexp = regexp.MustCompile(`([a-zA-Z0-9]+:([^ "]+|"[^"]+"))`)
 
 func (s *Server) __DELETE__string2Query(search string) string {
 	var qstr string
@@ -869,7 +870,7 @@ func (s *Server) __DELETE__string2Query(search string) string {
 	}
 	return qstr
 }
-func (s *Server) string2QList(search string) (map[string][]string, []string) {
+func (s *Server) string2QList(search string) (map[string][]string, string) {
 	slice := rexp.FindAllString(search, -1)
 	if slice == nil {
 		slice = []string{}
@@ -897,7 +898,7 @@ func (s *Server) string2QList(search string) (map[string][]string, []string) {
 			gen = append(gen, f)
 		}
 	}
-	return fldlist, gen
+	return fldlist, strings.TrimSpace(rexp.ReplaceAllString(search, " "))
 }
 
 func (s *Server) doc2result(search string,

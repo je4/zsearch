@@ -130,8 +130,8 @@ func (zot *SourceZoteroDeprecated) GetDate() string {
 	return zot.ZData.Data.Date
 }
 
-func (zot *SourceZoteroDeprecated) GetMeta() Metalist {
-	var result = make(map[string]string)
+func (zot *SourceZoteroDeprecated) GetMeta() *Metalist {
+	var result = Metalist{}
 	s := reflect.ValueOf(&zot.ZData.Data).Elem()
 	typeOfT := s.Type()
 	for i := 0; i < s.NumField(); i++ {
@@ -155,18 +155,19 @@ func (zot *SourceZoteroDeprecated) GetMeta() Metalist {
 			result[fname] = valstr
 		}
 	}
-	return result
+	return &result
 }
 
-func (zot *SourceZoteroDeprecated) GetExtra() Metalist {
-	var result = make(map[string]string)
-	for key, val := range zot.GetMeta() {
+func (zot *SourceZoteroDeprecated) GetExtra() *Metalist {
+	var result = Metalist{}
+	ml := zot.GetMeta()
+	for key, val := range *ml {
 		if InList(zoteroDeprecatedIgnoreMetaFields, key) {
 			continue
 		}
 		result[key] = val
 	}
-	return result
+	return &result
 }
 
 func (zot *SourceZoteroDeprecated) GetAbstract() string {

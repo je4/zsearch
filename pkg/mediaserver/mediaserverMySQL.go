@@ -10,7 +10,6 @@ import (
 	"github.com/goph/emperror"
 	"github.com/op/go-logging"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -56,7 +55,7 @@ func NewJWT(secret string, subject string, valid int64) (tokenString string, err
 		"sub": strings.ToLower(subject),
 		"exp": exp,
 	})
-	log.Println("NewJWT( ", secret, ", ", subject, ", ", exp)
+	//log.Println("NewJWT( ", secret, ", ", subject, ", ", exp)
 	tokenString, err = token.SignedString([]byte(secret))
 	return tokenString, err
 }

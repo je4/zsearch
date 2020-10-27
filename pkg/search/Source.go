@@ -84,21 +84,21 @@ type Reference struct {
 
 type Metalist map[string]string
 
-func (ml Metalist) UnmarshalJSON(b []byte) error {
+func (ml *Metalist) UnmarshalJSON(b []byte) error {
 	type kv struct {
 		Key   string `json:"key"`
 		Value string `json:"value"`
 	}
 	var arr []kv
 
-	ml = map[string]string{}
+	m := Metalist{}
 	if err := json.Unmarshal(b, &arr); err != nil {
 		return err
 	}
 	for _, val := range arr {
-		(ml)[val.Key] = val.Value
+		m[val.Key] = val.Value
 	}
-
+	*ml = m
 	return nil
 }
 
@@ -131,8 +131,8 @@ type Source interface {
 	GetNotes() []Note
 	GetAbstract() string
 	GetReferences() []Reference
-	GetMeta() Metalist
-	GetExtra() Metalist
+	GetMeta() *Metalist
+	GetExtra() *Metalist
 	GetContentType() string
 	GetQueries() []Query
 	GetSolrDoc() *solr.Document
@@ -157,8 +157,8 @@ type SourceData struct {
 	Notes           []Note               `json:"notes"`
 	Abstract        string               `json:"abstract"`
 	References      []Reference          `json:"references"`
-	Meta            Metalist             `json:"meta"`
-	Extra           Metalist             `json:"extra"`
+	Meta            *Metalist            `json:"meta"`
+	Extra           *Metalist            `json:"extra"`
 	Type            string               `json:"type"`
 	Queries         []Query              `json:"queries"`
 	ContentStr      string               `json:"-"`

@@ -9,7 +9,6 @@ require (
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/bluele/gcache v0.0.0-20190518031135-bc40bd653833
-	github.com/dgraph-io/badger v1.6.2
 	github.com/dgraph-io/badger/v2 v2.2007.2
 	github.com/dgraph-io/ristretto v0.0.3 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
@@ -26,6 +25,7 @@ require (
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/je4/zsync v0.0.0-20201019161026-b24e6be76bd1
 	github.com/juliangruber/go-intersect v1.0.0
+	github.com/kr/pretty v0.2.0 // indirect
 	github.com/mitchellh/copystructure v1.0.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7

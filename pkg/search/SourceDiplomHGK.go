@@ -161,14 +161,14 @@ func (dhgk *SourceDiplomHGK) GetDate() string {
 	return dhgk.DData.Year
 }
 
-func (dhgk *SourceDiplomHGK) GetMeta() Metalist {
-	var result = make(map[string]string)
-	return result
+func (dhgk *SourceDiplomHGK) GetMeta() *Metalist {
+	var result = Metalist{}
+	return &result
 }
 
-func (dhgk *SourceDiplomHGK) GetExtra() Metalist {
-	var result = make(map[string]string)
-	return result
+func (dhgk *SourceDiplomHGK) GetExtra() *Metalist {
+	var result = Metalist{}
+	return &result
 }
 
 func (dhgk *SourceDiplomHGK) GetAbstract() string {

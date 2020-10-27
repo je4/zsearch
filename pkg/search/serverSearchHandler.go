@@ -179,7 +179,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		start = 0
 	}
 
-	filter_field, filter_general := s.string2QList(search)
+	filter_field, qstr := s.string2QList(search)
 	subfiltername, ok := vars["subfilter"]
 	if ok {
 		var f *SubFilter = nil
@@ -201,9 +201,10 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 				s.DoPanicf(w, http.StatusInternalServerError, "data of signature %s is nil", false, subfiltername)
 				return
 			}
-			if filter, ok := doc.Meta["Archive"]; ok {
-				ff, fg := s.string2QList(filter)
-				filter_general = append(filter_general, fg...)
+			if filter, ok := (*doc.Meta)["Archive"]; ok {
+				// todo: deal with search string
+				ff, _ /* fg */ := s.string2QList(filter)
+				//filter_general = append(filter_general, fg...)
 				for fld, vals := range ff {
 					if _, ok := filter_field[fld]; !ok {
 						filter_field[fld] = []string{}
@@ -212,7 +213,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 				}
 				status.Title = doc.Title
 			}
-			if facetstring, ok := doc.Meta["Extra"]; ok {
+			if facetstring, ok := (*doc.Meta)["Extra"]; ok {
 				if fl := facetDefRegexp.FindStringSubmatch(facetstring); fl != nil {
 					s.log.Infof("%v", fl)
 					facetField := fl[1]
@@ -236,8 +237,9 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 			}
 
 		} else {
-			ff, fg := s.string2QList(f.Filter)
-			filter_general = append(filter_general, fg...)
+			// todo: deal with search string
+			ff, _ /* fg */ := s.string2QList(f.Filter)
+			//filter_general = append(filter_general, fg...)
 			for fld, vals := range ff {
 				if _, ok := filter_field[fld]; !ok {
 					filter_field[fld] = []string{}
@@ -249,16 +251,15 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	cfg := &SearchConfig{
-		general:         []string{},
-		fields:          make(map[string][]string),
-		filters_general: filter_general,
-		filters_fields:  filter_field,
-		facets:          facets,
-		groups:          status.User.Groups,
-		contentVisible:  status.SearchResultVisible,
-		start:           int(start),
-		rows:            int(rows),
-		isAdmin:         status.User.inGroup(s.adminGroup),
+		fields:         make(map[string][]string),
+		qstr:           qstr,
+		filters_fields: filter_field,
+		facets:         facets,
+		groups:         status.User.Groups,
+		contentVisible: status.SearchResultVisible,
+		start:          int(start),
+		rows:           int(rows),
+		isAdmin:        status.User.inGroup(s.adminGroup),
 	}
 
 	docs, total, facetFieldCount, err := s.mts.Search(cfg)

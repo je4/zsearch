@@ -115,14 +115,14 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 
 	var facets map[string]termFacet
 	cfg := &SearchConfig{
-		filters_fields:  filters_fields,
-		filters_general: []string{},
-		facets:          facets,
-		groups:          status.User.Groups,
-		contentVisible:  status.SearchResultVisible,
-		start:           int(0),
-		rows:            int(1000),
-		isAdmin:         status.User.inGroup(s.adminGroup),
+		filters_fields: filters_fields,
+		qstr:           "",
+		facets:         facets,
+		groups:         status.User.Groups,
+		contentVisible: status.SearchResultVisible,
+		start:          int(0),
+		rows:           int(1000),
+		isAdmin:        status.User.inGroup(s.adminGroup),
 	}
 	docs, total, _, err := s.mts.Search(cfg)
 	if err != nil {
@@ -138,7 +138,7 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 				if _, ok := status.Result[field]; !ok {
 					status.Result[field] = []*SourceData{}
 				}
-				if srch, ok := doc.Meta["Archive"]; ok && strings.TrimSpace(srch) != "" {
+				if srch, ok := (*doc.Meta)["Archive"]; ok && strings.TrimSpace(srch) != "" {
 					status.Result[field] = append(status.Result[field], doc)
 					break
 				}

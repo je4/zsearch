@@ -197,15 +197,14 @@ func (mte *MTElasticSearch) LoadDocs(ids []string, ctx context.Context) (map[str
 }
 
 func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]*SourceData, int64, FacetCountResult, error) {
-
 	query := elasticQuery()
 
 	filters := []*tElasticFieldValue{}
 	if cfg.isAdmin == false {
-		filters = append(filters, elasticTermQuery("acl.meta.keyword", cfg.groups[0], 0).FieldValue())
+		filters = append(filters, elasticTermQuery("acl.meta", cfg.groups[0], 0).FieldValue())
 	}
 	if cfg.contentVisible {
-		filters = append(filters, elasticTermQuery("acl.content.keyword", cfg.groups[0], 0).FieldValue())
+		filters = append(filters, elasticTermQuery("acl.content", cfg.groups[0], 0).FieldValue())
 		filters = append(filters, elasticExistsQuery("mediatype").FieldValue())
 	}
 
@@ -213,32 +212,60 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]*SourceData, int64, Fac
 	if len(cfg.filters_fields) > 0 {
 		for fld, vals := range cfg.filters_fields {
 			for _, val := range vals {
-				matchqueries = append(matchqueries, elasticTermQuery(fld, val, 6).FieldValue())
+				if fld == "category" {
+					filters = append(filters, elasticPrefixQuery(fld, val).FieldValue())
+				} else {
+					filters = append(filters, elasticTermQuery(fld, val, 0).FieldValue())
+				}
 			}
 		}
 	}
-	if len(cfg.filters_general) > 0 {
-		qstr := ""
-		for _, slice := range cfg.filters_general {
-			slice = strings.TrimSpace(slice)
-			qstr += " " + slice
+	/*
+		if len(cfg.filters_general) > 0 {
+			qstr := ""
+			for _, slice := range cfg.filters_general {
+				slice = strings.TrimSpace(slice)
+				qstr += " " + slice
+			}
+			matchqueries = append(matchqueries,
+				elasticSimpleQueryString(qstr).
+				withFields([]string{"title^5", "person.name^4", "abstract^1", "notes^1"}).
+				withOperatorOR().
+				FieldValue())
 		}
-		matchqueries = append(matchqueries, elasticSimpleQueryString(qstr).withFields([]string{"title^5", "person.name^4", "abstract^1", "notes^1"}).FieldValue())
+	*/
+	qstr := strings.TrimSpace(cfg.qstr)
+	if len(qstr) > 0 {
+		matchqueries = append(matchqueries,
+			elasticSimpleQueryString(qstr).
+				withFields([]string{"title^5", "person.name^4", "abstract^1", "notes^1"}).
+				withOperatorOR().
+				FieldValue())
 	}
-	query.withBooleanQuery(elasticBooleanQuery(0).withFilter(filters...).withShould(1, matchqueries...))
+	bq := elasticBooleanQuery(0)
+	if len(matchqueries) > 0 {
+		bq.withShould(1, matchqueries...)
+	}
+	if len(filters) > 0 {
+		bq.withFilter(filters...)
+	}
+	query.withBooleanQuery(bq)
 
 	pfterms := []*tElasticFieldValue{}
-	aggregations := elasticSearchAggregations()
-	for field, vals := range cfg.facets {
-		aggregations.AddAggregation(field, elasticSearchAggregation(nil).withTerms(field, vals.limit, nil))
-		values := []string{}
-		for val, selected := range vals.selected {
-			if selected {
-				values = append(values, val)
+	var aggregations *tElasticSearchAggregations
+	if cfg.facets != nil {
+		aggregations = elasticSearchAggregations()
+		for field, vals := range cfg.facets {
+			aggregations.AddAggregation(field, elasticSearchAggregation(nil).withTerms(field, vals.limit, nil))
+			values := []string{}
+			for val, selected := range vals.selected {
+				if selected {
+					values = append(values, val)
+				}
 			}
-		}
-		if len(values) > 0 {
-			pfterms = append(pfterms, elasticTermsQuery(field, 0, values...).FieldValue())
+			if len(values) > 0 {
+				pfterms = append(pfterms, elasticTermsQuery(field, 0, values...).FieldValue())
+			}
 		}
 	}
 	var postfilter *tElasticQuery = nil

@@ -104,36 +104,22 @@
       "acl": {
         "properties": {
           "content": {
-            "type": "text",
-            "fields": {
-              "keyword": {
-                "type": "keyword",
-                "ignore_above": 256
-              }
-            }
+            "type": "keyword"
           },
           "meta": {
-            "type": "text",
-            "fields": {
-              "keyword": {
-                "type": "keyword",
-                "ignore_above": 256
-              }
-            }
+            "type": "keyword"
           },
           "preview": {
-            "type": "text",
-            "fields": {
-              "keyword": {
-                "type": "keyword",
-                "ignore_above": 256
-              }
-            }
+            "type": "keyword"
           }
         }
       },
       "catalog": {
+        "type": "keyword"
+      },
+      "category": {
         "type": "text",
+        "index_prefixes": { },
         "fields": {
           "keyword": {
             "type": "keyword",
@@ -405,6 +391,9 @@
       "notes": {
         "properties": {
           "note": {
+            "type": "text"
+          },
+          "title": {
             "type": "text",
             "fields": {
               "keyword": {
@@ -412,6 +401,13 @@
                 "ignore_above": 256
               }
             }
+          }
+        }
+      },
+      "content": {
+        "properties": {
+          "content": {
+            "type": "text"
           },
           "title": {
             "type": "text",
@@ -483,13 +479,7 @@
         }
       },
       "type": {
-        "type": "text",
-        "fields": {
-          "keyword": {
-            "type": "keyword",
-            "ignore_above": 256
-          }
-        }
+        "type": "keyword"
       },
       "mediatype": {
         "type": "keyword"

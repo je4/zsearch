@@ -127,15 +127,21 @@ func (item *Item) GetCategories() []string {
 		if err != nil {
 			continue
 		}
-		cat := coll.Data.Name
-		for coll.Data.ParentCollection != "" {
-			coll, err = item.Group.GetCollectionByKeyLocal(string(coll.Data.ParentCollection))
+		if coll.Data.ParentCollection != "" {
+			coll2, err := item.Group.GetCollectionByKeyLocal(string(coll.Data.ParentCollection))
 			if err != nil {
 				break
 			}
-			cat = fmt.Sprintf("%v!!%v", coll.Data.Name, cat)
+			cat := fmt.Sprintf("zotero!!%v!!%v!!%v", item.Library.Name, coll2.Data.Name, coll.Data.Name)
+			categories = append(categories, cat)
+		} else {
+			cat := fmt.Sprintf("zotero!!%v!!%v", item.Library.Name, coll.Data.Name)
+			categories = append(categories, cat)
 		}
-		categories = append(categories, cat)
+
+	}
+	if len(categories) == 0 {
+		categories = append(categories, fmt.Sprintf("zotero!!%v", item.Library.Name))
 	}
 	return categories
 }
@@ -360,8 +366,8 @@ func (item *Item) GetReferences() []Reference {
 	return references
 }
 
-func (item *Item) GetMeta() Metalist {
-	var result = make(map[string]string)
+func (item *Item) GetMeta() *Metalist {
+	var result = Metalist{}
 	s := reflect.ValueOf(&item.Data).Elem()
 	typeOfT := s.Type()
 	for i := 0; i < s.NumField(); i++ {
@@ -385,18 +391,19 @@ func (item *Item) GetMeta() Metalist {
 			result[fname] = valstr
 		}
 	}
-	return result
+	return &result
 }
 
-func (item *Item) GetExtra() Metalist {
-	var result = make(map[string]string)
-	for key, val := range item.GetMeta() {
+func (item *Item) GetExtra() *Metalist {
+	var result = Metalist{}
+	ml := item.GetMeta()
+	for key, val := range *ml {
 		if InList(zoteroIgnoreMetaFields, key) {
 			continue
 		}
 		result[key] = val
 	}
-	return result
+	return &result
 }
 
 func (item *Item) GetContentType() string {

@@ -6,16 +6,15 @@ import (
 )
 
 type SearchConfig struct {
-	general         []string
-	fields          map[string][]string
-	filters_general []string
-	filters_fields  map[string][]string
-	facets          map[string]termFacet
-	groups          []string
-	contentVisible  bool
-	start           int
-	rows            int
-	isAdmin         bool
+	fields         map[string][]string
+	qstr           string
+	filters_fields map[string][]string
+	facets         map[string]termFacet
+	groups         []string
+	contentVisible bool
+	start          int
+	rows           int
+	isAdmin        bool
 }
 
 type SearchEngine interface {

@@ -89,14 +89,14 @@ func (cdk *SourceCDK) GetDate() string {
 	return "cdk.DData.Year"
 }
 
-func (cdk *SourceCDK) GetMeta() Metalist {
+func (cdk *SourceCDK) GetMeta() *Metalist {
 	var result = make(Metalist)
-	return result
+	return &result
 }
 
-func (cdk *SourceCDK) GetExtra() Metalist {
-	var result = make(map[string]string)
-	return result
+func (cdk *SourceCDK) GetExtra() *Metalist {
+	var result = make(Metalist)
+	return &result
 }
 
 func (cdk *SourceCDK) GetAbstract() string {
