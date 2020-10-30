@@ -109,8 +109,13 @@ func (ms *MediaserverMySQL) Init() error {
 	return nil
 }
 
+var regexpOldMedia = regexp.MustCompile("^http://media/([^/]+)/([^/]+)$")
+
 func (ms *MediaserverMySQL) IsMediaserverURL(url string) (string, string, bool) {
 	if matches := ms.mediaserverRegexp.FindStringSubmatch(url); matches != nil {
+		return matches[1], matches[2], true
+	}
+	if matches := regexpOldMedia.FindStringSubmatch(url); matches != nil {
 		return matches[1], matches[2], true
 	}
 	return "", "", false

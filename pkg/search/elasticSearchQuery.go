@@ -1,5 +1,37 @@
 package search
 
+import (
+	"regexp"
+)
+
+// + - && || ! ( ) { } [ ] ^ " ~ * ? : \
+var escapeChars = regexp.MustCompile(`(-|&&|!|\|\|\(|\)|{|}|\[|]|\^|"|~|\*|\?|:|\\)`)
+
+func escapeValue(str string) string {
+	return escapeChars.ReplaceAllString(str, `\$1`)
+}
+
+/*
+Nested Query
+https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-nested-query.html
+*/
+type tElasticNestedQuery map[string]interface{}
+
+func (q *tElasticNestedQuery) withScoreMode(scoreMode string) *tElasticNestedQuery {
+	(*q)["score_mode"] = scoreMode
+	return q
+}
+func (q *tElasticNestedQuery) withIgnoreUnmappedON() *tElasticNestedQuery {
+	(*q)["ignoreUnmapped"] = true
+	return q
+}
+func (q *tElasticNestedQuery) FieldValue() *tElasticFieldValue {
+	return &tElasticFieldValue{"nested": q}
+}
+func elasticNestedQuery(path string, q *tElasticQuery) *tElasticNestedQuery {
+	return &tElasticNestedQuery{"path": path, "query": q}
+}
+
 /*
 Term Query
 https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-term-query.html
@@ -58,7 +90,7 @@ https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-dis-ma
 type tElasticDisMaxQuery map[string]interface{}
 
 func (q *tElasticDisMaxQuery) FieldValue() *tElasticFieldValue {
-	return (*tElasticFieldValue)(q)
+	return &tElasticFieldValue{"dis_max": q}
 }
 func elasticDisMaxQuery(tieBreaker float64, queries ...*tElasticFieldValue) *tElasticDisMaxQuery {
 	return &tElasticDisMaxQuery{
@@ -78,7 +110,7 @@ func (q *tElasticPrefixQuery) withRewrite(rewrite string) *tElasticPrefixQuery {
 	return q
 }
 func (q *tElasticPrefixQuery) FieldValue() *tElasticFieldValue {
-	return (*tElasticFieldValue)(q)
+	return &tElasticFieldValue{"prefix": q}
 }
 func elasticPrefixQuery(field, value string) *tElasticPrefixQuery {
 	return &tElasticPrefixQuery{
@@ -129,9 +161,11 @@ func (q *tElasticBooleanQuery) FieldValue() *tElasticFieldValue {
 	return (*tElasticFieldValue)(q)
 }
 func elasticBooleanQuery(boost float64) *tElasticBooleanQuery {
-	return &tElasticBooleanQuery{
-		"boost": boost,
+	bc := &tElasticBooleanQuery{}
+	if boost != 0.0 {
+		(*bc)["boost"] = boost
 	}
+	return bc
 }
 
 /*

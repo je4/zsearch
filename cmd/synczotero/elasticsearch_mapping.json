@@ -118,14 +118,7 @@
         "type": "keyword"
       },
       "category": {
-        "type": "text",
-        "index_prefixes": { },
-        "fields": {
-          "keyword": {
-            "type": "keyword",
-            "ignore_above": 256
-          }
-        }
+        "type": "keyword"
       },
       "collectiontitle": {
         "type": "text",

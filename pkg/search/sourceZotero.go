@@ -123,25 +123,23 @@ func (item *Item) GetCatalogs() []string {
 func (item *Item) GetCategories() []string {
 	categories := []string{}
 	for _, collection := range item.Data.Collections {
-		coll, err := item.Group.GetCollectionByKeyLocal(collection)
+		parentColl, err := item.Group.GetCollectionByKeyLocal(collection)
 		if err != nil {
 			continue
 		}
-		if coll.Data.ParentCollection != "" {
-			coll2, err := item.Group.GetCollectionByKeyLocal(string(coll.Data.ParentCollection))
+		if parentColl.Data.ParentCollection != "" {
+			coll2, err := item.Group.GetCollectionByKeyLocal(string(parentColl.Data.ParentCollection))
 			if err != nil {
 				break
 			}
-			cat := fmt.Sprintf("zotero!!%v!!%v!!%v", item.Library.Name, coll2.Data.Name, coll.Data.Name)
-			categories = append(categories, cat)
+			categories = append(categories, fmt.Sprintf("%v!!%v!!%v!!%v", item.Name(), item.Group.Data.Name, coll2.Data.Name, parentColl.Data.Name))
 		} else {
-			cat := fmt.Sprintf("zotero!!%v!!%v", item.Library.Name, coll.Data.Name)
-			categories = append(categories, cat)
+			categories = append(categories, fmt.Sprintf("%v!!%v!!%v", item.Name(), item.Group.Data.Name, parentColl.Data.Name))
 		}
 
 	}
 	if len(categories) == 0 {
-		categories = append(categories, fmt.Sprintf("zotero!!%v", item.Library.Name))
+		categories = append(categories, fmt.Sprintf("%v!!%v", item.Name(), item.Group.Data.Name))
 	}
 	return categories
 }
@@ -420,7 +418,40 @@ func (item *Item) GetContentType() string {
 }
 
 func (item *Item) GetQueries() []Query {
-	return nil
+	queries := []Query{}
+	for _, collection := range item.Data.Collections {
+		parentColl, err := item.Group.GetCollectionByKeyLocal(collection)
+		if err != nil {
+			continue
+		}
+		if parentColl.Data.ParentCollection != "" {
+			subParentColl, err := item.Group.GetCollectionByKeyLocal(string(parentColl.Data.ParentCollection))
+			if err != nil {
+				break
+			}
+			queries = append(queries, Query{
+				Label:  fmt.Sprintf("%s - %s - %s", item.Group.Data.Name, parentColl.Data.Name, subParentColl.Data.Name),
+				Search: fmt.Sprintf("cat:%v!!%v!!%v!!%v", item.Name(), item.Group.Data.Name, parentColl.Data.Name, subParentColl.Data.Name),
+			})
+		}
+
+		queries = append(queries, Query{
+			Label:  fmt.Sprintf("%s - %s", item.Group.Data.Name, parentColl.Data.Name),
+			Search: fmt.Sprintf("cat:%v!!%v!!%v", item.Name(), item.Group.Data.Name, parentColl.Data.Name),
+		})
+
+	}
+	queries = append(queries, Query{
+		Label:  fmt.Sprintf("%s", item.Group.Data.Name),
+		Search: fmt.Sprintf("cat:%v!!%v", item.Name(), item.Group.Data.Name),
+	})
+	if item.Data.ArchiveLocation != "" {
+		queries = append(queries, Query{
+			Label:  "Group",
+			Search: item.Data.ArchiveLocation,
+		})
+	}
+	return queries
 }
 
 func (item *Item) GetSolrDoc() *solr.Document {

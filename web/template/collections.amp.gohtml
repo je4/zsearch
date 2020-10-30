@@ -43,6 +43,7 @@ limitations under the License.
 
     {{template "collections.prefetch.inc.gohtml" . }}
 
+    <script async custom-element="amp-truncate-text" src="https://cdn.ampproject.org/v0/amp-truncate-text-0.1.js"></script>
     <script custom-element="amp-sidebar" src="https://cdn.ampproject.org/v0/amp-sidebar-0.1.js" async=""></script>
     <script custom-element="amp-bind" src="https://cdn.ampproject.org/v0/amp-bind-0.1.js" async=""></script>
     <script custom-element="amp-carousel" src="https://cdn.ampproject.org/v0/amp-carousel-0.1.js" async=""></script>
@@ -135,12 +136,12 @@ limitations under the License.
                     <h3>{{title $area}}</h3>
                     {{range $key, $item := $items}}
                         <div style="padding-left:16px; /* height:260px; */ overflow:hidden; margin-bottom: 12px;" class="md-result-list relative md-flex flex-wrap items-center md-mx0">
-                            <a style="text-decoration: none;" href="{{$baseurl}}/search/{{$item.Signature}}">
                                 <div style="display:table;">
                                     <div style="display:table-row; width:100%;">
                                         <div style="display:table-cell; width:260px; /* height:260px; */ padding-right:16px; vertical-align: top;">
                                             {{if $item.Poster}}
                                                 {{$image := $item.Poster}}
+                                                <a style="text-decoration: none;" href="{{$baseurl}}/search/{{$item.Signature}}">
                                                 <amp-img
                                                         aria-label="{{$image.Name}}"
                                                         src="{{medialink $image.Uri "resize" "size260x260/formatWEBP" false}}"
@@ -159,18 +160,25 @@ limitations under the License.
                                                         <div placeholder="" class="commerce-loader"></div>
                                                     </amp-img>
                                                 </amp-img>
+                                                </a>
                                             {{end}}
                                         </div>
                                         <div style="display:table-cell; vertical-align: top;">
                                             <div style="height:100%; overflow:hidden;">
+                                                <a style="text-decoration: none;" href="{{$baseurl}}/search/{{$item.Signature}}">
                                                 <b>{{$item.Title}}</b>
                                                 {{if not (eq $item.Date "")}}<br />{{$item.Date}}{{end}}
-                                                {{if len $item.Abstract}}<p style="padding-top:10px;">{{$item.Abstract}}</p>{{end}}
+                                                </a>
+                                                {{if len $item.Abstract}}
+                                                    <amp-truncate-text style="padding-top:10px; width:100vh;" layout="fixed-height" height="8em">
+                                                    {{$item.Abstract}}
+                                                    <button class="gsearch-btn gsearch-btn-seemore caps" slot="collapsed">See more</button>
+                                                </amp-truncate-text>
+                                                <!-- <p style="padding-top:10px;">{{$item.Abstract}}</p> -->{{end}}
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </a>
                         </div>
                     {{end}}
                 {{end}}

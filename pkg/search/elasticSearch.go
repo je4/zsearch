@@ -96,13 +96,18 @@ type tElasticMGetResult struct {
 }
 
 type tElasticSearch struct {
-	From         int64                       `json:"from"`
-	Size         int64                       `json:"size"`
-	Query        *tElasticQuery              `json:"query"`
-	Aggregations *tElasticSearchAggregations `json:"aggs,omitempty"`
-	PostFilter   *tElasticQuery              `json:"post_filter,omitempty"`
+	From           int64                       `json:"from"`
+	Size           int64                       `json:"size"`
+	Query          *tElasticQuery              `json:"query"`
+	Aggregations   *tElasticSearchAggregations `json:"aggs,omitempty"`
+	PostFilter     *tElasticQuery              `json:"post_filter,omitempty"`
+	TrackTotalHits bool                        `json:"track_total_hits,omitempty"`
 }
 
+func (s *tElasticSearch) withTrackTotalHits() *tElasticSearch {
+	s.TrackTotalHits = true
+	return s
+}
 func elasticSearch(query *tElasticQuery, aggregations *tElasticSearchAggregations, postfilter *tElasticQuery, from, size int64) *tElasticSearch {
 	return &tElasticSearch{
 		From:         from,
@@ -212,33 +217,24 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]*SourceData, int64, Fac
 	if len(cfg.filters_fields) > 0 {
 		for fld, vals := range cfg.filters_fields {
 			for _, val := range vals {
-				if fld == "category" {
+				switch fld {
+				case "category":
 					filters = append(filters, elasticPrefixQuery(fld, val).FieldValue())
-				} else {
+				case "persons.name":
+					filters = append(filters, elasticNestedQuery("persons",
+						elasticQuery().withBooleanQuery(elasticBooleanQuery(0).withMust(elasticMatchQuery(fld, val).FieldValue()))).FieldValue())
+				default:
 					filters = append(filters, elasticTermQuery(fld, val, 0).FieldValue())
 				}
 			}
 		}
 	}
-	/*
-		if len(cfg.filters_general) > 0 {
-			qstr := ""
-			for _, slice := range cfg.filters_general {
-				slice = strings.TrimSpace(slice)
-				qstr += " " + slice
-			}
-			matchqueries = append(matchqueries,
-				elasticSimpleQueryString(qstr).
-				withFields([]string{"title^5", "person.name^4", "abstract^1", "notes^1"}).
-				withOperatorOR().
-				FieldValue())
-		}
-	*/
+
 	qstr := strings.TrimSpace(cfg.qstr)
 	if len(qstr) > 0 {
 		matchqueries = append(matchqueries,
 			elasticSimpleQueryString(qstr).
-				withFields([]string{"title^5", "person.name^4", "abstract^1", "notes^1"}).
+				withFields([]string{"title^5", "persons.name^4", "abstract^1", "notes^1"}).
 				withOperatorOR().
 				FieldValue())
 	}
@@ -276,7 +272,7 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]*SourceData, int64, Fac
 		))
 	}
 
-	fq := elasticSearch(query, aggregations, postfilter, int64(cfg.start), int64(cfg.rows))
+	fq := elasticSearch(query, aggregations, postfilter, int64(cfg.start), int64(cfg.rows)).withTrackTotalHits()
 	jsonstr, err := json.MarshalIndent(fq, "", "   ")
 	if err != nil {
 		return nil, 0, nil, emperror.Wrapf(err, "cannot marshal %v", fq)
@@ -291,14 +287,6 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]*SourceData, int64, Fac
 		return nil, 0, nil, emperror.Wrapf(err, "cannot query %v", string(jsonstr))
 	}
 	defer res.Body.Close()
-
-	/*
-		var mapResp map[string]interface{}
-		if err := json.NewDecoder(res.Body).Decode(&mapResp); err != nil {
-			return nil, 0, nil, emperror.Wrap(err, "cannot unmarshal result")
-		}
-
-	*/
 
 	var result tElasticResult
 	if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
