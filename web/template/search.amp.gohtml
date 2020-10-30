@@ -295,7 +295,7 @@ limitations under the License.
                                 {{range $key2, $val := $vals}}
                                     <button id="button_filter_{{js ($key2 | toString)}}_{{js ($key | replace "." "_")}}"
                                             class="gsearch-facet-inv caps"
-                                            on="tap:AMP.setState({filter_{{js ($key2 | toString)}}_{{js ($key | replace "." "_")}}: '' }),button_filter_{{js ($key2 | toString)}}_{{js ($key | replace "." "_")}}.toggleVisibility">
+                                            on="tap:AMP.setState({filter_{{js ($key2 | toString)}}_{{js ($key | replace "." "_")}}: '' }),button_filter_{{js ($key2 | toString)}}_{{js ($key | replace "." "_")}}.toggleVisibility,search.submit">
                                         {{$key}}: {{$val}} X
                                     </button>
                                 {{end}}
@@ -428,7 +428,7 @@ limitations under the License.
                 -------------------------------- -->
                 <div class="md-hide lg-hide">
                     {{range $key, $field := .Result.Items}}
-                            <div class="md-result-list relative md-flex flex-wrap items-center md-mx0 pl2 overflow-hidden" style="height:6.5em; margin-bottom: 2px;">
+                            <div class="md-result-list relative md-flex flex-wrap items-center md-mx0 pl2 overflow-hidden" style="padding-bottom: 7px;">
                                 <a class="text-decoration-none" href="{{$field.Link}}">
                                 <div class="table">
                                     <div class="tr">
@@ -479,6 +479,15 @@ limitations under the License.
                                         </div>
                                     </div>
                                 </div>
+                                    {{if $field.Highlight}}
+                                        <div class="highlightbox">
+                                            {{range $fld, $hls := $field.Highlight}}
+                                                {{range $hl := $hls}}
+                                                    {{html $hl}}
+                                                {{end}}
+                                            {{end}}
+                                        </div>
+                                    {{end}}
                                 </a>
                             </div>
                     {{end}}
