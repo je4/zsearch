@@ -20,5 +20,5 @@ type SearchConfig struct {
 type SearchEngine interface {
 	Update(source Source, ms mediaserver.Mediaserver) error
 	LoadDocs(ids []string, ctx context.Context) (map[string]*SourceData, error)
-	Search(cfg *SearchConfig) ([]*SourceData, int64, FacetCountResult, error)
+	Search(cfg *SearchConfig) ([]map[string][]string, []*SourceData, int64, FacetCountResult, error)
 }

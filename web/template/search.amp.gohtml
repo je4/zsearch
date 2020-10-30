@@ -187,6 +187,18 @@ limitations under the License.
        {{.Facet}}
         </script>
     </amp-state>
+
+    {{range $key, $vals := .Filter}}
+        {{range $key2, $val := $vals}}
+            <amp-state id="state_filter_{{js ($key2 | toString)}}_{{js ($key | replace "." "_")}}">
+                <script type="application/json">
+               {{$val}}
+                </script>
+            </amp-state>
+        {{end}}
+    {{end}}
+
+
     <!-- END - virtual states for search interaction -->
     <section class="commerce-listing-content mx-auto flex flex-wrap pb4">
             <!-- BEGIN - Facets wide -->
@@ -236,6 +248,11 @@ limitations under the License.
                         <input type="hidden" name="start" value="0" [value]="SearchResultStart"/>
                         <input type="hidden" name="lastsearch" value="" [value]="SearchResultSearch"/>
                         <input type="hidden" name="visible" value="" [value]="SearchResultVisible"/>
+                        {{range $key, $vals := .Filter}}
+                            {{range $key2, $val := $vals}}
+                                <input type="hidden" name="filter_{{js ($key2 | toString)}}_{{js ($key | replace "." "_")}}" value="{{$val}}" [value]="filter_{{js ($key2 | toString)}}_{{js ($key | replace "." "_")}}"/>
+                            {{end}}
+                        {{end}}
                         {{range $key, $type := .Facet}}
                             {{range $facet,$val := $type}}
                                 <input type="hidden"
@@ -272,6 +289,18 @@ limitations under the License.
                     </form>
                     <!-- END - Form -->
                     <div class="commerce-listing-filters pt2 pb2 mb3 md-mb0">
+                        <!-- BEGIN - Filter big -->
+                        <div class="commerce-select-wrapper inline-block md-mr1 pl2">
+                            {{range $key, $vals := .Filter}}
+                                {{range $key2, $val := $vals}}
+                                    <button id="button_filter_{{js ($key2 | toString)}}_{{js ($key | replace "." "_")}}"
+                                            class="gsearch-facet-inv caps"
+                                            on="tap:AMP.setState({filter_{{js ($key2 | toString)}}_{{js ($key | replace "." "_")}}: '' }),button_filter_{{js ($key2 | toString)}}_{{js ($key | replace "." "_")}}.toggleVisibility">
+                                        {{$key}}: {{$val}} X
+                                    </button>
+                                {{end}}
+                            {{end}}
+                        </div>
                         <!-- BEGIN - Facets small -->
                         <div class="commerce-select-wrapper inline-block md-mr1 pl2 md-hide lg-hide">
                             {{range $key, $type := .Facet}}
@@ -324,7 +353,7 @@ limitations under the License.
                     {{range $key, $field := .Result.Items}}
                         <div style="margin-bottom: 2px;" class="md-result-list relative md-flex flex-wrap items-center md-mx0 pl2 pb1 overflow-hidden">
                             <a class="text-decoration-none" href="{{$field.Link}}">
-                            <div class="table">
+                            <div class="table full-width">
                                 <div class="tr full-width">
                                     <div class="td align-top" style="width:130px;">
                                         <b>{{$field.AuthorText}}</b>
@@ -378,6 +407,15 @@ limitations under the License.
                                     </div>
                                 </div>
                             </div>
+                            {{if $field.Highlight}}
+                            <div class="highlightbox">
+                                {{range $fld, $hls := $field.Highlight}}
+                                    {{range $hl := $hls}}
+                                        {{html $hl}}
+                                    {{end}}
+                                {{end}}
+                            </div>
+                            {{end}}
                             </a>
                         </div>
                     {{end}}

@@ -9,6 +9,10 @@
     display: table-cell;
 }
 
+.colspan-all {
+    column-span: all;
+}
+
 .header-table {
     width: calc(100% - 24px);
 }

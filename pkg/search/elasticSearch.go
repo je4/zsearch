@@ -40,11 +40,12 @@ type tElasticResultShards struct {
 }
 
 type tElasticResultHitsEntry struct {
-	Index  string     `json:"_index"`
-	Type   string     `json:"_type"`
-	Id     string     `json:"_id"`
-	Score  float64    `json:"_score"`
-	Source SourceData `json:"_source"`
+	Index     string              `json:"_index"`
+	Type      string              `json:"_type"`
+	Id        string              `json:"_id"`
+	Score     float64             `json:"_score"`
+	Source    SourceData          `json:"_source"`
+	Highlight map[string][]string `json:"highlight,omitempty"`
 }
 
 type tElasticResultHitsTotal struct {
@@ -101,6 +102,7 @@ type tElasticSearch struct {
 	Query          *tElasticQuery              `json:"query"`
 	Aggregations   *tElasticSearchAggregations `json:"aggs,omitempty"`
 	PostFilter     *tElasticQuery              `json:"post_filter,omitempty"`
+	Highlight      *tElasticHighlight          `json:"highlight,omitempty"`
 	TrackTotalHits bool                        `json:"track_total_hits,omitempty"`
 }
 
@@ -108,13 +110,14 @@ func (s *tElasticSearch) withTrackTotalHits() *tElasticSearch {
 	s.TrackTotalHits = true
 	return s
 }
-func elasticSearch(query *tElasticQuery, aggregations *tElasticSearchAggregations, postfilter *tElasticQuery, from, size int64) *tElasticSearch {
+func elasticSearch(query *tElasticQuery, aggregations *tElasticSearchAggregations, postfilter *tElasticQuery, highlight *tElasticHighlight, from, size int64) *tElasticSearch {
 	return &tElasticSearch{
 		From:         from,
 		Size:         size,
 		Query:        query,
 		Aggregations: aggregations,
 		PostFilter:   postfilter,
+		Highlight:    highlight,
 	}
 }
 
@@ -201,7 +204,7 @@ func (mte *MTElasticSearch) LoadDocs(ids []string, ctx context.Context) (map[str
 	return result, nil
 }
 
-func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]*SourceData, int64, FacetCountResult, error) {
+func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]map[string][]string, []*SourceData, int64, FacetCountResult, error) {
 	query := elasticQuery()
 
 	filters := []*tElasticFieldValue{}
@@ -272,10 +275,19 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]*SourceData, int64, Fac
 		))
 	}
 
-	fq := elasticSearch(query, aggregations, postfilter, int64(cfg.start), int64(cfg.rows)).withTrackTotalHits()
+	var highlight *tElasticHighlight
+	if len(matchqueries) > 0 {
+		highlight = elasticHighlight().
+			withField("abstract", elasticHighlightField()).
+			withField("notes", elasticHighlightField()).
+			withTags([]string{`<span class="highlight">`}, []string{`</span>`})
+	}
+
+	fq := elasticSearch(query, aggregations, postfilter, highlight, int64(cfg.start), int64(cfg.rows)).withTrackTotalHits()
+
 	jsonstr, err := json.MarshalIndent(fq, "", "   ")
 	if err != nil {
-		return nil, 0, nil, emperror.Wrapf(err, "cannot marshal %v", fq)
+		return nil, nil, 0, nil, emperror.Wrapf(err, "cannot marshal %v", fq)
 	}
 	buf := bytes.NewBuffer(jsonstr)
 	res, err := mte.es.Search(
@@ -284,13 +296,13 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]*SourceData, int64, Fac
 		mte.es.Search.WithTrackTotalHits(true),
 	)
 	if err != nil {
-		return nil, 0, nil, emperror.Wrapf(err, "cannot query %v", string(jsonstr))
+		return nil, nil, 0, nil, emperror.Wrapf(err, "cannot query %v", string(jsonstr))
 	}
 	defer res.Body.Close()
 
 	var result tElasticResult
 	if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
-		return nil, 0, nil, emperror.Wrap(err, "cannot unmarshal result")
+		return nil, nil, 0, nil, emperror.Wrap(err, "cannot unmarshal result")
 	}
 	if res.IsError() {
 		errstr := fmt.Sprintf(
@@ -300,11 +312,13 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]*SourceData, int64, Fac
 			result.Error.CausedBy.Line,
 			result.Error.CausedBy.Col,
 		)
-		return nil, 0, nil, fmt.Errorf("%s\n%s", errstr, jsonstr)
+		return nil, nil, 0, nil, fmt.Errorf("%s\n%s", errstr, jsonstr)
 	}
 
 	sdarr := []*SourceData{}
+	highlightarr := []map[string][]string{}
 	for _, sd := range result.Hits.Hits {
+		highlightarr = append(highlightarr, sd.Highlight)
 		x := sd.Source
 		sdarr = append(sdarr, &x)
 	}
@@ -315,5 +329,5 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]*SourceData, int64, Fac
 			fcr[name][bucket.Key] = int(bucket.DocCount)
 		}
 	}
-	return sdarr, result.Hits.Total.Value, fcr, nil
+	return highlightarr, sdarr, result.Hits.Total.Value, fcr, nil
 }

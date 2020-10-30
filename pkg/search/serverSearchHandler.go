@@ -30,7 +30,8 @@ import (
 
 var facetDefRegexp = regexp.MustCompile("^([^:]+):(.+:)?([0-9-]+)$")
 var facetValRegexp = regexp.MustCompile("^(.+)\\.(true|false)$")
-var facetRegex = regexp.MustCompile("^facet_([^_]+)_(.+)$")
+var facetRegexp = regexp.MustCompile("^facet_([^_]+)_(.+)$")
+var filterRegexp = regexp.MustCompile("^filter_[0-9]+_(.+)$")
 
 func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 	var facetCounter int64 = 1000
@@ -63,10 +64,10 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		LoginUrl:      s.loginUrl,
 		Title:         "Search",
 		QueryApi:      "api/search",
-		//FacetCount:    make(map[string]FacetCountField),
-		Facet:      make(map[string]map[string]FacetCountField),
-		Menu:       s.menu,
-		CoreFacets: []string{},
+		Facet:         make(map[string]map[string]FacetCountField),
+		Menu:          s.menu,
+		CoreFacets:    []string{},
+		Filter:        make(map[string][]string),
 	}
 
 	jwt, ok := req.URL.Query()["token"]
@@ -133,12 +134,14 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 	var start int64 = 0
 	var rows int64 = 10
 	var search, lastsearch string
+	var filterOrg = make(map[string][]string)
 
 	for key, vals := range req.URL.Query() {
 		if len(vals) == 0 {
 			continue
 		}
 		val := vals[0]
+		val = strings.TrimSpace(val)
 		switch key {
 		case "start":
 			start, _ = strconv.ParseInt(val, 10, 64)
@@ -151,7 +154,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		case "visible":
 			status.SearchResultVisible = val == "true"
 		default:
-			if found := facetRegex.FindStringSubmatch(key); found != nil {
+			if found := facetRegexp.FindStringSubmatch(key); found != nil {
 				fld := found[1]
 				if m := facetValRegexp.FindStringSubmatch(val); m != nil {
 					if _, ok := facets[fld]; !ok {
@@ -168,6 +171,16 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 						//facets[fld].selected[v] = false
 					}
 				}
+			} else {
+				if found := filterRegexp.FindStringSubmatch(key); found != nil {
+					fld := found[1]
+					if _, ok := filterOrg[fld]; !ok {
+						filterOrg[fld] = []string{}
+					}
+					if val != "" {
+						filterOrg[fld] = append(filterOrg[fld], val)
+					}
+				}
 			}
 		}
 	}
@@ -179,7 +192,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		start = 0
 	}
 
-	filter_field, qstr := s.string2QList(search)
+	filterOrg, filterField, qstr := s.string2QList(search, filterOrg)
 	subfiltername, ok := vars["subfilter"]
 	if ok {
 		var f *SubFilter = nil
@@ -203,13 +216,13 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 			}
 			if filter, ok := (*doc.Meta)["Archive"]; ok {
 				// todo: deal with search string
-				ff, _ /* fg */ := s.string2QList(filter)
+				_, ff, _ /* fg */ := s.string2QList(filter, nil)
 				//filter_general = append(filter_general, fg...)
 				for fld, vals := range ff {
-					if _, ok := filter_field[fld]; !ok {
-						filter_field[fld] = []string{}
+					if _, ok := filterField[fld]; !ok {
+						filterField[fld] = []string{}
 					}
-					filter_field[fld] = append(filter_field[fld], vals...)
+					filterField[fld] = append(filterField[fld], vals...)
 				}
 				status.Title = doc.Title
 			}
@@ -238,13 +251,13 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 
 		} else {
 			// todo: deal with search string
-			ff, _ /* fg */ := s.string2QList(f.Filter)
+			_, ff, _ /* fg */ := s.string2QList(f.Filter, nil)
 			//filter_general = append(filter_general, fg...)
 			for fld, vals := range ff {
-				if _, ok := filter_field[fld]; !ok {
-					filter_field[fld] = []string{}
+				if _, ok := filterField[fld]; !ok {
+					filterField[fld] = []string{}
 				}
-				filter_field[fld] = append(filter_field[fld], vals...)
+				filterField[fld] = append(filterField[fld], vals...)
 			}
 			status.Title = f.Name
 		}
@@ -253,7 +266,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 	cfg := &SearchConfig{
 		fields:         make(map[string][]string),
 		qstr:           qstr,
-		filters_fields: filter_field,
+		filters_fields: filterField,
 		facets:         facets,
 		groups:         status.User.Groups,
 		contentVisible: status.SearchResultVisible,
@@ -262,12 +275,12 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		isAdmin:        status.User.inGroup(s.adminGroup),
 	}
 
-	docs, total, facetFieldCount, err := s.mts.Search(cfg)
+	highlights, docs, total, facetFieldCount, err := s.mts.Search(cfg)
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot execute solr query: %v", false, err)
 		return
 	}
-	status.Result, err = s.doc2result("", "", docs, total, facetFieldCount, facets, 0, status.User, "")
+	status.Result, err = s.doc2result("", "", docs, total, facetFieldCount, facets, 0, status.User, "", highlights)
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal result: %v", false, err)
 		return
@@ -279,7 +292,9 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 	status.SearchResultRows = len(docs)
 	status.SearchResultTotal = int(total)
 	status.SearchResultStart = int(start)
-	status.SearchString = search
+	//status.SearchString = search
+	status.SearchString = qstr
+	status.Filter = filterOrg
 	for _, f := range s.facets {
 		vals := f.Restrict
 		facet := f.Field

@@ -97,12 +97,12 @@ type SearchStatus struct {
 	SearchResultRows    int
 	SearchResultTotal   int
 	SearchString        string
+	Filter              map[string][]string
 	SearchResultVisible bool
-	//FacetCount          map[string]FacetCountField
-	Facet           map[string]map[string]FacetCountField
-	CoreFacets      []string
-	Menu            []Menu
-	MetaDescription string
+	Facet               map[string]map[string]FacetCountField
+	CoreFacets          []string
+	Menu                []Menu
+	MetaDescription     string
 }
 
 type CollectionsStatus struct {
@@ -181,24 +181,25 @@ type SearchResult struct {
 }
 
 type SearchResultItem struct {
-	Id            string         `json:"Id"`
-	Type          string         `json:"type"`
-	Title         string         `json:"title"`
-	Text          string         `json:"text"`
-	Collection    string         `json:"collection"`
-	Authors       []string       `json:"authors"`
-	AuthorText    string         `json:"authortext"`
-	Link          string         `json:"link"`
-	FirstItem     bool           `json:"firstitem"`
-	Total         int64          `json:"total,omitempty"`
-	Date          string         `json:"date"`
-	Icon          string         `json:"icon"`
-	Media         map[string]int `json:"media"`
-	MetaPublic    bool           `json:"metapublic"`
-	ContentPublic bool           `json:"contentpublic"`
-	MetaOK        bool           `json:"metaok"`
-	ContentOK     bool           `json:"contentok"`
-	Poster        *Media         `json:"poster"`
+	Id            string              `json:"Id"`
+	Type          string              `json:"type"`
+	Title         string              `json:"title"`
+	Text          string              `json:"text"`
+	Collection    string              `json:"collection"`
+	Authors       []string            `json:"authors"`
+	AuthorText    string              `json:"authortext"`
+	Link          string              `json:"link"`
+	FirstItem     bool                `json:"firstitem"`
+	Total         int64               `json:"total,omitempty"`
+	Date          string              `json:"date"`
+	Icon          string              `json:"icon"`
+	Media         map[string]int      `json:"media"`
+	MetaPublic    bool                `json:"metapublic"`
+	ContentPublic bool                `json:"contentpublic"`
+	MetaOK        bool                `json:"metaok"`
+	ContentOK     bool                `json:"contentok"`
+	Poster        *Media              `json:"poster"`
+	Highlight     map[string][]string `json:"highlight"`
 }
 
 func (ng NetGroups) Contains(str string) []string {
@@ -870,7 +871,7 @@ func (s *Server) __DELETE__string2Query(search string) string {
 	}
 	return qstr
 }
-func (s *Server) string2QList(search string) (map[string][]string, string) {
+func (s *Server) string2QList(search string, filterOrg map[string][]string) (map[string][]string, map[string][]string, string) {
 	slice := rexp.FindAllString(search, -1)
 	if slice == nil {
 		slice = []string{}
@@ -881,6 +882,15 @@ func (s *Server) string2QList(search string) (map[string][]string, string) {
 	//fields := make(map[string][]string)
 	gen := []string{}
 	fldlist := make(map[string][]string)
+	fldlistOrg := filterOrg
+
+	for fld, val := range fldlistOrg {
+		fld, ok := s.searchFields[fld]
+		if !ok {
+			continue
+		}
+		fldlist[fld] = val
+	}
 
 	for _, f := range slice {
 		fldq := rexp2.FindStringSubmatch(f)
@@ -892,16 +902,19 @@ func (s *Server) string2QList(search string) (map[string][]string, string) {
 			val := fldq[2]
 			if _, ok := fldlist[fld]; !ok {
 				fldlist[fld] = []string{}
+				fldlistOrg[fldq[1]] = []string{}
 			}
 			fldlist[fld] = append(fldlist[fld], strings.Trim(val, `""''`))
+			fldlistOrg[fldq[1]] = append(fldlistOrg[fldq[1]], strings.Trim(val, `""''`))
 		} else {
 			gen = append(gen, f)
 		}
 	}
-	return fldlist, strings.TrimSpace(rexp.ReplaceAllString(search, " "))
+	return fldlistOrg, fldlist, strings.TrimSpace(rexp.ReplaceAllString(search, " "))
 }
 
-func (s *Server) doc2result(search string,
+func (s *Server) doc2result(
+	search string,
 	query string,
 	docs []*SourceData,
 	total int64,
@@ -909,7 +922,8 @@ func (s *Server) doc2result(search string,
 	facets map[string]termFacet,
 	start int64,
 	user *User,
-	next string) (*SearchResult, error) {
+	next string,
+	highlight []map[string][]string) (*SearchResult, error) {
 	result := &SearchResult{
 		Items:           []SearchResultItem{},
 		Total:           total,
@@ -1020,6 +1034,10 @@ func (s *Server) doc2result(search string,
 			item.ContentOK = true
 		}
 
+		if hl := highlight[key]; ok {
+			item.Highlight = hl
+		}
+
 		result.Items = append(result.Items, item)
 	}
 	return result, nil
@@ -1034,7 +1052,7 @@ func (s *Server) doc2json(search string,
 	start int64,
 	user *User,
 	next string) ([]byte, error) {
-	result, err := s.doc2result(search, query, docs, total, facetFieldCount, facets, start, user, next)
+	result, err := s.doc2result(search, query, docs, total, facetFieldCount, facets, start, user, next, nil)
 	if err != nil {
 		return nil, emperror.Wrap(err, "cannot format result")
 	}

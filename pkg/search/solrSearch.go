@@ -82,13 +82,13 @@ func solrField2String(fields map[string][]string, general []string) string {
 	return qstr
 }
 
-func (mte *MTSOLRSearch) Search(cfg *SearchConfig) ([]*SourceData, int64, FacetCountResult, error) {
+func (mte *MTSOLRSearch) Search(cfg *SearchConfig) ([]map[string][]string, []*SourceData, int64, FacetCountResult, error) {
 	// todo: query string wrong
 	qstr := solrField2String(cfg.fields, []string{cfg.qstr})
 	filter := solrField2String(cfg.filters_fields, []string{cfg.qstr})
 	docs, num, fts, err := mte.ss.Search(qstr, []string{filter}, cfg.facets, cfg.groups, cfg.contentVisible, cfg.start, cfg.rows, cfg.isAdmin)
 	if err != nil {
-		return nil, 0, nil, emperror.Wrap(err, "cannot search docs")
+		return nil, nil, 0, nil, emperror.Wrap(err, "cannot search docs")
 	}
 	var result []*SourceData
 	for _, doc := range docs {
@@ -100,5 +100,5 @@ func (mte *MTSOLRSearch) Search(cfg *SearchConfig) ([]*SourceData, int64, FacetC
 		}
 		result = append(result, src)
 	}
-	return result, num, fts, nil
+	return nil, result, num, fts, nil
 }

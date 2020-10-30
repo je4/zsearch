@@ -124,7 +124,7 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 		rows:           int(1000),
 		isAdmin:        status.User.inGroup(s.adminGroup),
 	}
-	docs, total, _, err := s.mts.Search(cfg)
+	_, docs, total, _, err := s.mts.Search(cfg)
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot execute solr query: %v", false, err)
 		return

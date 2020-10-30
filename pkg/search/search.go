@@ -134,12 +134,12 @@ func (s *Search) LoadEntity(id string) (*SourceData, error) {
 	return e, nil
 }
 
-func (s *Search) Search(cfg *SearchConfig) ([]*SourceData, int64, FacetCountResult, error) {
+func (s *Search) Search(cfg *SearchConfig) ([]map[string][]string, []*SourceData, int64, FacetCountResult, error) {
 
-	result, num, fts, err := s.se.Search(cfg)
+	highlights, result, num, fts, err := s.se.Search(cfg)
 	if err != nil {
-		return nil, 0, nil, emperror.Wrap(err, "cannot search")
+		return nil, nil, 0, nil, emperror.Wrap(err, "cannot search")
 	}
 
-	return result, num, fts, nil
+	return highlights, result, num, fts, nil
 }

@@ -15,6 +15,22 @@
         color: rgba(255,255,255,1)
     }
 
+    .highlight {
+        color: yellow;
+        background-color: #222222;
+    }
+
+    .highlightbox {
+        padding-left: 10px;
+        padding-right: 10px;
+        margin-top: 5px;
+        margin-left: 20px;
+        margin-right: 20px;
+        border-left: 1px solid #666666;
+        border-right: 1px solid #666666;
+        font-style: italic;
+    }
+
     .amp-mode-mouse  {
         background-color: #121212;
         color: white;
