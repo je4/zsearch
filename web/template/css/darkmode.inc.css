@@ -27,8 +27,8 @@
         margin-top: 5px;
         margin-left: 20px;
         margin-right: 20px;
-        border-left: 1px solid #666666;
-        border-right: 1px solid #666666;
+        /* border-left: 1px solid #666666;
+        border-right: 1px solid #666666; */
         font-style: italic;
     }
 

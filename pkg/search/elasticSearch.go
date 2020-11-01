@@ -236,10 +236,23 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]map[string][]string, []
 	qstr := strings.TrimSpace(cfg.qstr)
 	if len(qstr) > 0 {
 		matchqueries = append(matchqueries,
+			elasticNestedQuery("media.pdf", elasticQuery().withBooleanQuery(elasticBooleanQuery(0).withMust(
+				elasticSimpleQueryString(qstr).
+					withFields([]string{"media.pdf.fulltext^1"}).
+					withOperatorOR().
+					FieldValue()))).FieldValue())
+		matchqueries = append(matchqueries,
+			elasticNestedQuery("persons", elasticQuery().withBooleanQuery(elasticBooleanQuery(0).withMust(
+				elasticSimpleQueryString(qstr).
+					withFields([]string{"persons.name^5"}).
+					withOperatorOR().
+					FieldValue()))).FieldValue())
+		matchqueries = append(matchqueries,
 			elasticSimpleQueryString(qstr).
-				withFields([]string{"title^5", "persons.name^4", "abstract^1", "notes^1"}).
+				withFields([]string{"title^4", "abstract^3", "notes^3"}).
 				withOperatorOR().
 				FieldValue())
+
 	}
 	bq := elasticBooleanQuery(0)
 	if len(matchqueries) > 0 {
@@ -280,6 +293,7 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]map[string][]string, []
 		highlight = elasticHighlight().
 			withField("abstract", elasticHighlightField()).
 			withField("notes", elasticHighlightField()).
+			withField("media.pdf.fulltext", elasticHighlightField()).
 			withTags([]string{`<span class="highlight">`}, []string{`</span>`})
 	}
 
