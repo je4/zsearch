@@ -6,4 +6,5 @@ type Mediaserver interface {
 	GetCollectionById(id int64) (*Collection, error)
 	CreateMasterUrl(collection, signature, url string) error
 	GetMetadata(collection, signature string) (*Metadata, error)
+	GetFulltext(collection, signature string) (string, error)
 }

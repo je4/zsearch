@@ -195,3 +195,31 @@ func (ms *MediaserverMySQL) GetMetadata(collection, signature string) (*Metadata
 	}
 	return result, nil
 }
+
+func (ms *MediaserverMySQL) GetFulltext(collection, signature string) (string, error) {
+	coll, err := ms.GetCollectionByName(collection)
+	if err != nil {
+		return "", emperror.Wrapf(err, "cannot find collection %s", collection)
+	}
+
+	url := fmt.Sprintf("%s/%s/%s/fulltext", ms.base, collection, signature)
+	if coll.JWTKey != "" {
+		// todo: test this
+		sub := strings.ToLower(fmt.Sprintf("mediaserver:%s/%s/fulltext", collection, signature))
+		key, err := NewJWT(coll.JWTKey, sub, 1800)
+		if err != nil {
+			return "", emperror.Wrapf(err, "cannot build jwt token")
+		}
+		url += fmt.Sprintf("?token=%s", key)
+	}
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", emperror.Wrapf(err, "cannot load url %s", url)
+	}
+	defer resp.Body.Close()
+	var buf bytes.Buffer
+	if _, err := io.Copy(&buf, resp.Body); err != nil {
+		return "", emperror.Wrapf(err, "cannot read result data from url %s", url)
+	}
+	return buf.String(), nil
+}

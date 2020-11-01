@@ -251,6 +251,14 @@ func (item *Item) GetMedia(ms mediaserver.Mediaserver) map[string]MediaList {
 				item.Group.Zot.Logger.Errorf("cannot get metadata for %s/%s", collection, signature)
 				continue
 			}
+			var fulltext string
+			if metadata.Type == "pdf" {
+				fulltext, err = ms.GetFulltext(collection, signature)
+				if err != nil {
+					item.Group.Zot.Logger.Errorf("cannot get fulltext for %s/%s", collection, signature)
+					continue
+				}
+			}
 			name := child.Data.Title
 			if name == "" {
 				name = fmt.Sprintf("#%v.%v", item.Group.Id, child.Key)
@@ -263,10 +271,13 @@ func (item *Item) GetMedia(ms mediaserver.Mediaserver) map[string]MediaList {
 				Width:    metadata.Width,
 				Height:   metadata.Height,
 				Duration: metadata.Duration,
+				Fulltext: fulltext,
 			}
+
 			if _, ok := medias[media.Type]; !ok {
 				medias[media.Type] = []Media{}
 			}
+
 			medias[media.Type] = append(medias[media.Type], media)
 		}
 	}

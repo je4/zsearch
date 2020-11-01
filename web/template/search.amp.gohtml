@@ -250,7 +250,7 @@ limitations under the License.
                         <input type="hidden" name="visible" value="" [value]="SearchResultVisible"/>
                         {{range $key, $vals := .Filter}}
                             {{range $key2, $val := $vals}}
-                                <input type="hidden" name="filter_{{js ($key2 | toString)}}_{{js ($key | replace "." "_")}}" value="{{$val}}" [value]="filter_{{js ($key2 | toString)}}_{{js ($key | replace "." "_")}}"/>
+                                <input type="hidden" name="filter_{{js ($key2 | toString)}}_{{js ($key | replace "." "_")}}" value="{{$val}}" [value]="state_filter_{{js ($key2 | toString)}}_{{js ($key | replace "." "_")}}"/>
                             {{end}}
                         {{end}}
                         {{range $key, $type := .Facet}}
@@ -295,7 +295,7 @@ limitations under the License.
                                 {{range $key2, $val := $vals}}
                                     <button id="button_filter_{{js ($key2 | toString)}}_{{js ($key | replace "." "_")}}"
                                             class="gsearch-facet-inv caps"
-                                            on="tap:AMP.setState({filter_{{js ($key2 | toString)}}_{{js ($key | replace "." "_")}}: '' }),button_filter_{{js ($key2 | toString)}}_{{js ($key | replace "." "_")}}.toggleVisibility,search.submit">
+                                            on="tap:AMP.setState({state_filter_{{js ($key2 | toString)}}_{{js ($key | replace "." "_")}}: '' }),button_filter_{{js ($key2 | toString)}}_{{js ($key | replace "." "_")}}.toggleVisibility,search.submit">
                                         {{$key}}: {{$val}} X
                                     </button>
                                 {{end}}

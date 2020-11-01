@@ -214,9 +214,6 @@
           "image": {
             "type": "nested",
             "properties": {
-              "duration": {
-                "type": "long"
-              },
               "height": {
                 "type": "long"
               },
@@ -308,6 +305,9 @@
               },
               "width": {
                 "type": "long"
+              },
+              "fulltext": {
+                "type": "text"
               }
             }
           },
@@ -360,6 +360,50 @@
                 "type": "long"
               }
             }
+          },
+          "audio": {
+            "type": "nested",
+            "properties": {
+              "duration": {
+                "type": "long"
+              },
+              "mimetype": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  }
+                }
+              },
+              "name": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  }
+                }
+              },
+              "type": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  }
+                }
+              },
+              "uri": {
+                "type": "text",
+                "fields": {
+                  "keyword": {
+                    "type": "keyword",
+                    "ignore_above": 256
+                  }
+                }
+              }
+            }
           }
         }
       },
@@ -384,22 +428,6 @@
       "notes": {
         "properties": {
           "note": {
-            "type": "text"
-          },
-          "title": {
-            "type": "text",
-            "fields": {
-              "keyword": {
-                "type": "keyword",
-                "ignore_above": 256
-              }
-            }
-          }
-        }
-      },
-      "content": {
-        "properties": {
-          "content": {
             "type": "text"
           },
           "title": {

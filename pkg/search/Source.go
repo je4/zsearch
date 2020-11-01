@@ -55,9 +55,10 @@ type Media struct {
 	Mimetype string `json:"mimetype"`
 	Type     string `json:"type"`
 	Uri      string `json:"uri"`
-	Width    int64  `json:"width"`
-	Height   int64  `json:"height"`
-	Duration int64  `json:"duration"`
+	Width    int64  `json:"width,omitempty"`
+	Height   int64  `json:"height,omitempty"`
+	Duration int64  `json:"duration,omitempty"`
+	Fulltext string `json:"fulltext,omitempty"`
 }
 
 type Query struct {

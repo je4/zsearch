@@ -16,11 +16,12 @@
     }
 
     .highlight {
-        color: yellow;
-        background-color: #222222;
+        color: white;
+        /* background-color: #222222; */
     }
 
     .highlightbox {
+        color: #6a6a6a;
         padding-left: 10px;
         padding-right: 10px;
         margin-top: 5px;
