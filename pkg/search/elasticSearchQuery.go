@@ -174,7 +174,7 @@ https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-simple
 */
 type tElasticSimpleQueryString struct {
 	Query           string   `json:"query"`
-	Fields          []string `json:"fields,omitempty"`
+	Fields          []string `json:"Fields,omitempty"`
 	DefaultOperator string   `json:"default_operator,omitempty"`
 }
 

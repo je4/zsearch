@@ -57,7 +57,6 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 		LoginUrl:      s.loginUrl,
 		Title:         "Collections",
 		QueryApi:      "api/search",
-		Menu:          s.menu,
 		Result:        map[string][]*SourceData{},
 	}
 
@@ -115,14 +114,14 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 
 	var facets map[string]termFacet
 	cfg := &SearchConfig{
-		filters_fields: filters_fields,
-		qstr:           "",
-		facets:         facets,
-		groups:         status.User.Groups,
-		contentVisible: status.SearchResultVisible,
-		start:          int(0),
-		rows:           int(1000),
-		isAdmin:        status.User.inGroup(s.adminGroup),
+		FiltersFields:  filters_fields,
+		QStr:           "",
+		Facets:         facets,
+		Groups:         status.User.Groups,
+		ContentVisible: status.SearchResultVisible,
+		Start:          int(0),
+		Rows:           int(1000),
+		IsAdmin:        status.User.inGroup(s.adminGroup),
 	}
 	_, docs, total, _, err := s.mts.Search(cfg)
 	if err != nil {

@@ -7,14 +7,14 @@ type JSONRangeFacetMap JSONFacetMap
 func CreateJSONRangeFacetMap(field string, start, end, gap interface{}) (*JSONRangeFacetMap, error) {
 	xType := fmt.Sprintf("%T", start)
 	if xType != fmt.Sprintf("%T", end) {
-		return nil, fmt.Errorf("start, end, gap must be of same type: %T - %T - %T", start, end, gap)
+		return nil, fmt.Errorf("SearchResultStart, end, gap must be of same type: %T - %T - %T", start, end, gap)
 	}
 	if xType != fmt.Sprintf("%T", gap) {
-		return nil, fmt.Errorf("start, end, gap must be of same type: %T - %T - %T", start, end, gap)
+		return nil, fmt.Errorf("SearchResultStart, end, gap must be of same type: %T - %T - %T", start, end, gap)
 	}
 	jfm := CreateJSONFacetMap("range")
 	(*jfm)["field"] = field
-	(*jfm)["start"] = start
+	(*jfm)["SearchResultStart"] = start
 	(*jfm)["end"] = end
 	(*jfm)["gap"] = gap
 	return (*JSONRangeFacetMap)(jfm), nil
@@ -36,7 +36,7 @@ public String toString() { return value; }
 */
 
 /**
- * Indicates that an additional range bucket(s) should be computed and added to those computed for {@code start} and {@code end}
+ * Indicates that an additional range bucket(s) should be computed and added to those computed for {@code SearchResultStart} and {@code end}
  *
  * See {@link OtherBuckets} for possible options.
  */

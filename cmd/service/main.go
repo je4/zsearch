@@ -21,7 +21,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	resp, err := svc.Cse.List().Q(query).Cx(cx).Do()
+	resp, err := svc.Cse.List().Q(query).Cx(cx).Num(10).Start(10).Do()
 	if err != nil {
 		log.Fatal(err)
 	}

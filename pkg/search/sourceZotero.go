@@ -206,7 +206,7 @@ func (item *Item) GetMedia(ms mediaserver.Mediaserver) map[string]MediaList {
 					// if not, create mediaserver entry
 					collection = fmt.Sprintf("zotero_%v", item.Group.Id)
 					signature = fmt.Sprintf("%v.%v_url", item.Group.Id, child.Key)
-					if err := ms.CreateMasterUrl(collection, signature, child.Data.Url); err != nil {
+					if err := ms.CreateMasterUrl(collection, signature, child.Data.Link); err != nil {
 						item.Group.Zot.Logger.Errorf("cannot create mediaserver entry for item #%v.%s %s/%s",
 							item.Group.Id,
 							child.Key,
@@ -357,7 +357,7 @@ func (item *Item) GetAbstract() string {
 	return zotero.TextNoMeta(item.Data.AbstractNote + "\n" + item.Data.Extra)
 }
 
-var zoterolinkregexp = regexp.MustCompile("^https?://org/groups/([^/]+)/items/([^/]+)$")
+var zoterolinkregexp = regexp.MustCompile("^https?://org/Groups/([^/]+)/items/([^/]+)$")
 
 func (item *Item) GetReferences() []Reference {
 	var references []Reference

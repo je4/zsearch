@@ -17,12 +17,14 @@ limitations under the License.
 package search
 
 import (
+	"crypto/md5"
 	"errors"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/golang/snappy"
 	"github.com/goph/emperror"
 	"github.com/op/go-logging"
+	"go.mongodb.org/mongo-driver/bson"
 	"golang.org/x/net/idna"
 	"net/http"
 	"net/url"
@@ -36,6 +38,14 @@ var _logformat = logging.MustStringFormatter(
 )
 
 var bearerPrefix = "Bearer "
+
+func Hash(data interface{}) ([16]byte, error) {
+	d, err := bson.Marshal(data)
+	if err != nil {
+		return [16]byte{}, emperror.Wrap(err, "cannot marshal data")
+	}
+	return md5.Sum(d), nil
+}
 
 func Compress(data []byte) []byte {
 	return snappy.Encode(nil, data)
@@ -231,7 +241,7 @@ func NewJWT(secret string, subject string, alg string, valid int64, domain strin
 		"sub": strings.ToLower(subject),
 		"exp": exp,
 	}
-	// keep jwt short, no empty fields
+	// keep jwt short, no empty Fields
 	if domain != "" {
 		claims["aud"] = domain
 	}

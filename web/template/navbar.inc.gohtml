@@ -24,14 +24,10 @@
     </div>
     <nav class="gsearch-sidebar-nav gsearch-nav">
         <ul class="list-reset m0 p0 pl1">
-            {{range $key, $menu := .Menu}}
-            <li class="gsearch-nav-item gsearch-label">{{if (not (eq $menu.Url ""))}}<a href="https://mediathek.hgk.fhnw.ch" class="gsearch-nav-link">{{$menu.Label}}</a>{{else}}{{$menu.Label}}{{end}}</li>
+            <li class="gsearch-nav-item gsearch-label"><a href="https://mediathek.hgk.fhnw.ch" class="gsearch-nav-link">Mediathek</a></li>
             <ul class="list-reset m0 p0 pl1">
-                {{range $label, $url := $menu.Sub}}
-                <li class="gsearch-nav-item">{{if (not (eq $url ""))}}<a href="{{$url}}" class="gsearch-nav-link">{{$label}}</a>{{else}}{{$label}}{{end}}</li>
-                {{end}}
+                <li class="gsearch-nav-item"><a href="https://mediathek.hgk.fhnw.ch/collections" class="gsearch-nav-link">Collections</a></li>
             </ul>
-            {{end}}
         </ul>
     </nav>
 </amp-sidebar>

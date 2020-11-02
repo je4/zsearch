@@ -283,7 +283,7 @@ func (zot *SourceZoteroDeprecated) GetNotes() []Note {
 	return notes
 }
 
-var zoteroDeprecatedlinkregexp = regexp.MustCompile("^https?://zotero.org/groups/([^/]+)/items/([^/]+)$")
+var zoteroDeprecatedlinkregexp = regexp.MustCompile("^https?://zotero.org/Groups/([^/]+)/items/([^/]+)$")
 
 func (zot *SourceZoteroDeprecated) GetReferences() []Reference {
 	var references []Reference

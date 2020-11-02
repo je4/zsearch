@@ -51,10 +51,6 @@ func (n *network) UnmarshalText(text []byte) error {
 	return nil
 }
 
-type Google struct {
-	Apikey string `toml:"apikey"`
-}
-
 type Template struct {
 	Detail      []string `toml:"detail"`
 	Error       []string `toml:"error"`
@@ -89,12 +85,6 @@ type Network struct {
 	Networks []network `toml:"networks"`
 }
 
-type Menu struct {
-	Label string                       `toml:"label"`
-	Url   string                       `toml:"url"`
-	Sub   map[string]map[string]string `toml:"sub"`
-}
-
 type SubFilter struct {
 	Name   string `toml:"name"`
 	Label  string `toml:"label"`
@@ -109,6 +99,11 @@ type Query struct {
 type Cfg_ElasticSearch struct {
 	Endpoint []string `toml:"endpoint"`
 	Index    string   `toml:"index"`
+}
+
+type Cfg_Google struct {
+	Apikey           string            `toml:"apikey"`
+	CustomSearchKeys map[string]string `toml:"searchkeys"`
 }
 
 type Config struct {
@@ -127,6 +122,7 @@ type Config struct {
 	SearchPrefix        string              `toml:"searchprefix"`
 	CollectionsPrefix   string              `toml:"collectionsprefix"`
 	ImageSearchPrefix   string              `toml:"imagesearchprefix"`
+	GoogleSearchPrefix  string              `toml:"googlesearchprefix"`
 	CollectionsCatalog  string              `toml:"collectionscatalog"`
 	ApiPrefix           string              `toml:"apiprefix"`
 	JWTKey              string              `toml:"jwtkey"`
@@ -136,7 +132,6 @@ type Config struct {
 	LoginIssuer         string              `toml:"loginissuer"`
 	IdleTimeout         duration            `toml:"idletimeout"`
 	UserCacheSize       int                 `toml:"usercachesize"`
-	Google              Google              `toml:"google"`
 	Template            map[string][]string `toml:"template"`
 	TemplateDev         bool                `toml:"templatedev"`
 	Solr                Solr                `toml:"solr"`
@@ -152,9 +147,9 @@ type Config struct {
 	SearchFields        map[string]string   `toml:"searchfields"`
 	Facets              []Facet             `toml:"facets"`
 	Locations           []Network           `toml:"locations"`
-	Menu                map[string]Menu     `toml:"menu"`
 	Icons               map[string]string   `toml:"icons"`
 	ElasticSearch       Cfg_ElasticSearch   `toml:"elasticsearch"`
+	Google              Cfg_Google          `toml:"google"`
 }
 
 func LoadConfig(filepath string) Config {
@@ -173,6 +168,7 @@ func LoadConfig(filepath string) Config {
 	conf.SearchPrefix = strings.Trim(conf.SearchPrefix, "/")
 	conf.CollectionsPrefix = strings.Trim(conf.CollectionsPrefix, "/")
 	conf.ImageSearchPrefix = strings.Trim(conf.ImageSearchPrefix, "/")
+	conf.GoogleSearchPrefix = strings.Trim(conf.GoogleSearchPrefix, "/")
 	conf.ApiPrefix = strings.Trim(conf.ApiPrefix, "/")
 	return conf
 }

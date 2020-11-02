@@ -107,8 +107,7 @@
                     {{$url := ""}}
                     {{if eq .Type "detail"}}
                         {{$url = .User.LinkSignatureCache .Doc.Signature}}
-                    {{end}}
-                    {{if eq .Type "search"}}
+                    {{else}}
                         {{$url = .Self}}
                     {{end}}
                     <a aria-label="Logout" href="{{$url}}" class="text-decoration-none mr2 gsearch-headerbar-fixed-link ">

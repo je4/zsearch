@@ -346,7 +346,7 @@ func (mts *MTSolr) LoadEntities(ids []string) (map[string]*Document, error) {
 }
 
 func (mts *MTSolr) Search(text string, filters []string, facets map[string]termFacet, groups []string, contentVisible bool, start, rows int, isAdmin bool) ([]*Document, int64, FacetCountResult, error) {
-	//qstr := EscapeSolrString(text)
+	//QStr := EscapeSolrString(text)
 	qstr := text
 	if qstr == "" {
 		qstr = "*:*"
@@ -368,7 +368,7 @@ func (mts *MTSolr) Search(text string, filters []string, facets map[string]termF
 	}
 
 	filterQuery := map[string]string{}
-	// build facets with filter exclusion
+	// build Facets with filter exclusion
 	for field, vals := range facets {
 		solrJSONTermsFacet := CreateJSONTermsFacetMap(field)
 		if vals.limit != 0 {
@@ -439,10 +439,10 @@ func (mts *MTSolr) Search(text string, filters []string, facets map[string]termF
 	if r.JsonFacets != nil {
 		jsonFacets, err = NewSolrResultJSONFacets()
 		if err != nil {
-			return nil, 0, nil, emperror.Wrap(err, "cannot create solr json facets")
+			return nil, 0, nil, emperror.Wrap(err, "cannot create solr json Facets")
 		}
 		if err := jsonFacets.Init(r.JsonFacets); err != nil {
-			return nil, 0, nil, emperror.Wrapf(err, "cannot init json facets with %v", r.JsonFacets)
+			return nil, 0, nil, emperror.Wrapf(err, "cannot init json Facets with %v", r.JsonFacets)
 		}
 		for name, elem := range jsonFacets.Elements {
 			if _, ok := facetFields[name]; !ok {

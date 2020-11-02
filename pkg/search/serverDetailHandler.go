@@ -46,7 +46,6 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 		SelfPath:      req.URL.Path,
 		LoginUrl:      s.loginUrl,
 		Notifications: []Notification{},
-		Menu:          s.menu,
 	}
 	jwt, ok := req.URL.Query()["token"]
 	if ok {

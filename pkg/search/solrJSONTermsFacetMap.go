@@ -156,7 +156,7 @@ func (jfm *JSONTermsFacetMap) IncludeTotalNumBuckets(numBuckets bool) *JSONTerms
 /**
  * Creates a bucket representing the union of all other buckets.
  *
- * For multi-valued fields this is different than a bucket for the entire domain, since documents can belong to
+ * For multi-valued Fields this is different than a bucket for the entire domain, since documents can belong to
  * multiple buckets.  Defaults to false if not specified.
  *
  * @param shouldInclude true if the union bucket "allBuckets" should be computed; false otherwise
@@ -167,7 +167,7 @@ func (jfm *JSONTermsFacetMap) IncludeAllBucketsUnionBucket(shouldInclude bool) *
 }
 
 /**
- * Indicates that the facet should only produce buckets for terms that start with the specified prefix.
+ * Indicates that the facet should only produce buckets for terms that SearchResultStart with the specified prefix.
  */
 func (jfm *JSONTermsFacetMap) SetTermPrefix(termPrefix string) *JSONTermsFacetMap {
 	if termPrefix == "" {

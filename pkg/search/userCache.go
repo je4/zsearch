@@ -30,7 +30,7 @@ import (
 type User struct {
 	Server    *Server   `json:"-"`
 	Id        string    `json:"Id"`
-	Groups    []string  `json:"groups"`
+	Groups    []string  `json:"Groups"`
 	Email     string    `json:"email"`
 	FirstName string    `json:"firstName"`
 	LastName  string    `json:"lastName"`

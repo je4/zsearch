@@ -26,6 +26,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"github.com/Masterminds/sprig"
+	"github.com/bluele/gcache"
 	"github.com/drgrib/maps"
 	"github.com/goph/emperror"
 	"github.com/gorilla/handlers"
@@ -33,6 +34,7 @@ import (
 	"github.com/htfy96/reformism"
 	"github.com/je4/zsearch/pkg/amp"
 	"github.com/op/go-logging"
+	"google.golang.org/api/customsearch/v1"
 	"html/template"
 	"io"
 	"net"
@@ -68,7 +70,6 @@ type DetailStatus struct {
 	AmpBase         string
 	LoginUrl        string
 	Title           string
-	Menu            []Menu
 	MetaDescription string
 }
 
@@ -101,7 +102,6 @@ type SearchStatus struct {
 	SearchResultVisible bool
 	Facet               map[string]map[string]FacetCountField
 	CoreFacets          []string
-	Menu                []Menu
 	MetaDescription     string
 }
 
@@ -123,7 +123,6 @@ type CollectionsStatus struct {
 	SearchResultRows    int
 	SearchResultTotal   int
 	SearchResultVisible bool
-	Menu                []Menu
 	MetaDescription     string
 }
 
@@ -172,8 +171,8 @@ type facetField struct {
 type SearchResult struct {
 	Items           []SearchResultItem    `json:"items"`
 	Total           int64                 `json:"total"`
-	Start           int64                 `json:"start"`
-	Rows            int64                 `json:"rows"`
+	Start           int64                 `json:"SearchResultStart"`
+	Rows            int64                 `json:"Rows"`
 	Query           string                `json:"query"`
 	Search          string                `json:"search"`
 	Next            string                `json:"next"`
@@ -233,6 +232,7 @@ type Server struct {
 	searchPrefix       string
 	imageSearchPrefix  string
 	collectionsPrefix  string
+	googleSearchPrefix string
 	apiPrefix          string
 	jwtKey             string
 	jwtAlg             []string
@@ -253,17 +253,20 @@ type Server struct {
 	searchFields       map[string]string
 	facets             SolrFacetList
 	locations          NetGroups
-	menu               []Menu
 	icons              map[string]string
 	baseFilter         string
 	subFilters         []SubFilter
 	funcMap            template.FuncMap
 	collectionsCatalog string
+	queryCache         gcache.Cache
+	google             *customsearch.Service
+	googleCSEKey       map[string]string
 }
 
 func NewServer(
 	mts *Search,
 	uc *UserCache,
+	google *customsearch.Service,
 	templates map[string][]string,
 	templateDev bool,
 	addr,
@@ -288,17 +291,18 @@ func NewServer(
 	searchPrefix string,
 	imageSearchPrefix string,
 	collectionsPrefix string,
+	googleSearchPrefix string,
 	apiPrefix string,
 	AmpCache string,
 	ampApiKeyFile string,
 	searchFields map[string]string,
 	facets SolrFacetList,
 	locations NetGroups,
-	menu []Menu,
 	icons map[string]string,
 	baseFilter string,
 	subFilter []SubFilter,
 	collectionsCatalog string,
+	googleCSEKey map[string]string,
 ) (*Server, error) {
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
@@ -331,6 +335,7 @@ func NewServer(
 	srv := &Server{
 		mts:                mts,
 		userCache:          uc,
+		google:             google,
 		host:               host,
 		port:               port,
 		addrExt:            addrExt,
@@ -354,13 +359,13 @@ func NewServer(
 		updatePrefix:       updatePrefix,
 		searchPrefix:       searchPrefix,
 		imageSearchPrefix:  imageSearchPrefix,
+		googleSearchPrefix: googleSearchPrefix,
 		apiPrefix:          apiPrefix,
 		ampCache:           ampCache,
 		ampApiKey:          ampApiKey,
 		searchFields:       searchFields,
 		facets:             facets,
 		locations:          locations,
-		menu:               menu,
 		icons:              icons,
 		baseFilter:         baseFilter,
 		subFilters:         subFilter,
@@ -368,6 +373,8 @@ func NewServer(
 		funcMap:            template.FuncMap{},
 		collectionsPrefix:  collectionsPrefix,
 		collectionsCatalog: collectionsCatalog,
+		queryCache:         gcache.New(100).ARC().Expiration(time.Hour * 3).Build(),
+		googleCSEKey:       googleCSEKey,
 	}
 	if err := srv.InitTemplates(templates); err != nil {
 		return nil, emperror.Wrapf(err, "cannot initialize server")
@@ -743,6 +750,9 @@ func (s *Server) ListenAndServe(cert, key string) error {
 			})
 		}(http.FileServer(http.Dir(s.staticDir))))).Methods("GET")
 
+	// google search
+	router.HandleFunc(fmt.Sprintf("/%s/{csekey}", s.googleSearchPrefix), s.googleHandler).Methods("GET")
+
 	loggedRouter := handlers.LoggingHandler(s.accesslog, router)
 	addr := net.JoinHostPort(s.host, s.port)
 	s.srv = &http.Server{
@@ -776,7 +786,7 @@ func (s *Server) GetClaimUser(claims map[string]interface{}) (*User, error) {
 	if err != nil {
 		return nil, emperror.Wrapf(err, "no userid in key")
 	}
-	groupstr, err := GetClaim(claims, "groups")
+	groupstr, err := GetClaim(claims, "Groups")
 	if err != nil {
 		groupstr = "global/guest"
 	}
@@ -819,7 +829,7 @@ func (s *Server) __DELETE__string2Query(search string) string {
 
 	// expand to field an generic search
 	rexp2 := regexp.MustCompile(`^(` + strings.Join(maps.GetKeysStringString(s.searchFields), `|`) + `):(.+)$`)
-	//fields := make(map[string][]string)
+	//Fields := make(map[string][]string)
 	gen := []string{}
 	qstr2 := ""
 
@@ -879,7 +889,7 @@ func (s *Server) string2QList(search string, filterOrg map[string][]string) (map
 
 	// expand to field an generic search
 	rexp2 := regexp.MustCompile(`^(` + strings.Join(maps.GetKeysStringString(s.searchFields), `|`) + `):(.+)$`)
-	//fields := make(map[string][]string)
+	//Fields := make(map[string][]string)
 	gen := []string{}
 	fldlist := make(map[string][]string)
 	fldlistOrg := filterOrg

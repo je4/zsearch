@@ -21,6 +21,8 @@ import (
 	"flag"
 	"github.com/dgraph-io/badger/v2"
 	"github.com/je4/zsearch/pkg/search"
+	"google.golang.org/api/customsearch/v1"
+	"google.golang.org/api/option"
 	"io"
 	"net"
 	"os"
@@ -154,7 +156,7 @@ func main() {
 
 	/*
 		mts, err := search.NewMTSolr(
-			config.Solr.Url,
+			config.Solr.Link,
 			config.Solr.Core,
 			db,
 			log)
@@ -164,7 +166,7 @@ func main() {
 	*/
 
 	/*
-		mtSolrWrapper, err := search.NewMTSOLRSearch([]string{config.Solr.Url}, config.Solr.Core, db, log)
+		mtSolrWrapper, err := search.NewMTSOLRSearch([]string{config.Solr.Link}, config.Solr.Core, db, log)
 		if err != nil {
 			log.Panicf("cannot initialize solr search wrapper: %v", err)
 			return
@@ -187,6 +189,11 @@ func main() {
 		log.Panic(err)
 	}
 
+	googleSvc, err := customsearch.NewService(context.Background(), option.WithAPIKey(config.Google.Apikey))
+	if err != nil {
+		log.Panic(err)
+	}
+
 	facets := search.SolrFacetList{}
 	for _, facet := range config.Facets {
 		facets[facet.Name] = search.SolrFacet{
@@ -205,22 +212,6 @@ func main() {
 			locations[loc.Group] = append(locations[loc.Group], &n.IPNet)
 		}
 	}
-	menu := []search.Menu{}
-
-	for _, m := range config.Menu {
-		sub := map[string]string{}
-		for _, s := range m.Sub {
-			for k, v := range s {
-				sub[k] = v
-			}
-		}
-		menu = append(menu, search.Menu{
-			Label: m.Label,
-			Url:   m.Url,
-			Sub:   sub,
-		})
-	}
-
 	subfilters := []search.SubFilter{}
 	for _, sf := range config.Query.SubFilter {
 		subfilters = append(subfilters, search.SubFilter{
@@ -233,6 +224,7 @@ func main() {
 	srv, err := search.NewServer(
 		searchEngine,
 		uc,
+		googleSvc,
 		config.Template,
 		config.TemplateDev,
 		config.Addr,
@@ -257,17 +249,18 @@ func main() {
 		config.SearchPrefix,
 		config.ImageSearchPrefix,
 		config.CollectionsPrefix,
+		config.GoogleSearchPrefix,
 		config.ApiPrefix,
 		config.AmpCache,
 		config.AmpApiKey,
 		config.SearchFields,
 		facets,
 		locations,
-		menu,
 		config.Icons,
 		config.Query.BaseFilter,
 		subfilters,
 		config.CollectionsCatalog,
+		config.Google.CustomSearchKeys,
 	)
 
 	if err != nil {

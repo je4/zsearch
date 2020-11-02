@@ -208,17 +208,17 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]map[string][]string, []
 	query := elasticQuery()
 
 	filters := []*tElasticFieldValue{}
-	if cfg.isAdmin == false {
-		filters = append(filters, elasticTermQuery("acl.meta", cfg.groups[0], 0).FieldValue())
+	if cfg.IsAdmin == false {
+		filters = append(filters, elasticTermQuery("acl.meta", cfg.Groups[0], 0).FieldValue())
 	}
-	if cfg.contentVisible {
-		filters = append(filters, elasticTermQuery("acl.content", cfg.groups[0], 0).FieldValue())
+	if cfg.ContentVisible {
+		filters = append(filters, elasticTermQuery("acl.content", cfg.Groups[0], 0).FieldValue())
 		filters = append(filters, elasticExistsQuery("mediatype").FieldValue())
 	}
 
 	matchqueries := []*tElasticFieldValue{}
-	if len(cfg.filters_fields) > 0 {
-		for fld, vals := range cfg.filters_fields {
+	if len(cfg.FiltersFields) > 0 {
+		for fld, vals := range cfg.FiltersFields {
 			for _, val := range vals {
 				switch fld {
 				case "category":
@@ -233,7 +233,7 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]map[string][]string, []
 		}
 	}
 
-	qstr := strings.TrimSpace(cfg.qstr)
+	qstr := strings.TrimSpace(cfg.QStr)
 	if len(qstr) > 0 {
 		matchqueries = append(matchqueries,
 			elasticNestedQuery("media.pdf", elasticQuery().withBooleanQuery(elasticBooleanQuery(0).withMust(
@@ -252,7 +252,6 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]map[string][]string, []
 				withFields([]string{"title^4", "abstract^3", "notes^3"}).
 				withOperatorOR().
 				FieldValue())
-
 	}
 	bq := elasticBooleanQuery(0)
 	if len(matchqueries) > 0 {
@@ -265,9 +264,9 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]map[string][]string, []
 
 	pfterms := []*tElasticFieldValue{}
 	var aggregations *tElasticSearchAggregations
-	if cfg.facets != nil {
+	if cfg.Facets != nil {
 		aggregations = elasticSearchAggregations()
-		for field, vals := range cfg.facets {
+		for field, vals := range cfg.Facets {
 			aggregations.AddAggregation(field, elasticSearchAggregation(nil).withTerms(field, vals.limit, nil))
 			values := []string{}
 			for val, selected := range vals.selected {
@@ -297,7 +296,7 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]map[string][]string, []
 			withTags([]string{`<span class="highlight">`}, []string{`</span>`})
 	}
 
-	fq := elasticSearch(query, aggregations, postfilter, highlight, int64(cfg.start), int64(cfg.rows)).withTrackTotalHits()
+	fq := elasticSearch(query, aggregations, postfilter, highlight, int64(cfg.Start), int64(cfg.Rows)).withTrackTotalHits()
 
 	jsonstr, err := json.MarshalIndent(fq, "", "   ")
 	if err != nil {

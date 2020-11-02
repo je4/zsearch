@@ -17,10 +17,13 @@ limitations under the License.
 package search
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/bluele/gcache"
 	"github.com/gorilla/mux"
 	"html/template"
+	"io"
 	"net"
 	"net/http"
 	"regexp"
@@ -65,7 +68,6 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		Title:         "Search",
 		QueryApi:      "api/search",
 		Facet:         make(map[string]map[string]FacetCountField),
-		Menu:          s.menu,
 		CoreFacets:    []string{},
 		Filter:        make(map[string][]string),
 	}
@@ -168,7 +170,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 					if m[2] == "true" {
 						facets[fld].selected[v] = true
 					} else {
-						//facets[fld].selected[v] = false
+						//Facets[fld].selected[v] = false
 					}
 				}
 			} else {
@@ -264,15 +266,38 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	cfg := &SearchConfig{
-		fields:         make(map[string][]string),
-		qstr:           qstr,
-		filters_fields: filterField,
-		facets:         facets,
-		groups:         status.User.Groups,
-		contentVisible: status.SearchResultVisible,
-		start:          int(start),
-		rows:           int(rows),
-		isAdmin:        status.User.inGroup(s.adminGroup),
+		Fields:         make(map[string][]string),
+		QStr:           qstr,
+		FiltersFields:  filterField,
+		Facets:         facets,
+		Groups:         status.User.Groups,
+		ContentVisible: status.SearchResultVisible,
+		Start:          int(start),
+		Rows:           int(rows),
+		IsAdmin:        status.User.inGroup(s.adminGroup),
+	}
+
+	hk, err := Hash(cfg)
+	if err != nil {
+		s.DoPanicf(w, http.StatusInternalServerError, "cannot hash config: %v", false, err)
+		return
+	}
+
+	result, err := s.queryCache.Get(hk)
+	if err != nil && err != gcache.KeyNotFoundError {
+		s.DoPanicf(w, http.StatusInternalServerError, "cannot access cache: %v", false, err)
+		return
+	}
+	if err != gcache.KeyNotFoundError {
+		s.log.Info("serving from cache")
+		dt, err := Decompress(result.([]byte))
+		if err != nil {
+			s.DoPanicf(w, http.StatusInternalServerError, "cannot decompress cache: %v", false, err)
+			return
+		}
+		w.Header().Set("Cache-Control", "max-age=14400, s-maxage=12200, stale-while-revalidate=9000, public")
+		io.WriteString(w, string(dt))
+		return
 	}
 
 	highlights, docs, total, facetFieldCount, err := s.mts.Search(cfg)
@@ -372,8 +397,14 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 	default:
 		w.Header().Set("Cache-Control", "max-age=14400, s-maxage=12200, stale-while-revalidate=9000, public")
 		if tpl, ok := s.templates["search.amp.gohtml"]; ok {
-			if err := tpl.Execute(w, status); err != nil {
+			var cacheBuffer bytes.Buffer
+			writer := io.MultiWriter(&cacheBuffer, w)
+			if err := tpl.Execute(writer, status); err != nil {
 				s.DoPanicf(w, http.StatusInternalServerError, "cannot render template: %v", false, err)
+				return
+			}
+			if err := s.queryCache.Set(hk, Compress(cacheBuffer.Bytes())); err != nil {
+				s.DoPanicf(w, http.StatusInternalServerError, "cannot cache result: %v", false, err)
 				return
 			}
 		}
