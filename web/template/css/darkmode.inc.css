@@ -32,6 +32,12 @@
         font-style: italic;
     }
 
+    .commerce-listing-banner {
+        width: 100%;
+        filter: grayscale(0.5) sepia(0.2);
+    }
+
+
     .amp-mode-mouse  {
         background-color: #121212;
         color: white;

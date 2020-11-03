@@ -235,6 +235,7 @@ limitations under the License.
                         <!-- END - Facets small -->
                     </div>
                 </div>
+           {{if ne .SearchString ""}}
                 <div>
                     <h2 style="padding-left:16px;" class="h6">
                         <div class="inline">{{.SearchResultTotal}}</div> items
@@ -255,7 +256,7 @@ limitations under the License.
                     {{range $key, $field := .Items}}
                         <div style="margin-bottom: 2px;" class="md-result-list relative items-center md-mx0 pl2 pb1 overflow-hidden">
 
-                                <div style="font-weight: bold">{{html $field.Title}}</div><p></p>
+                            <div style="font-weight: bold"><a target="blank" class="text-decoration-none" href="{{$field.Link}}">{{html $field.Title}}</a></div><p></p>
                                 <div style="white-space: pre;">[<a target="blank" class="text-decoration-none" href="{{$field.Link}}">{{$field.Domain}}] {{$field.FileFormat}}</a></div>
                                 <div class="highlightbox">
                                 {{html $field.Snippet}}
@@ -271,7 +272,9 @@ limitations under the License.
 
                 <!-- Paging -->
                 {{template "searchNav.inc.gohtml" . | arg "navPrefix" "bottom" | arg "tabIndex" 5 }}
-
+           {{else}} <!-- Empty Result Set -->
+               No Results
+           {{end}}
             </div>
         </section>
 </main>

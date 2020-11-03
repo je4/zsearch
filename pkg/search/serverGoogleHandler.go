@@ -3,6 +3,7 @@ package search
 import (
 	"bytes"
 	"fmt"
+	"github.com/bluele/gcache"
 	"github.com/gorilla/mux"
 	"io"
 	"net"
@@ -116,34 +117,88 @@ func (s *Server) googleHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	resp, err := s.google.Cse.List().Q(search).Start(start).Cx(cx).Do()
-	if err != nil {
-		s.DoPanicf(w, http.StatusInternalServerError, "cannot search: %v", false, err)
+	result, err := s.queryCache.Get(hash)
+	if err != nil && err != gcache.KeyNotFoundError {
+		s.DoPanicf(w, http.StatusInternalServerError, "cannot access cache: %v", false, err)
+		return
+	}
+	if err != gcache.KeyNotFoundError {
+		s.log.Info("serving from cache")
+		dt, err := Decompress(result.([]byte))
+		if err != nil {
+			s.DoPanicf(w, http.StatusInternalServerError, "cannot decompress cache: %v", false, err)
+			return
+		}
+		w.Header().Set("Cache-Control", "max-age=14400, s-maxage=12200, stale-while-revalidate=9000, public")
+		io.WriteString(w, string(dt))
 		return
 	}
 
-	numResult, _ := strconv.ParseInt(resp.SearchInformation.TotalResults, 10, 64)
 	searches := []string{}
 	for s, _ := range s.googleCSEKey {
 		searches = append(searches, s)
 	}
-	status := &GoogleResultStatus{
-		Type:              "search",
-		Notifications:     []Notification{},
-		Self:              fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(req.URL.Path, "/")),
-		BaseUrl:           s.addrExt,
-		SelfPath:          req.URL.Path,
-		LoginUrl:          s.loginUrl,
-		Title:             "Curated Search",
-		SearchString:      search,
-		SearchResultTotal: numResult,
-		TotalResults:      resp.SearchInformation.FormattedTotalResults,
-		SearchResultStart: start,
-		Items:             []GoogleResultItem{},
-		Searches:          searches,
-		CSEBase:           fmt.Sprintf("%s/%s", s.addrExt, s.googleSearchPrefix),
-	}
 
+	var status *GoogleResultStatus
+	if search != "" {
+
+		resp, err := s.google.Cse.List().Q(search).Start(start).Cx(cx).Do()
+		if err != nil {
+			s.DoPanicf(w, http.StatusInternalServerError, "cannot search: %v", false, err)
+			return
+		}
+
+		numResult, _ := strconv.ParseInt(resp.SearchInformation.TotalResults, 10, 64)
+		status = &GoogleResultStatus{
+			Type:              "search",
+			Notifications:     []Notification{},
+			Self:              fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(req.URL.Path, "/")),
+			BaseUrl:           s.addrExt,
+			SelfPath:          req.URL.Path,
+			LoginUrl:          s.loginUrl,
+			Title:             "Curated Search",
+			SearchString:      search,
+			SearchResultTotal: numResult,
+			TotalResults:      resp.SearchInformation.FormattedTotalResults,
+			SearchResultStart: start,
+			Items:             []GoogleResultItem{},
+			Searches:          searches,
+			CSEBase:           fmt.Sprintf("%s/%s", s.addrExt, s.googleSearchPrefix),
+		}
+		status.SearchResultRows = int64(len(resp.Items))
+
+		for _, result := range resp.Items {
+			status.Items = append(status.Items, GoogleResultItem{
+				Title:           result.HtmlTitle,
+				Snippet:         result.HtmlSnippet,
+				Thumbnail:       "",
+				ThumbnailWidth:  0,
+				ThumbnailHeight: 0,
+				Domain:          result.DisplayLink,
+				Link:            result.Link,
+				Mimetype:        result.Mime,
+				FileFormat:      result.FileFormat,
+			})
+		}
+
+	} else {
+		status = &GoogleResultStatus{
+			Type:              "search",
+			Notifications:     []Notification{},
+			Self:              fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(req.URL.Path, "/")),
+			BaseUrl:           s.addrExt,
+			SelfPath:          req.URL.Path,
+			LoginUrl:          s.loginUrl,
+			Title:             "Curated Search",
+			SearchString:      search,
+			SearchResultTotal: 0,
+			TotalResults:      "0",
+			SearchResultStart: start,
+			Items:             []GoogleResultItem{},
+			Searches:          searches,
+			CSEBase:           fmt.Sprintf("%s/%s", s.addrExt, s.googleSearchPrefix),
+		}
+	}
 	jwt, ok := req.URL.Query()["token"]
 	if ok {
 		// jwt in parameter?
@@ -190,21 +245,6 @@ func (s *Server) googleHandler(w http.ResponseWriter, req *http.Request) {
 		status.User.Groups = append(status.User.Groups, grp)
 	}
 
-	status.SearchResultRows = int64(len(resp.Items))
-
-	for _, result := range resp.Items {
-		status.Items = append(status.Items, GoogleResultItem{
-			Title:           result.HtmlTitle,
-			Snippet:         result.HtmlSnippet,
-			Thumbnail:       "",
-			ThumbnailWidth:  0,
-			ThumbnailHeight: 0,
-			Domain:          result.DisplayLink,
-			Link:            result.Link,
-			Mimetype:        result.Mime,
-			FileFormat:      result.FileFormat,
-		})
-	}
 	w.Header().Set("Cache-Control", "max-age=14400, s-maxage=12200, stale-while-revalidate=9000, public")
 	if tpl, ok := s.templates["google.amp.gohtml"]; ok {
 		var cacheBuffer bytes.Buffer

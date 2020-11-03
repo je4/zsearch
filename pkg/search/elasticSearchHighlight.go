@@ -9,7 +9,7 @@ func elasticHighlightField() *tElastidHighlightField {
 }
 
 type tElasticHighlight struct {
-	Fields   map[string]*tElastidHighlightField `json:"Fields"`
+	Fields   map[string]*tElastidHighlightField `json:"fields"`
 	PreTags  []string                           `json:"pre_tags,omitempty"`
 	PostTags []string                           `json:"post_tags,omitempty"`
 }
