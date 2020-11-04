@@ -59,17 +59,29 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	status := SearchStatus{
-		Type:          "search",
-		Notifications: []Notification{},
-		Self:          fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(req.URL.Path, "/")),
-		BaseUrl:       s.addrExt,
-		SelfPath:      req.URL.Path,
-		LoginUrl:      s.loginUrl,
-		Title:         "Search",
-		QueryApi:      "api/search",
-		Facet:         make(map[string]map[string]FacetCountField),
-		CoreFacets:    []string{},
-		Filter:        make(map[string][]string),
+		BaseStatus: BaseStatus{
+			Notifications: []Notification{},
+			Self:          fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(req.URL.Path, "/")),
+			BaseUrl:       s.addrExt,
+			Prefixes: map[string]string{
+				"detail":      s.detailPrefix,
+				"search":      s.searchPrefix,
+				"collections": s.collectionsPrefix,
+				"cluster":     s.clusterSearchPrefix,
+				"google":      s.googleSearchPrefix,
+			},
+			SelfPath: req.URL.Path,
+			LoginUrl: s.loginUrl,
+			Title:    "Search",
+			User:     nil,
+			Token:    "",
+			AmpBase:  "",
+			Type:     "search",
+		},
+		QueryApi:   "api/search",
+		Facet:      make(map[string]map[string]FacetCountField),
+		CoreFacets: []string{},
+		Filter:     make(map[string][]string),
 	}
 
 	jwt, ok := req.URL.Query()["token"]

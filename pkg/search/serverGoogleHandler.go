@@ -3,45 +3,18 @@ package search
 import (
 	"bytes"
 	"fmt"
-	"github.com/bluele/gcache"
 	"github.com/gorilla/mux"
 	"io"
 	"net"
 	"net/http"
-	"strconv"
 	"strings"
 )
 
-type GoogleResultItem struct {
-	Title                           string
-	Snippet                         string
-	Thumbnail                       string
-	ThumbnailWidth, ThumbnailHeight int64
-	Domain                          string
-	Link                            string
-	Mimetype                        string
-	FileFormat                      string
-}
-
 type GoogleResultStatus struct {
-	Type              string
-	Notifications     []Notification
-	Self              string
-	BaseUrl           string
-	SelfPath          string
-	LoginUrl          string
-	Title             string
-	SearchResultTotal int64
-	SearchResultStart int64
-	SearchResultRows  int64
-	Items             []GoogleResultItem
-	TotalResults      string
-	SearchString      string
-	Searches          []string
-	CSEBase           string
-	User              *User
-	Token             string
-	SearchToken       string
+	BaseStatus
+	SearchName string
+	CX         string
+	Searches   []string
 }
 
 func (s *Server) googleHandler(w http.ResponseWriter, req *http.Request) {
@@ -77,128 +50,33 @@ func (s *Server) googleHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	var start int64 = 0
-	//var rows int64 = 10
-	var search, lastsearch string
-
-	for key, vals := range req.URL.Query() {
-		if len(vals) == 0 {
-			continue
-		}
-		val := vals[0]
-		val = strings.TrimSpace(val)
-		switch key {
-		case "start":
-			start, _ = strconv.ParseInt(val, 10, 64)
-		case "lastsearch":
-			lastsearch = val
-		case "searchtext":
-			search = val
-		default:
-		}
-	}
-
-	if start < 0 {
-		start = 0
-	}
-	if search != lastsearch {
-		start = 0
-	}
-
-	hash, err := Hash(struct {
-		Search string
-		Start  int64
-	}{
-		Search: search,
-		Start:  start,
-	})
-	if err != nil {
-		s.DoPanicf(w, http.StatusInternalServerError, "cannot create hash", false)
-		return
-	}
-
-	result, err := s.queryCache.Get(hash)
-	if err != nil && err != gcache.KeyNotFoundError {
-		s.DoPanicf(w, http.StatusInternalServerError, "cannot access cache: %v", false, err)
-		return
-	}
-	if err != gcache.KeyNotFoundError {
-		s.log.Info("serving from cache")
-		dt, err := Decompress(result.([]byte))
-		if err != nil {
-			s.DoPanicf(w, http.StatusInternalServerError, "cannot decompress cache: %v", false, err)
-			return
-		}
-		w.Header().Set("Cache-Control", "max-age=14400, s-maxage=12200, stale-while-revalidate=9000, public")
-		io.WriteString(w, string(dt))
-		return
-	}
-
 	searches := []string{}
 	for s, _ := range s.googleCSEKey {
 		searches = append(searches, s)
 	}
 
-	var status *GoogleResultStatus
-	if search != "" {
-
-		resp, err := s.google.Cse.List().Q(search).Start(start).Cx(cx).Do()
-		if err != nil {
-			s.DoPanicf(w, http.StatusInternalServerError, "cannot search: %v", false, err)
-			return
-		}
-
-		numResult, _ := strconv.ParseInt(resp.SearchInformation.TotalResults, 10, 64)
-		status = &GoogleResultStatus{
-			Type:              "search",
-			Notifications:     []Notification{},
-			Self:              fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(req.URL.Path, "/")),
-			BaseUrl:           s.addrExt,
-			SelfPath:          req.URL.Path,
-			LoginUrl:          s.loginUrl,
-			Title:             "Curated Search",
-			SearchString:      search,
-			SearchResultTotal: numResult,
-			TotalResults:      resp.SearchInformation.FormattedTotalResults,
-			SearchResultStart: start,
-			Items:             []GoogleResultItem{},
-			Searches:          searches,
-			CSEBase:           fmt.Sprintf("%s/%s", s.addrExt, s.googleSearchPrefix),
-		}
-		status.SearchResultRows = int64(len(resp.Items))
-
-		for _, result := range resp.Items {
-			status.Items = append(status.Items, GoogleResultItem{
-				Title:           result.HtmlTitle,
-				Snippet:         result.HtmlSnippet,
-				Thumbnail:       "",
-				ThumbnailWidth:  0,
-				ThumbnailHeight: 0,
-				Domain:          result.DisplayLink,
-				Link:            result.Link,
-				Mimetype:        result.Mime,
-				FileFormat:      result.FileFormat,
-			})
-		}
-
-	} else {
-		status = &GoogleResultStatus{
-			Type:              "search",
-			Notifications:     []Notification{},
-			Self:              fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(req.URL.Path, "/")),
-			BaseUrl:           s.addrExt,
-			SelfPath:          req.URL.Path,
-			LoginUrl:          s.loginUrl,
-			Title:             "Curated Search",
-			SearchString:      search,
-			SearchResultTotal: 0,
-			TotalResults:      "0",
-			SearchResultStart: start,
-			Items:             []GoogleResultItem{},
-			Searches:          searches,
-			CSEBase:           fmt.Sprintf("%s/%s", s.addrExt, s.googleSearchPrefix),
-		}
+	status := &GoogleResultStatus{
+		BaseStatus: BaseStatus{
+			Prefixes: map[string]string{
+				"detail":      s.detailPrefix,
+				"search":      s.searchPrefix,
+				"collections": s.collectionsPrefix,
+				"cluster":     s.clusterSearchPrefix,
+				"google":      s.googleSearchPrefix,
+			},
+			Type:          "search",
+			Notifications: []Notification{},
+			Self:          fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(req.URL.Path, "/")),
+			BaseUrl:       s.addrExt,
+			SelfPath:      req.URL.Path,
+			LoginUrl:      s.loginUrl,
+			Title:         "Wissenscluster",
+		},
+		SearchName: csekey,
+		CX:         cx,
+		Searches:   searches,
 	}
+
 	jwt, ok := req.URL.Query()["token"]
 	if ok {
 		// jwt in parameter?
@@ -225,21 +103,6 @@ func (s *Server) googleHandler(w http.ResponseWriter, req *http.Request) {
 	if status.User == nil {
 		status.User = NewGuestUser(s)
 	}
-	if status.User.LoggedIn {
-		jwt, err := NewJWT(
-			status.User.Server.jwtKey,
-			"search",
-			"HS256",
-			int64(status.User.Server.linkTokenExp.Seconds()),
-			"catalogue",
-			"mediathek",
-			status.User.Id)
-		if err != nil {
-			s.DoPanicf(w, http.StatusInternalServerError, "create token: %v", false, err)
-			return
-		}
-		status.SearchToken = jwt
-	}
 	ip, _, _ := net.SplitHostPort(req.RemoteAddr)
 	for _, grp := range s.locations.Contains(ip) {
 		status.User.Groups = append(status.User.Groups, grp)
@@ -251,10 +114,6 @@ func (s *Server) googleHandler(w http.ResponseWriter, req *http.Request) {
 		writer := io.MultiWriter(&cacheBuffer, w)
 		if err := tpl.Execute(writer, status); err != nil {
 			s.DoPanicf(w, http.StatusInternalServerError, "cannot render template: %v", false, err)
-			return
-		}
-		if err := s.queryCache.Set(hash, Compress(cacheBuffer.Bytes())); err != nil {
-			s.DoPanicf(w, http.StatusInternalServerError, "cannot cache result: %v", false, err)
 			return
 		}
 	}

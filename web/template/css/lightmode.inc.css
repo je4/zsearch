@@ -15,6 +15,10 @@
         color: #222
     }
 
+    .amp-mode-mouse .gsearch-nav-link:after {
+        background-color: #222;
+    }
+
     .highlight {
         color: #ffffff;
         background-color: #888888;

@@ -122,6 +122,7 @@ type Config struct {
 	SearchPrefix        string              `toml:"searchprefix"`
 	CollectionsPrefix   string              `toml:"collectionsprefix"`
 	ImageSearchPrefix   string              `toml:"imagesearchprefix"`
+	ClusterSearchPrefix string              `toml:"clustersearchprefix"`
 	GoogleSearchPrefix  string              `toml:"googlesearchprefix"`
 	CollectionsCatalog  string              `toml:"collectionscatalog"`
 	ApiPrefix           string              `toml:"apiprefix"`
@@ -168,6 +169,7 @@ func LoadConfig(filepath string) Config {
 	conf.SearchPrefix = strings.Trim(conf.SearchPrefix, "/")
 	conf.CollectionsPrefix = strings.Trim(conf.CollectionsPrefix, "/")
 	conf.ImageSearchPrefix = strings.Trim(conf.ImageSearchPrefix, "/")
+	conf.ClusterSearchPrefix = strings.Trim(conf.ClusterSearchPrefix, "/")
 	conf.GoogleSearchPrefix = strings.Trim(conf.GoogleSearchPrefix, "/")
 	conf.ApiPrefix = strings.Trim(conf.ApiPrefix, "/")
 	return conf

@@ -777,7 +777,7 @@
     }
 
 
-    .gsearch-sidebar {
+    .delete_gsearch-sidebar {
         background-color: #fff;
         width: 350px;
         margin-bottom: 1.5rem;
@@ -835,9 +835,6 @@
         margin-bottom: 2rem
     }
 
-    .gsearch-nav-item {
-        color: #222
-    }
 
     .gsearch-sidebar .gsearch-nav-item {
         margin-bottom: 0.4rem
@@ -854,7 +851,6 @@
     }
 
     .amp-mode-mouse .gsearch-nav-link:after {
-        background-color: #222;
         left: 0;
         position: absolute;
         transform: scaleX(0);

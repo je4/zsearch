@@ -249,6 +249,7 @@ func main() {
 		config.SearchPrefix,
 		config.ImageSearchPrefix,
 		config.CollectionsPrefix,
+		config.ClusterSearchPrefix,
 		config.GoogleSearchPrefix,
 		config.ApiPrefix,
 		config.AmpCache,

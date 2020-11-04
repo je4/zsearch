@@ -49,15 +49,27 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	status := CollectionsStatus{
-		Type:          "Collections",
-		Notifications: []Notification{},
-		Self:          fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(req.URL.Path, "/")),
-		BaseUrl:       s.addrExt,
-		SelfPath:      req.URL.Path,
-		LoginUrl:      s.loginUrl,
-		Title:         "Collections",
-		QueryApi:      "api/search",
-		Result:        map[string][]*SourceData{},
+		BaseStatus: BaseStatus{
+			User:          nil,
+			Token:         "",
+			AmpBase:       "",
+			Type:          "Collections",
+			Notifications: []Notification{},
+			Self:          fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(req.URL.Path, "/")),
+			BaseUrl:       s.addrExt,
+			SelfPath:      req.URL.Path,
+			LoginUrl:      s.loginUrl,
+			Title:         "Collections",
+			Prefixes: map[string]string{
+				"detail":      s.detailPrefix,
+				"search":      s.searchPrefix,
+				"collections": s.collectionsPrefix,
+				"cluster":     s.clusterSearchPrefix,
+				"google":      s.googleSearchPrefix,
+			},
+		},
+		QueryApi: "api/search",
+		Result:   map[string][]*SourceData{},
 	}
 
 	jwt, ok := req.URL.Query()["token"]

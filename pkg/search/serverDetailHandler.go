@@ -37,15 +37,27 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	status := DetailStatus{
-		Type:          "detail",
-		User:          nil,
-		ContentOK:     false,
-		MetaOK:        false,
-		Self:          fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(req.URL.Path, "/")),
-		BaseUrl:       s.addrExt,
-		SelfPath:      req.URL.Path,
-		LoginUrl:      s.loginUrl,
-		Notifications: []Notification{},
+		BaseStatus: BaseStatus{
+			Type:          "detail",
+			User:          nil,
+			Self:          fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(req.URL.Path, "/")),
+			BaseUrl:       s.addrExt,
+			SelfPath:      req.URL.Path,
+			LoginUrl:      s.loginUrl,
+			Notifications: []Notification{},
+			Token:         "",
+			Prefixes: map[string]string{
+				"detail":      s.detailPrefix,
+				"search":      s.searchPrefix,
+				"collections": s.collectionsPrefix,
+				"cluster":     s.clusterSearchPrefix,
+				"google":      s.googleSearchPrefix,
+			},
+			AmpBase: "",
+			Title:   "",
+		},
+		ContentOK: false,
+		MetaOK:    false,
 	}
 	jwt, ok := req.URL.Query()["token"]
 	if ok {
