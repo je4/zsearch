@@ -161,6 +161,12 @@ limitations under the License.
         </amp-img>
     </amp-img>
     <!-- BEGIN - virtual states for search interaction -->
+    <amp-state id="SearchResultSearch">
+        <script type="application/json">
+            {{.SearchString}}
+        </script>
+    </amp-state>
+
     {{$currentSrch := .SearchName}}
     {{$cseBase := (print .BaseUrl "/" (.Prefixes.google))}}
 

@@ -79,6 +79,10 @@
         background-color: #121212;
     }
 
+    .gsc-input {
+        color: black;
+    }
+
     .amp-mode-mouse .gsearch-nav-link:after {
         background-color: #ffff;
     }

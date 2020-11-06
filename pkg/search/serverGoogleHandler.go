@@ -12,9 +12,10 @@ import (
 
 type GoogleResultStatus struct {
 	BaseStatus
-	SearchName string
-	CX         string
-	Searches   []string
+	SearchName   string
+	CX           string
+	Searches     []string
+	SearchString string
 }
 
 func (s *Server) googleHandler(w http.ResponseWriter, req *http.Request) {

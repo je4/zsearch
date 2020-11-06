@@ -142,6 +142,7 @@ limitations under the License.
                                             {{if $item.Poster}}
                                                 {{$image := $item.Poster}}
                                                 <a style="text-decoration: none;" href="{{$baseurl}}/search/{{$item.Signature}}">
+                                                    <div style="filter: grayscale(0.7) sepia(0.2);">
                                                 <amp-img
                                                         aria-label="{{$image.Name}}"
                                                         src="{{medialink $image.Uri "resize" "size260x260/formatWEBP" false}}"
@@ -160,6 +161,7 @@ limitations under the License.
                                                         <div placeholder="" class="commerce-loader"></div>
                                                     </amp-img>
                                                 </amp-img>
+                                                    </div>
                                                 </a>
                                             {{end}}
                                         </div>
@@ -200,6 +202,7 @@ limitations under the License.
                                     {{if not (eq $item.Date "")}}<br />{{$item.Date}}{{end}}
                                     {{if $item.Poster}}
                                         {{$image := $item.Poster}}
+                                    <div style="filter: grayscale(0.7) sepia(0.2);">
                                         <amp-img
                                                 aria-label="{{$image.Name}}"
                                                 src="{{medialink $image.Uri "resize" "size260x260/formatWEBP" false}}"
@@ -218,6 +221,7 @@ limitations under the License.
                                                 <div placeholder="" class="commerce-loader"></div>
                                             </amp-img>
                                         </amp-img>
+                                    </div>
                                         <br />
                                     {{end}}
 
