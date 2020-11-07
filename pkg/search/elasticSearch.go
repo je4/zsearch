@@ -298,10 +298,12 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]map[string][]string, []
 
 	fq := elasticSearch(query, aggregations, postfilter, highlight, int64(cfg.Start), int64(cfg.Rows)).withTrackTotalHits()
 
-	jsonstr, err := json.MarshalIndent(fq, "", "   ")
+	// jsonstr, err := json.MarshalIndent(fq, "", "   ")
+	jsonstr, err := json.Marshal(fq)
 	if err != nil {
 		return nil, nil, 0, nil, emperror.Wrapf(err, "cannot marshal %v", fq)
 	}
+	mte.log.Debugf("%v", string(jsonstr))
 	buf := bytes.NewBuffer(jsonstr)
 	res, err := mte.es.Search(
 		mte.es.Search.WithIndex(mte.index),
