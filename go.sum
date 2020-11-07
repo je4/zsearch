@@ -250,6 +250,8 @@ github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 h1:BQSFePA1RWJOl
 github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99/go.mod h1:1lJo3i6rXxKeerYnT8Nvf0QmHCRC1n8sfWVwXF2Frvo=
 github.com/je4/zsync v0.0.0-20201107172229-856c7492001b h1:RsCI28gqPpq5ooBv6WTbb9ArPlUFHzNjsnYBsLaBZts=
 github.com/je4/zsync v0.0.0-20201107172229-856c7492001b/go.mod h1:AZK+nM3uv0gu2CaYTygTsKWBc/7fPM8g+QDitcC8NBY=
+github.com/je4/zsync v0.0.0-20201107173229-469a61b4f365 h1:+cR/u5azy6i7XuGxv0NfTRirBapLIIGyZgxc+QEDi8c=
+github.com/je4/zsync v0.0.0-20201107173229-469a61b4f365/go.mod h1:CFKfvww/dxWr2Bew7Uog5knm360/8fBQbA62Upv9sB4=
 github.com/je4/zsync v0.1.0 h1:KLEjLnPCCMaWeqmVGBKb+Ox33fEuAvYFvKueUwoKl/g=
 github.com/je4/zsync v0.1.0/go.mod h1:VRNM0YVlspYZvO9sQ3uP1NLYSn9LJoNJ+kB6Bq6Er3g=
 github.com/jessevdk/go-flags v1.4.0/go.mod h1:4FA24M0QyGHXBuZZK/XkWh8h0e1EYbRYJSGM75WSRxI=

@@ -20,7 +20,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/htfy96/reformism v0.0.0-20160819020323-e5bfca398e73
 	github.com/huandu/xstrings v1.3.2 // indirect
-	github.com/je4/zsync v0.0.0-20201107172229-856c7492001b
+	github.com/je4/zsync v0.0.0-20201107173229-469a61b4f365
 	github.com/juliangruber/go-intersect v1.0.0
 	github.com/mitchellh/copystructure v1.0.0 // indirect
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
