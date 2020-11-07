@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/dgraph-io/badger/v2"
-	"github.com/elastic/go-elasticsearch/v7/esapi"
-	elasticsearch8 "github.com/elastic/go-elasticsearch/v8"
+	elasticsearch "github.com/elastic/go-elasticsearch/v8"
+	"github.com/elastic/go-elasticsearch/v8/esapi"
 	"github.com/goph/emperror"
 	"github.com/je4/zsearch/pkg/mediaserver"
 	"github.com/op/go-logging"
@@ -122,13 +122,13 @@ func elasticSearch(query *tElasticQuery, aggregations *tElasticSearchAggregation
 }
 
 type MTElasticSearch struct {
-	es    *elasticsearch8.Client
+	es    *elasticsearch.Client
 	index string
 	log   *logging.Logger
 }
 
 func NewMTElasticSearch(urls []string, index string, db *badger.DB, log *logging.Logger) (*MTElasticSearch, error) {
-	es, err := elasticsearch8.NewClient(elasticsearch8.Config{
+	es, err := elasticsearch.NewClient(elasticsearch.Config{
 		Addresses: urls,
 	})
 	if err != nil {
