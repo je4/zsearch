@@ -11,7 +11,6 @@ require (
 	github.com/dgraph-io/badger/v2 v2.2007.2
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/drgrib/maps v0.0.0-20190206181841-390503673595
-	github.com/elastic/go-elasticsearch/v7 v7.9.0
 	github.com/elastic/go-elasticsearch/v8 v8.0.0-20201104130540-2e1f801663c6
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/golang/snappy v0.0.2
