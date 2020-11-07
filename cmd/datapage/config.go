@@ -125,6 +125,7 @@ type Config struct {
 	ClusterSearchPrefix string              `toml:"clustersearchprefix"`
 	GoogleSearchPrefix  string              `toml:"googlesearchprefix"`
 	CollectionsCatalog  string              `toml:"collectionscatalog"`
+	ClusterCatalog      string              `toml:"clustercatalog"`
 	ApiPrefix           string              `toml:"apiprefix"`
 	JWTKey              string              `toml:"jwtkey"`
 	JWTAlg              []string            `toml:"jwtalg"`

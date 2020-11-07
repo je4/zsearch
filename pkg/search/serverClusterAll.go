@@ -23,13 +23,10 @@ import (
 	"html/template"
 	"net"
 	"net/http"
-	"regexp"
 	"strings"
 )
 
-var tagFieldRegexp = regexp.MustCompile("^(area|field):(.+)$")
-
-func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
+func (s *Server) clusterAllHandler(w http.ResponseWriter, req *http.Request) {
 	var err error
 	vars := mux.Vars(req)
 	subfiltername, ok := vars["subfilter"]
@@ -59,7 +56,7 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 			BaseUrl:       s.addrExt,
 			SelfPath:      req.URL.Path,
 			LoginUrl:      s.loginUrl,
-			Title:         "Collections",
+			Title:         "Wissenscluster",
 			Prefixes: map[string]string{
 				"detail":      s.detailPrefix,
 				"search":      s.searchPrefix,
@@ -118,6 +115,9 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 		status.User.Groups = append(status.User.Groups, grp)
 	}
 
+	qstr := "*:*"
+	s.log.Infof("Query: %s", qstr)
+
 	filters_fields := make(map[string][]string)
 	filters_fields["catalog"] = []string{s.collectionsCatalog}
 
@@ -170,7 +170,7 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	default:
 		w.Header().Set("Cache-Control", "max-age=14400, s-maxage=12200, stale-while-revalidate=9000, public")
-		if tpl, ok := s.templates["collections.amp.gohtml"]; ok {
+		if tpl, ok := s.templates["clusterall.amp.gohtml"]; ok {
 			if err := tpl.Execute(w, status); err != nil {
 				s.DoPanicf(w, http.StatusInternalServerError, "cannot render template: %v", false, err)
 				return
