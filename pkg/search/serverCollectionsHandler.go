@@ -137,6 +137,7 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot execute solr query: %v", false, err)
 		return
 	}
+	s.log.Infof("found %v collections", len(docs))
 
 	// sort documents into result sets
 	for _, doc := range docs {
