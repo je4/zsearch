@@ -95,7 +95,7 @@ func (s *Server) sitemapHandler(w http.ResponseWriter, req *http.Request) {
 		num := int(math.Ceil(float64(total) / float64(sitemapSize)))
 		sitemapindex := sitemap.NewSitemapIndex()
 		for i := 0; i < num; i++ {
-			us := fmt.Sprintf("%v/%v/sitemap/%v", s.addrExt, s.prefixes["api"], i*sitemapSize)
+			us := fmt.Sprintf("%v/%v/sitemap/%v?token=%s", s.addrExt, s.prefixes["api"], i*sitemapSize, tokenstring)
 			sitemapindex.URLs = append(sitemapindex.URLs, &sitemap.URL{Loc: us})
 		}
 
