@@ -22,7 +22,7 @@ func (s *Server) reloadTemplateHandler(w http.ResponseWriter, req *http.Request)
 	}
 	tokenstring := jwt[0]
 	if tokenstring == "" {
-		s.DoPanicf(w, http.StatusForbidden, "empty token to access template reload", true, err)
+		s.DoPanicf(w, http.StatusForbidden, "empty token to access template reload", true)
 		return
 	}
 	claims, err := CheckJWTValid(tokenstring, s.jwtKey, s.jwtAlg)

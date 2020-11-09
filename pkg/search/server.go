@@ -502,6 +502,20 @@ func (s *Server) InitTemplates() (err error) {
 	return nil
 }
 
+var regexpMediaUri = regexp.MustCompile(`^mediaserver:(.+)$`)
+
+func (s *Server) mediaserverUri2Url(uri string, params ...string) (string, error) {
+	matches := regexpMediaUri.FindStringSubmatch(uri)
+	if matches == nil {
+		return "", fmt.Errorf("cannot parse uri %s", uri)
+	}
+	u := fmt.Sprintf("%s/%s", s.mediaserver, matches[1])
+	if len(params) > 0 {
+		u += "/" + strings.Join(params, "/")
+	}
+	return u, nil
+}
+
 func (s *Server) DoPanicf(writer http.ResponseWriter, status int, message string, json bool, a ...interface{}) (err error) {
 	msg := fmt.Sprintf(message, a...)
 	if json {
@@ -717,7 +731,8 @@ func (s *Server) ListenAndServe(cert, key string) error {
 	router.HandleFunc(fmt.Sprintf("/%s/{csekey}", s.prefixes["cse"]), s.googleHandler).Methods("GET")
 
 	router.HandleFunc(fmt.Sprintf("/%s/reloadtemplates", s.prefixes["api"]), s.reloadTemplateHandler).Methods("GET")
-
+	router.HandleFunc(fmt.Sprintf("/%s/sitemap", s.prefixes["api"]), s.sitemapHandler).Methods("GET")
+	router.HandleFunc(fmt.Sprintf("/%s/sitemap/{start:[0-9]+}", s.prefixes["api"]), s.sitemapHandler).Methods("GET")
 	loggedRouter := handlers.LoggingHandler(s.accesslog, router)
 	addr := net.JoinHostPort(s.host, s.port)
 	s.srv = &http.Server{
