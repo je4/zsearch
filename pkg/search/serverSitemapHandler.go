@@ -172,9 +172,14 @@ func (s *Server) sitemapHandler(w http.ResponseWriter, req *http.Request) {
 					if item.Poster != nil {
 						us, err = s.mediaserverUri2Url(item.Poster.Uri, "resize", "size800x600", "formatPNG")
 						if err != nil {
-							s.DoPanicf(w, http.StatusInternalServerError, "cannot parse poster media uri %s: %v", false, videos[0].Uri, err)
+							s.DoPanicf(w, http.StatusInternalServerError, "cannot parse poster media uri %s: %v", false, item.Poster.Uri, err)
 							return
 						}
+					}
+					playerLoc, err := s.mediaserverUri2Url(videos[0].Uri, "iframe")
+					if err != nil {
+						s.DoPanicf(w, http.StatusInternalServerError, "cannot parse video0 media uri %s: %v", false, videos[0].Uri, err)
+						return
 					}
 
 					abstract := ""
@@ -187,7 +192,7 @@ func (s *Server) sitemapHandler(w http.ResponseWriter, req *http.Request) {
 						Title:        item.Title,
 						Description:  abstract,
 						ContentLoc:   "",
-						PlayerLoc:    fmt.Sprintf("%s/%s/%s", s.addrExt, s.prefixes["detail"], item.Signature),
+						PlayerLoc:    playerLoc,
 						AllowEmbed:   "no",
 						Duration:     videos[0].Duration,
 						GalleryLoc: &sitemap.GalleryLocation{
