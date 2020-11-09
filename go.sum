@@ -240,6 +240,8 @@ github.com/je4/sitemap v1.0.1-0.20201109171429-ffee1ef84d66 h1:P5r2LJlgVpX06N2lH
 github.com/je4/sitemap v1.0.1-0.20201109171429-ffee1ef84d66/go.mod h1:wPwiCw+mNfXMHsKhHvXCZOXvn87SG9IjGEBY33pmoj0=
 github.com/je4/sitemap v1.0.1-0.20201109172019-47c45e7132d8 h1:ZSxE/TRWVtrcDDi7WdFOo5bqVOhkP7+WSmLrWNPGohE=
 github.com/je4/sitemap v1.0.1-0.20201109172019-47c45e7132d8/go.mod h1:wPwiCw+mNfXMHsKhHvXCZOXvn87SG9IjGEBY33pmoj0=
+github.com/je4/sitemap v1.0.1-0.20201109172531-8a7e0eb5b921 h1:YBBfnbPVf87tQzEpLBsLNZa5S0rRbgPVK6TiTuQ6vJM=
+github.com/je4/sitemap v1.0.1-0.20201109172531-8a7e0eb5b921/go.mod h1:wPwiCw+mNfXMHsKhHvXCZOXvn87SG9IjGEBY33pmoj0=
 github.com/je4/zsync v0.0.0-20201107173229-469a61b4f365 h1:+cR/u5azy6i7XuGxv0NfTRirBapLIIGyZgxc+QEDi8c=
 github.com/je4/zsync v0.0.0-20201107173229-469a61b4f365/go.mod h1:CFKfvww/dxWr2Bew7Uog5knm360/8fBQbA62Upv9sB4=
 github.com/jessevdk/go-flags v1.4.0/go.mod h1:4FA24M0QyGHXBuZZK/XkWh8h0e1EYbRYJSGM75WSRxI=
