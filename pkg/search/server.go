@@ -132,7 +132,6 @@ type ImageSearchStatus struct {
 	SearchResultRows  int
 	SearchResultTotal int
 	SearchString      string
-	Menu              []Menu
 	MetaDescription   string
 }
 
@@ -143,12 +142,6 @@ type SubFilter struct {
 }
 
 type NetGroups map[string][]*net.IPNet
-
-type Menu struct {
-	Label string
-	Url   string
-	Sub   map[string]string
-}
 
 type facetField struct {
 	Id       string `json:"id"`
@@ -206,57 +199,50 @@ func (ng NetGroups) Contains(str string) []string {
 }
 
 type Server struct {
-	mts                 *Search
-	srv                 *http.Server
-	userCache           *UserCache
-	host                string
-	port                string
-	addrExt             string
-	staticDir           string
-	detailPrefix        string
-	staticPrefix        string
-	staticCacheControl  string
-	updatePrefix        string
-	searchPrefix        string
-	imageSearchPrefix   string
-	collectionsPrefix   string
-	clusterSearchPrefix string
-	googleSearchPrefix  string
-	apiPrefix           string
-	jwtKey              string
-	jwtAlg              []string
-	linkTokenExp        time.Duration
-	loginUrl            string
-	loginIssuer         string
-	guestGroup          string
-	adminGroup          string
-	templates           map[string]*template.Template
-	templateDev         bool
-	mediaserver         string
-	mediaserverKey      string
-	mediaTokenExp       time.Duration
-	log                 *logging.Logger
-	accesslog           io.Writer
-	ampApiKey           *rsa.PrivateKey
-	ampCache            *amp.Cache
-	searchFields        map[string]string
-	facets              SolrFacetList
-	locations           NetGroups
-	icons               map[string]string
-	baseFilter          string
-	subFilters          []SubFilter
-	funcMap             template.FuncMap
-	collectionsCatalog  string
-	queryCache          gcache.Cache
-	google              *customsearch.Service
-	googleCSEKey        map[string]string
+	mts                *Search
+	srv                *http.Server
+	userCache          *UserCache
+	host               string
+	port               string
+	addrExt            string
+	prefixes           map[string]string
+	staticDir          string
+	staticCacheControl string
+	jwtKey             string
+	jwtAlg             []string
+	linkTokenExp       time.Duration
+	loginUrl           string
+	loginIssuer        string
+	guestGroup         string
+	adminGroup         string
+	templates          map[string]*template.Template
+	templatesFiles     map[string][]string
+	templateDev        bool
+	mediaserver        string
+	mediaserverKey     string
+	mediaTokenExp      time.Duration
+	log                *logging.Logger
+	accesslog          io.Writer
+	ampApiKey          *rsa.PrivateKey
+	ampCache           *amp.Cache
+	searchFields       map[string]string
+	facets             SolrFacetList
+	locations          NetGroups
+	icons              map[string]string
+	baseFilter         string
+	subFilters         []SubFilter
+	funcMap            template.FuncMap
+	collectionsCatalog string
+	queryCache         gcache.Cache
+	google             *customsearch.Service
+	googleCSEKey       map[string]string
 }
 
 func NewServer(
 	mts *Search,
 	uc *UserCache,
 	google *customsearch.Service,
-	templates map[string][]string,
+	templateFiles map[string][]string,
 	templateDev bool,
 	addr,
 	addrExt,
@@ -265,7 +251,7 @@ func NewServer(
 	mediatokenexp time.Duration,
 	log *logging.Logger,
 	accesslog io.Writer,
-	staticPrefix,
+	prefixes map[string]string,
 	staticDir,
 	staticCacheControl,
 	jwtKey string,
@@ -275,14 +261,6 @@ func NewServer(
 	loginIssuer string,
 	guestGroup string,
 	adminGroup string,
-	detailPrefix string,
-	updatePrefix string,
-	searchPrefix string,
-	imageSearchPrefix string,
-	collectionsPrefix string,
-	clusterSearchPrefix string,
-	googleSearchPrefix string,
-	apiPrefix string,
 	AmpCache string,
 	ampApiKeyFile string,
 	searchFields map[string]string,
@@ -323,51 +301,44 @@ func NewServer(
 	ampCache, _ := aCaches[AmpCache]
 
 	srv := &Server{
-		mts:                 mts,
-		userCache:           uc,
-		google:              google,
-		host:                host,
-		port:                port,
-		addrExt:             addrExt,
-		mediaserver:         mediaserver,
-		mediaserverKey:      mediaserverkey,
-		mediaTokenExp:       mediatokenexp,
-		log:                 log,
-		accesslog:           accesslog,
-		staticPrefix:        staticPrefix,
-		staticDir:           staticDir,
-		staticCacheControl:  staticCacheControl,
-		templateDev:         templateDev,
-		jwtKey:              jwtKey,
-		jwtAlg:              jwtAlg,
-		linkTokenExp:        linkTokenExp,
-		loginUrl:            loginUrl,
-		loginIssuer:         loginIssuer,
-		guestGroup:          guestGroup,
-		adminGroup:          adminGroup,
-		detailPrefix:        detailPrefix,
-		updatePrefix:        updatePrefix,
-		searchPrefix:        searchPrefix,
-		imageSearchPrefix:   imageSearchPrefix,
-		clusterSearchPrefix: clusterSearchPrefix,
-		googleSearchPrefix:  googleSearchPrefix,
-		apiPrefix:           apiPrefix,
-		ampCache:            ampCache,
-		ampApiKey:           ampApiKey,
-		searchFields:        searchFields,
-		facets:              facets,
-		locations:           locations,
-		icons:               icons,
-		baseFilter:          baseFilter,
-		subFilters:          subFilter,
-		templates:           make(map[string]*template.Template),
-		funcMap:             template.FuncMap{},
-		collectionsPrefix:   collectionsPrefix,
-		collectionsCatalog:  collectionsCatalog,
-		queryCache:          gcache.New(100).ARC().Expiration(time.Hour * 3).Build(),
-		googleCSEKey:        googleCSEKey,
+		mts:                mts,
+		userCache:          uc,
+		google:             google,
+		host:               host,
+		port:               port,
+		addrExt:            addrExt,
+		prefixes:           prefixes,
+		mediaserver:        mediaserver,
+		mediaserverKey:     mediaserverkey,
+		mediaTokenExp:      mediatokenexp,
+		log:                log,
+		accesslog:          accesslog,
+		staticDir:          staticDir,
+		staticCacheControl: staticCacheControl,
+		templateDev:        templateDev,
+		jwtKey:             jwtKey,
+		jwtAlg:             jwtAlg,
+		linkTokenExp:       linkTokenExp,
+		loginUrl:           loginUrl,
+		loginIssuer:        loginIssuer,
+		guestGroup:         guestGroup,
+		adminGroup:         adminGroup,
+		ampCache:           ampCache,
+		ampApiKey:          ampApiKey,
+		searchFields:       searchFields,
+		facets:             facets,
+		locations:          locations,
+		icons:              icons,
+		baseFilter:         baseFilter,
+		subFilters:         subFilter,
+		templates:          make(map[string]*template.Template),
+		funcMap:            template.FuncMap{},
+		collectionsCatalog: collectionsCatalog,
+		queryCache:         gcache.New(100).ARC().Expiration(time.Hour * 3).Build(),
+		googleCSEKey:       googleCSEKey,
+		templatesFiles:     templateFiles,
 	}
-	if err := srv.InitTemplates(templates); err != nil {
+	if err := srv.InitTemplates(); err != nil {
 		return nil, emperror.Wrapf(err, "cannot initialize server")
 	}
 	return srv, nil
@@ -405,7 +376,7 @@ func initTemplate(tpl []string, name string, funcMap template.FuncMap) (*templat
 	return newTpl, nil
 }
 
-func (s *Server) InitTemplates(templates map[string][]string) (err error) {
+func (s *Server) InitTemplates() (err error) {
 	mediaMatch := regexp.MustCompile(`^mediaserver:([^/]+)/([^/]+)$`)
 
 	for key, val := range sprig.FuncMap() {
@@ -521,7 +492,7 @@ func (s *Server) InitTemplates(templates map[string][]string) (err error) {
 		return url
 	}
 
-	for name, templateFiles := range templates {
+	for name, templateFiles := range s.templatesFiles {
 		tpl, err := initTemplate(templateFiles, name, s.funcMap)
 		if err != nil {
 			return emperror.Wrapf(err, "cannot initialize template")
@@ -656,7 +627,7 @@ func (s *Server) ListenAndServe(cert, key string) error {
 	router := mux.NewRouter()
 
 	// https://data.mediathek.hgk.fhnw.ch/search
-	searchRegexp := regexp.MustCompile(fmt.Sprintf("/%s(/(.+))?$", s.searchPrefix))
+	searchRegexp := regexp.MustCompile(fmt.Sprintf("/%s(/(.+))?$", s.prefixes["search"]))
 	searchMatcher := func(r *http.Request, rm *mux.RouteMatch) bool {
 		matches := searchRegexp.FindSubmatch([]byte(r.URL.Path))
 		if len(matches) == 0 {
@@ -677,7 +648,7 @@ func (s *Server) ListenAndServe(cert, key string) error {
 		Handler(handlers.CompressHandler(func() http.Handler { return http.HandlerFunc(s.searchHandler) }())).
 		Methods("GET")
 
-	collectionsRegexp := regexp.MustCompile(fmt.Sprintf("/%s(/(.+))?$", s.collectionsPrefix))
+	collectionsRegexp := regexp.MustCompile(fmt.Sprintf("/%s(/(.+))?$", s.prefixes["collections"]))
 	collectionsMatcher := func(r *http.Request, rm *mux.RouteMatch) bool {
 		matches := collectionsRegexp.FindSubmatch([]byte(r.URL.Path))
 		if len(matches) == 0 {
@@ -699,7 +670,7 @@ func (s *Server) ListenAndServe(cert, key string) error {
 		Methods("GET")
 
 	// https://data.mediathek.hgk.fhnw.ch/detail/[signature]
-	mainRegexp := regexp.MustCompile(fmt.Sprintf("^/%s/([^/]+)(/(.+))?$", s.detailPrefix))
+	mainRegexp := regexp.MustCompile(fmt.Sprintf("^/%s/([^/]+)(/(.+))?$", s.prefixes["detail"]))
 	router.
 		MatcherFunc(func(r *http.Request, rm *mux.RouteMatch) bool {
 			matches := mainRegexp.FindSubmatch([]byte(r.URL.Path))
@@ -717,7 +688,7 @@ func (s *Server) ListenAndServe(cert, key string) error {
 		Methods("GET")
 
 	// https://data.mediathek.hgk.fhnw.ch/update/[signature]
-	updateRegexp := regexp.MustCompile(fmt.Sprintf("^/%s/(.+)$", s.updatePrefix))
+	updateRegexp := regexp.MustCompile(fmt.Sprintf("^/%s/(.+)$", s.prefixes["update"]))
 	router.
 		MatcherFunc(func(r *http.Request, rm *mux.RouteMatch) bool {
 			matches := updateRegexp.FindSubmatch([]byte(r.URL.Path))
@@ -733,8 +704,8 @@ func (s *Server) ListenAndServe(cert, key string) error {
 
 	// the static fileserver
 	router.
-		PathPrefix(fmt.Sprintf("/%s", s.staticPrefix)).
-		Handler(http.StripPrefix("/"+s.staticPrefix, func(h http.Handler) http.Handler {
+		PathPrefix(fmt.Sprintf("/%s", s.prefixes["static"])).
+		Handler(http.StripPrefix("/"+s.prefixes["static"], func(h http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Cache-Control", s.staticCacheControl)
 				h.ServeHTTP(w, r)
@@ -742,8 +713,10 @@ func (s *Server) ListenAndServe(cert, key string) error {
 		}(http.FileServer(http.Dir(s.staticDir))))).Methods("GET")
 
 	// google search
-	router.HandleFunc(fmt.Sprintf("/%s/{csekey}", s.clusterSearchPrefix), s.clusterHandler).Methods("GET")
-	router.HandleFunc(fmt.Sprintf("/%s/{csekey}", s.googleSearchPrefix), s.googleHandler).Methods("GET")
+	router.HandleFunc(fmt.Sprintf("/%s/{csekey}", s.prefixes["cluster"]), s.clusterHandler).Methods("GET")
+	router.HandleFunc(fmt.Sprintf("/%s/{csekey}", s.prefixes["cse"]), s.googleHandler).Methods("GET")
+
+	router.HandleFunc(fmt.Sprintf("/%s/reloadtemplates", s.prefixes["api"]), s.reloadTemplateHandler).Methods("GET")
 
 	loggedRouter := handlers.LoggingHandler(s.accesslog, router)
 	addr := net.JoinHostPort(s.host, s.port)
@@ -758,7 +731,7 @@ func (s *Server) ListenAndServe(cert, key string) error {
 			return emperror.Wrap(err, "cannot generate default certificate")
 		}
 		s.srv.TLSConfig = &tls.Config{Certificates: []tls.Certificate{*cert}}
-		s.log.Infof("starting HTTPS zsearch at https://%v/%v", addr, s.searchPrefix)
+		s.log.Infof("starting HTTPS zsearch at https://%v/%v", addr, s.prefixes["search"])
 		return s.srv.ListenAndServeTLS("", "")
 	} else if cert != "" && key != "" {
 		s.log.Infof("starting HTTPS zsearch at https://%v", addr)
@@ -885,6 +858,9 @@ func (s *Server) string2QList(search string, filterOrg map[string][]string) (map
 	gen := []string{}
 	fldlist := make(map[string][]string)
 	fldlistOrg := filterOrg
+	if fldlistOrg == nil {
+		fldlistOrg = make(map[string][]string)
+	}
 
 	for fld, val := range fldlistOrg {
 		fld, ok := s.searchFields[fld]

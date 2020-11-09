@@ -92,7 +92,7 @@ func (s *Server) updateHandler(w http.ResponseWriter, req *http.Request) {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot parse addrExt %s: %v", false, s.addrExt, err)
 		return
 	}
-	theUrl := fmt.Sprintf("%s/%s/%s", extUrl, s.detailPrefix, signature)
+	theUrl := fmt.Sprintf("%s/%s/%s", extUrl, s.prefixes["detail"], signature)
 	updateUrl, err := s.ampCache.BuildUpdateUrl(theUrl, s.ampApiKey)
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot build update url: %v", false, err)

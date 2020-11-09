@@ -36,11 +36,11 @@ func (s *Server) googleHandler(w http.ResponseWriter, req *http.Request) {
 
 	if pusher, ok := w.(http.Pusher); ok {
 		pushfonts := []string{
-			"/" + s.staticPrefix + "/font/inter/Inter-ExtraLight.woff2?v=3.15",
-			"/" + s.staticPrefix + "/font/inter/Inter-Regular.woff2?v=3.15",
-			"/" + s.staticPrefix + "/font/inter/Inter-Light.woff2?v=3.15",
-			"/" + s.staticPrefix + "/font/inter/Inter-Bold.woff2?v=3.15",
-			"/" + s.staticPrefix + "/font/inter/Inter-roman.var.woff2?v=3.15",
+			"/" + s.prefixes["static"] + "/font/inter/Inter-ExtraLight.woff2?v=3.15",
+			"/" + s.prefixes["static"] + "/font/inter/Inter-Regular.woff2?v=3.15",
+			"/" + s.prefixes["static"] + "/font/inter/Inter-Light.woff2?v=3.15",
+			"/" + s.prefixes["static"] + "/font/inter/Inter-Bold.woff2?v=3.15",
+			"/" + s.prefixes["static"] + "/font/inter/Inter-roman.var.woff2?v=3.15",
 		}
 
 		for _, furl := range pushfonts {
@@ -59,11 +59,11 @@ func (s *Server) googleHandler(w http.ResponseWriter, req *http.Request) {
 	status := &GoogleResultStatus{
 		BaseStatus: BaseStatus{
 			Prefixes: map[string]string{
-				"detail":      s.detailPrefix,
-				"search":      s.searchPrefix,
-				"collections": s.collectionsPrefix,
-				"cluster":     s.clusterSearchPrefix,
-				"google":      s.googleSearchPrefix,
+				"detail":      s.prefixes["detail"],
+				"search":      s.prefixes["search"],
+				"collections": s.prefixes["collections"],
+				"cluster":     s.prefixes["cluster"],
+				"google":      s.prefixes["cse"],
 			},
 			Type:          "search",
 			Notifications: []Notification{},

@@ -234,7 +234,7 @@ func main() {
 		config.MediaserverExp.Duration,
 		log,
 		accesslog,
-		config.StaticPrefix,
+		config.Prefixes,
 		config.StaticDir,
 		config.StaticCacheControl,
 		config.JWTKey,
@@ -244,14 +244,6 @@ func main() {
 		config.LoginIssuer,
 		config.AccessGroup.Guest,
 		config.AccessGroup.Admin,
-		config.DetailPrefix,
-		config.UpdatePrefix,
-		config.SearchPrefix,
-		config.ImageSearchPrefix,
-		config.CollectionsPrefix,
-		config.ClusterSearchPrefix,
-		config.GoogleSearchPrefix,
-		config.ApiPrefix,
 		config.AmpCache,
 		config.AmpApiKey,
 		config.SearchFields,
@@ -270,7 +262,7 @@ func main() {
 	}
 	go func() {
 		if err := srv.ListenAndServe(config.CertPEM, config.KeyPEM); err != nil {
-			log.Errorf("server died: %v", err)
+			log.Fatalf("server died: %v", err)
 		}
 	}()
 

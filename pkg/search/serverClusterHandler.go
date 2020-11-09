@@ -55,11 +55,11 @@ func (s *Server) clusterHandler(w http.ResponseWriter, req *http.Request) {
 
 	if pusher, ok := w.(http.Pusher); ok {
 		pushfonts := []string{
-			"/" + s.staticPrefix + "/font/inter/Inter-ExtraLight.woff2?v=3.15",
-			"/" + s.staticPrefix + "/font/inter/Inter-Regular.woff2?v=3.15",
-			"/" + s.staticPrefix + "/font/inter/Inter-Light.woff2?v=3.15",
-			"/" + s.staticPrefix + "/font/inter/Inter-Bold.woff2?v=3.15",
-			"/" + s.staticPrefix + "/font/inter/Inter-roman.var.woff2?v=3.15",
+			"/" + s.prefixes["static"] + "/font/inter/Inter-ExtraLight.woff2?v=3.15",
+			"/" + s.prefixes["static"] + "/font/inter/Inter-Regular.woff2?v=3.15",
+			"/" + s.prefixes["static"] + "/font/inter/Inter-Light.woff2?v=3.15",
+			"/" + s.prefixes["static"] + "/font/inter/Inter-Bold.woff2?v=3.15",
+			"/" + s.prefixes["static"] + "/font/inter/Inter-roman.var.woff2?v=3.15",
 		}
 
 		for _, furl := range pushfonts {
@@ -146,11 +146,11 @@ func (s *Server) clusterHandler(w http.ResponseWriter, req *http.Request) {
 		status = &ClusterResultStatus{
 			BaseStatus: BaseStatus{
 				Prefixes: map[string]string{
-					"detail":      s.detailPrefix,
-					"search":      s.searchPrefix,
-					"collections": s.collectionsPrefix,
-					"cluster":     s.clusterSearchPrefix,
-					"google":      s.googleSearchPrefix,
+					"detail":      s.prefixes["detail"],
+					"search":      s.prefixes["search"],
+					"collections": s.prefixes["collections"],
+					"cluster":     s.prefixes["cluster"],
+					"google":      s.prefixes["cse"],
 				},
 				Type:          "search",
 				Notifications: []Notification{},
@@ -166,7 +166,7 @@ func (s *Server) clusterHandler(w http.ResponseWriter, req *http.Request) {
 			SearchResultStart: start,
 			Items:             []GoogleResultItem{},
 			Searches:          searches,
-			CSEBase:           fmt.Sprintf("%s/%s", s.addrExt, s.clusterSearchPrefix),
+			CSEBase:           fmt.Sprintf("%s/%s", s.addrExt, s.prefixes["cluster"]),
 			SearchName:        csekey,
 		}
 		status.SearchResultRows = int64(len(resp.Items))
@@ -189,10 +189,11 @@ func (s *Server) clusterHandler(w http.ResponseWriter, req *http.Request) {
 		status = &ClusterResultStatus{
 			BaseStatus: BaseStatus{
 				Prefixes: map[string]string{
-					"detail":      s.detailPrefix,
-					"search":      s.searchPrefix,
-					"collections": s.collectionsPrefix,
-					"google":      s.clusterSearchPrefix,
+					"detail":      s.prefixes["detail"],
+					"search":      s.prefixes["search"],
+					"collections": s.prefixes["collections"],
+					"cluster":     s.prefixes["cluster"],
+					"google":      s.prefixes["cse"],
 				},
 				Type:          "search",
 				Notifications: []Notification{},
@@ -208,7 +209,7 @@ func (s *Server) clusterHandler(w http.ResponseWriter, req *http.Request) {
 			SearchResultStart: start,
 			Items:             []GoogleResultItem{},
 			Searches:          searches,
-			CSEBase:           fmt.Sprintf("%s/%s", s.addrExt, s.clusterSearchPrefix),
+			CSEBase:           fmt.Sprintf("%s/%s", s.addrExt, s.prefixes["cluster"]),
 			SearchName:        csekey,
 		}
 	}

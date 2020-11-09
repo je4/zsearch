@@ -141,28 +141,28 @@ limitations under the License.
                                         <div style="display:table-cell; width:260px; /* height:260px; */ padding-right:16px; vertical-align: top;">
                                             {{if $item.Poster}}
                                                 {{$image := $item.Poster}}
-                                                <a style="text-decoration: none;" href="{{$baseurl}}/search/{{$item.Signature}}">
-                                                    <div style="filter: grayscale(0.7) sepia(0.2);">
-                                                <amp-img
-                                                        aria-label="{{$image.Name}}"
-                                                        src="{{medialink $image.Uri "resize" "size260x260/formatWEBP" false}}"
-                                                        width="{{resizeW $image.Width $image.Height 260 260}}"
-                                                        height="{{resizeH $image.Width $image.Height 260 260}}"
-                                                        layout="responsive"
-                                                        noloading="">
-                                                    <amp-img
-                                                            aria-label="{{$image.Name}}"
-                                                            src="{{medialink $image.Uri "resize" "size260x260/formatJPEG" false}}"
-                                                            width="{{resizeW $image.Width $image.Height 260 260}}"
-                                                            height="{{resizeH $image.Width $image.Height 260 260}}"
-                                                            layout="responsive"
-                                                            fallback
-                                                            noloading="">
-                                                        <div placeholder="" class="commerce-loader"></div>
-                                                    </amp-img>
-                                                </amp-img>
+                                                    <div class="collectionsposter" style="">
+                                                        <a style="text-decoration: none;" href="{{$baseurl}}/search/{{$item.Signature}}">
+                                                        <amp-img
+                                                                aria-label="{{$image.Name}}"
+                                                                src="{{medialink $image.Uri "resize" "size180x180/formatWEBP" false}}"
+                                                                width="{{resizeW $image.Width $image.Height 180 180}}"
+                                                                height="{{resizeH $image.Width $image.Height 180 180}}"
+                                                                layout="responsive"
+                                                                noloading="">
+                                                            <amp-img
+                                                                    aria-label="{{$image.Name}}"
+                                                                    src="{{medialink $image.Uri "resize" "size180x180/formatJPEG" false}}"
+                                                                    width="{{resizeW $image.Width $image.Height 180 180}}"
+                                                                    height="{{resizeH $image.Width $image.Height 180 180}}"
+                                                                    layout="responsive"
+                                                                    fallback
+                                                                    noloading="">
+                                                                <div placeholder="" class="commerce-loader"></div>
+                                                            </amp-img>
+                                                        </amp-img>
+                                                        </a>
                                                     </div>
-                                                </a>
                                             {{end}}
                                         </div>
                                         <div style="display:table-cell; vertical-align: top;">

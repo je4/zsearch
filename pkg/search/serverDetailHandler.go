@@ -47,11 +47,11 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 			Notifications: []Notification{},
 			Token:         "",
 			Prefixes: map[string]string{
-				"detail":      s.detailPrefix,
-				"search":      s.searchPrefix,
-				"collections": s.collectionsPrefix,
-				"cluster":     s.clusterSearchPrefix,
-				"google":      s.googleSearchPrefix,
+				"detail":      s.prefixes["detail"],
+				"search":      s.prefixes["search"],
+				"collections": s.prefixes["collections"],
+				"cluster":     s.prefixes["cluster"],
+				"google":      s.prefixes["cse"],
 			},
 			AmpBase: "",
 			Title:   "",
@@ -192,12 +192,12 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 
 	if pusher, ok := w.(http.Pusher); ok {
 		// Push is supported.
-		furl := "/" + s.staticPrefix + "/font/inter/Inter-roman.var.woff2?v=3.15"
+		furl := "/" + s.prefixes["static"] + "/font/inter/Inter-roman.var.woff2?v=3.15"
 		s.log.Infof("pushing font %s", furl)
 		if err := pusher.Push(furl, nil); err != nil {
 			s.log.Errorf("Failed to push %s: %v", furl, err)
 		}
-		furl = "/" + s.staticPrefix + "/font/inter/Inter-Bold.woff2?v=3.15"
+		furl = "/" + s.prefixes["static"] + "/font/inter/Inter-Bold.woff2?v=3.15"
 		s.log.Infof("pushing font %s", furl)
 		if err := pusher.Push(furl, nil); err != nil {
 			s.log.Errorf("Failed to push %s: %v", furl, err)

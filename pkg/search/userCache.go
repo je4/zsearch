@@ -50,7 +50,7 @@ func (u User) inGroup(grp string) bool {
 }
 
 func (u User) LinkSignatureCache(signature string) string {
-	urlstr := fmt.Sprintf("%s/%s/%s", u.Server.addrExt, u.Server.detailPrefix, signature)
+	urlstr := fmt.Sprintf("%s/%s/%s", u.Server.addrExt, u.Server.prefixes["detail"], signature)
 	var err error
 	if u.Server.ampCache != nil {
 		urlstr, err = u.Server.ampCache.BuildUrl(urlstr, amp.PAGE)
@@ -62,7 +62,7 @@ func (u User) LinkSignatureCache(signature string) string {
 }
 
 func (u User) LinkSearch(query string, facets ...string) template.URL {
-	urlstr := fmt.Sprintf("%s/%s?searchtext=%s", u.Server.addrExt, u.Server.searchPrefix, url.QueryEscape(query))
+	urlstr := fmt.Sprintf("%s/%s?searchtext=%s", u.Server.addrExt, u.Server.prefixes["search"], url.QueryEscape(query))
 	for _, f := range facets {
 		urlstr += fmt.Sprintf("&%s=true", url.QueryEscape(f))
 	}
@@ -99,7 +99,7 @@ func (u User) LinkSignature(signature string) string {
 		}
 		urlstr := fmt.Sprintf("%s://%s/%s/%s", proto, u.Server.srv.Addr, u.Server.detailPrefix, signature)
 	*/
-	urlstr := fmt.Sprintf("%s/%s/%s", u.Server.addrExt, u.Server.detailPrefix, signature)
+	urlstr := fmt.Sprintf("%s/%s/%s", u.Server.addrExt, u.Server.prefixes["detail"], signature)
 	if u.LoggedIn {
 		jwt, err := NewJWT(
 			u.Server.jwtKey,

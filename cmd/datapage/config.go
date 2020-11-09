@@ -114,19 +114,11 @@ type Config struct {
 	AddrExt             string              `toml:"addrext"`
 	CertPEM             string              `toml:"certpem"`
 	KeyPEM              string              `toml:"keypem"`
+	Prefixes            map[string]string   `toml:"prefix"`
 	StaticDir           string              `toml:"staticdir"`
-	StaticPrefix        string              `toml:"staticprefix"`
 	StaticCacheControl  string              `toml:"staticcachecontrol"`
-	DetailPrefix        string              `toml:"detailprefix"`
-	UpdatePrefix        string              `toml:"updateprefix"`
-	SearchPrefix        string              `toml:"searchprefix"`
-	CollectionsPrefix   string              `toml:"collectionsprefix"`
-	ImageSearchPrefix   string              `toml:"imagesearchprefix"`
-	ClusterSearchPrefix string              `toml:"clustersearchprefix"`
-	GoogleSearchPrefix  string              `toml:"googlesearchprefix"`
 	CollectionsCatalog  string              `toml:"collectionscatalog"`
 	ClusterCatalog      string              `toml:"clustercatalog"`
-	ApiPrefix           string              `toml:"apiprefix"`
 	JWTKey              string              `toml:"jwtkey"`
 	JWTAlg              []string            `toml:"jwtalg"`
 	LinkTokenExp        duration            `toml:"linktokenexp"`
@@ -154,6 +146,18 @@ type Config struct {
 	Google              Cfg_Google          `toml:"google"`
 }
 
+var prefixNames = []string{
+	"detail",
+	"update",
+	"search",
+	"images",
+	"collections",
+	"cse",
+	"cluster",
+	"api",
+	"static",
+}
+
 func LoadConfig(filepath string) Config {
 	var conf Config
 	m, err := toml.DecodeFile(filepath, &conf)
@@ -164,14 +168,15 @@ func LoadConfig(filepath string) Config {
 	// make sure, that medaiserver url ends with an /
 	conf.Mediaserver = strings.TrimRight(conf.Mediaserver, "/")
 	conf.AddrExt = strings.TrimRight(conf.AddrExt, "/")
-	conf.StaticPrefix = strings.Trim(conf.StaticPrefix, "/")
-	conf.DetailPrefix = strings.Trim(conf.DetailPrefix, "/")
-	conf.UpdatePrefix = strings.Trim(conf.UpdatePrefix, "/")
-	conf.SearchPrefix = strings.Trim(conf.SearchPrefix, "/")
-	conf.CollectionsPrefix = strings.Trim(conf.CollectionsPrefix, "/")
-	conf.ImageSearchPrefix = strings.Trim(conf.ImageSearchPrefix, "/")
-	conf.ClusterSearchPrefix = strings.Trim(conf.ClusterSearchPrefix, "/")
-	conf.GoogleSearchPrefix = strings.Trim(conf.GoogleSearchPrefix, "/")
-	conf.ApiPrefix = strings.Trim(conf.ApiPrefix, "/")
+
+	// clean prefixes
+	// check existence to avoid error handling on future prefix access
+	for _, name := range prefixNames {
+		val, ok := conf.Prefixes[name]
+		if !ok {
+			log.Fatalf("could not find prefix.%s in config file", name)
+		}
+		conf.Prefixes[name] = strings.Trim(val, "/")
+	}
 	return conf
 }
