@@ -733,6 +733,11 @@ func (s *Server) ListenAndServe(cert, key string) error {
 	router.HandleFunc(fmt.Sprintf("/%s/reloadtemplates", s.prefixes["api"]), s.reloadTemplateHandler).Methods("GET")
 	router.HandleFunc(fmt.Sprintf("/%s/sitemap", s.prefixes["api"]), s.sitemapHandler).Methods("GET")
 	router.HandleFunc(fmt.Sprintf("/%s/sitemap/{start:[0-9]+}", s.prefixes["api"]), s.sitemapHandler).Methods("GET")
+	router.HandleFunc("/google54f060b89e33248e.html", func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Content-type", "text/html")
+		writer.Write([]byte("google-site-verification: google54f060b89e33248e.html\n"))
+	})
+
 	loggedRouter := handlers.LoggingHandler(s.accesslog, router)
 	addr := net.JoinHostPort(s.host, s.port)
 	s.srv = &http.Server{
