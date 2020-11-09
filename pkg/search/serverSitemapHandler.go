@@ -192,9 +192,12 @@ func (s *Server) sitemapHandler(w http.ResponseWriter, req *http.Request) {
 						Title:        item.Title,
 						Description:  abstract,
 						ContentLoc:   "",
-						PlayerLoc:    playerLoc,
-						AllowEmbed:   "no",
-						Duration:     videos[0].Duration,
+						PlayerLoc: &sitemap.PlayerLocation{
+							AllowEmbed: "no",
+							Value:      playerLoc,
+						},
+						AllowEmbed: "no",
+						Duration:   videos[0].Duration,
 						GalleryLoc: &sitemap.GalleryLocation{
 							Title: "Mediathek HGK, Basel",
 							Value: "https://mediathek.hgk.fhnw.ch",
