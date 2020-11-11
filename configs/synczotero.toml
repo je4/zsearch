@@ -3,14 +3,14 @@ loglevel = "DEBUG" # CRITICAL|ERROR|WARNING|NOTICE|INFO|DEBUG
 cachedir = "C:/temp/badger"
 groups = [
     # 2483850, # Albena
-    2545256, # HGK Collections
+    # 2545256, # HGK Collections
     # 2553473, # HGK Publikationen
     # 2512784, # HGK Events
     # 2206003, # ACT Basel  // indexer - not yet implemented
     # 2486551, # ACT 2020
     # 2329831, # HGK Fotoarchiv
     # 2317722, # archive_des_ephemeren
-    2474728, # armin
+    # 2474728, # armin
     # 2561875, # company_cultures__leitbilder
     # 2327162, # digitalbrainstorming
     # 2358931, # julia
@@ -20,7 +20,7 @@ groups = [
     # 2514673, # rimab
     # 2068924, # summe2017
     # 2579176, # Wissenscluster
-
+    2604593, # Peter von Arx
 ]
 
 

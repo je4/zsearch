@@ -394,6 +394,11 @@ func (s *Server) InitTemplates() (err error) {
 	s.funcMap["js"] = func(value string) template.JS {
 		return template.JS(value)
 	}
+	s.funcMap["nl2br"] = func(value string) template.HTML {
+		safe := template.HTMLEscapeString(value)
+		safe = strings.Replace(safe, "\n", "<br>", -1)
+		return template.HTML(safe)
+	}
 	s.funcMap["htmlattr"] = func(value string) template.HTMLAttr {
 		return template.HTMLAttr(value)
 	}

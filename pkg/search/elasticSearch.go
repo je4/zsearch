@@ -225,7 +225,7 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]map[string][]string, []
 					filters = append(filters, elasticPrefixQuery(fld, val).FieldValue())
 				case "persons.name":
 					filters = append(filters, elasticNestedQuery("persons",
-						elasticQuery().withBooleanQuery(elasticBooleanQuery(0).withMust(elasticMatchQuery(fld, val).FieldValue()))).FieldValue())
+						elasticQuery().withTermQuery(elasticTermQuery("persons.name.keyword", val, 0))).FieldValue())
 				default:
 					filters = append(filters, elasticTermQuery(fld, val, 0).FieldValue())
 				}
