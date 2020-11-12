@@ -25,7 +25,7 @@ import (
 )
 
 func (s *Server) updateHandler(w http.ResponseWriter, req *http.Request) {
-	// remove prefix and use whole rest of url as signature
+	// remove Prefix and use whole rest of url as signature
 	vars := mux.Vars(req)
 	signature, ok := vars["signature"]
 	if !ok {

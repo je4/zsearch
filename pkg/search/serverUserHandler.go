@@ -23,7 +23,7 @@ import (
 )
 
 func (s *Server) userHandler(w http.ResponseWriter, req *http.Request) {
-	// remove prefix and use whole rest of url as signature
+	// remove Prefix and use whole rest of url as signature
 	vars := mux.Vars(req)
 	_, ok := vars["access"]
 	if !ok {

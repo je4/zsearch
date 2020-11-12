@@ -130,17 +130,17 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		status.User.Groups = append(status.User.Groups, grp)
 	}
 
-	facets := map[string]termFacet{}
+	facets := map[string]TermFacet{}
 	for _, val := range s.facets {
 		if _, ok := facets[val.Field]; !ok {
-			facets[val.Field] = termFacet{
-				selected: map[string]bool{},
-				prefix:   "",
-				limit:    0,
+			facets[val.Field] = TermFacet{
+				Selected: map[string]bool{},
+				Prefix:   "",
+				Limit:    0,
 			}
 		}
 		for v, sel := range val.Restrict {
-			facets[val.Field].selected[v] = sel
+			facets[val.Field].Selected[v] = sel
 		}
 		status.CoreFacets = append(status.CoreFacets, val.Field)
 	}
@@ -172,17 +172,17 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 				fld := found[1]
 				if m := facetValRegexp.FindStringSubmatch(val); m != nil {
 					if _, ok := facets[fld]; !ok {
-						facets[fld] = termFacet{
-							selected: map[string]bool{},
-							prefix:   "",
-							limit:    0,
+						facets[fld] = TermFacet{
+							Selected: map[string]bool{},
+							Prefix:   "",
+							Limit:    0,
 						}
 					}
 					v := m[1]
 					if m[2] == "true" {
-						facets[fld].selected[v] = true
+						facets[fld].Selected[v] = true
 					} else {
-						//Facets[fld].selected[v] = false
+						//Facets[fld].Selected[v] = false
 					}
 				}
 			} else {
@@ -250,15 +250,15 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 						facetLimit = 0
 					}
 					if _, ok := facets[facetField]; !ok {
-						facets[facetField] = termFacet{
-							selected: map[string]bool{},
-							prefix:   "",
-							limit:    0,
+						facets[facetField] = TermFacet{
+							Selected: map[string]bool{},
+							Prefix:   "",
+							Limit:    0,
 						}
 					}
 					f := facets[facetField]
-					f.prefix = facetPrefix
-					f.limit = facetLimit
+					f.Prefix = facetPrefix
+					f.Limit = facetLimit
 					facets[facetField] = f
 				}
 			}
@@ -353,7 +353,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 					}
 				}
 			}
-			selected, ok := facets[facet].selected[val]
+			selected, ok := facets[facet].Selected[val]
 			if !ok {
 				selected = false
 			}
@@ -384,7 +384,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 			//id := "facet_" + fmt.Sprintf("%x", crc32.Checksum([]byte(facet+val), crc32q))
 			id := fmt.Sprintf("facet_%v_%v", facet, facetCounter)
 			facetCounter++
-			selected, ok := facets[facet].selected[val]
+			selected, ok := facets[facet].Selected[val]
 			if !ok {
 				selected = false
 			}

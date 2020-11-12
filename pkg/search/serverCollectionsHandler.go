@@ -121,7 +121,7 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 	filters_fields := make(map[string][]string)
 	filters_fields["catalog"] = []string{s.collectionsCatalog}
 
-	var facets map[string]termFacet
+	var facets map[string]TermFacet
 	cfg := &SearchConfig{
 		FiltersFields:  filters_fields,
 		QStr:           "",

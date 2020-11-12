@@ -33,7 +33,7 @@ func (jfm *JSONTermsFacetMap) setBucketOffset(numToSkip int64) *JSONTermsFacetMa
  * Defaults to 10 if not specified.
  */
 func (jfm *JSONTermsFacetMap) setLimit(maximumBuckets int64) *JSONTermsFacetMap {
-	(*jfm)["limit"] = maximumBuckets
+	(*jfm)["Limit"] = maximumBuckets
 	return jfm
 }
 
@@ -167,13 +167,13 @@ func (jfm *JSONTermsFacetMap) IncludeAllBucketsUnionBucket(shouldInclude bool) *
 }
 
 /**
- * Indicates that the facet should only produce buckets for terms that SearchResultStart with the specified prefix.
+ * Indicates that the facet should only produce buckets for terms that SearchResultStart with the specified Prefix.
  */
 func (jfm *JSONTermsFacetMap) SetTermPrefix(termPrefix string) *JSONTermsFacetMap {
 	if termPrefix == "" {
 		return jfm
 	}
-	(*jfm)["prefix"] = termPrefix
+	(*jfm)["Prefix"] = termPrefix
 	return jfm
 }
 

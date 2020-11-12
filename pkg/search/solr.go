@@ -89,12 +89,6 @@ type cacheEntry struct {
 	Doc     *solr.Document
 }
 
-type termFacet struct {
-	selected map[string]bool
-	prefix   string
-	limit    int64
-}
-
 func (mts *MTSolr) GetContent(entry *cacheEntry) (Source, error) {
 	var content Source
 	var err error
@@ -345,7 +339,7 @@ func (mts *MTSolr) LoadEntities(ids []string) (map[string]*Document, error) {
 	return result, nil
 }
 
-func (mts *MTSolr) Search(text string, filters []string, facets map[string]termFacet, groups []string, contentVisible bool, start, rows int, isAdmin bool) ([]*Document, int64, FacetCountResult, error) {
+func (mts *MTSolr) Search(text string, filters []string, facets map[string]TermFacet, groups []string, contentVisible bool, start, rows int, isAdmin bool) ([]*Document, int64, FacetCountResult, error) {
 	//QStr := EscapeSolrString(text)
 	qstr := text
 	if qstr == "" {
@@ -371,11 +365,11 @@ func (mts *MTSolr) Search(text string, filters []string, facets map[string]termF
 	// build Facets with filter exclusion
 	for field, vals := range facets {
 		solrJSONTermsFacet := CreateJSONTermsFacetMap(field)
-		if vals.limit != 0 {
-			solrJSONTermsFacet.setLimit(vals.limit)
+		if vals.Limit != 0 {
+			solrJSONTermsFacet.setLimit(vals.Limit)
 		}
-		if vals.prefix != "" {
-			solrJSONTermsFacet.SetTermPrefix(vals.prefix)
+		if vals.Prefix != "" {
+			solrJSONTermsFacet.SetTermPrefix(vals.Prefix)
 		}
 		solrJSONDomainMap := CreateJSONDomainMap().WithTagsToExclude("facet_" + field)
 		solrJSONTermsFacet.JSONFacetMap().withDomain(solrJSONDomainMap)
@@ -387,7 +381,7 @@ func (mts *MTSolr) Search(text string, filters []string, facets map[string]termF
 		//		query.AddFacet(fmt.Sprintf("{!ex=%s}%s", facet, facet))
 		// filterquery only needed if selections available
 		selected := []string{}
-		for val, sel := range vals.selected {
+		for val, sel := range vals.Selected {
 			if sel {
 				selected = append(selected, val)
 			}

@@ -122,6 +122,10 @@ func (zot *SourceZoteroDeprecated) GetTitle() string {
 	return zot.ZData.Data.Title
 }
 
+func (zot *SourceZoteroDeprecated) GetSeries() string {
+	return zot.ZData.Data.Series
+}
+
 func (zot *SourceZoteroDeprecated) GetPlace() string {
 	return zot.ZData.Data.Place
 }

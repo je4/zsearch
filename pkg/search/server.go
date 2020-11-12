@@ -146,7 +146,7 @@ type NetGroups map[string][]*net.IPNet
 type facetField struct {
 	Id       string `json:"id"`
 	Name     string `json:"name"`
-	Selected bool   `json:"selected"`
+	Selected bool   `json:"Selected"`
 }
 
 type SearchResult struct {
@@ -778,7 +778,7 @@ func (s *Server) GetClaimUser(claims map[string]interface{}) (*User, error) {
 	}
 	groupstr, err := GetClaim(claims, "Groups")
 	if err != nil {
-		groupstr = "global/guest"
+		groupstr = "global/guest;global/user"
 	}
 	groups := strings.Split(groupstr, ";")
 	firstName, _ := GetClaim(claims, "firstName")
@@ -922,7 +922,7 @@ func (s *Server) doc2result(
 	docs []*SourceData,
 	total int64,
 	facetFieldCount FacetCountResult,
-	facets map[string]termFacet,
+	facets map[string]TermFacet,
 	start int64,
 	user *User,
 	next string,
@@ -949,7 +949,7 @@ func (s *Server) doc2result(
 					if !ok {
 						return false
 					}
-					if res.selected[val] {
+					if res.Selected[val] {
 						return true
 					}
 					return false
@@ -1051,7 +1051,7 @@ func (s *Server) doc2json(search string,
 	docs []*SourceData,
 	total int64,
 	facetFieldCount FacetCountResult,
-	facets map[string]termFacet,
+	facets map[string]TermFacet,
 	start int64,
 	user *User,
 	next string) ([]byte, error) {

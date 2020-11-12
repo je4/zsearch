@@ -119,6 +119,7 @@ type Source interface {
 	GetSignature() string
 	Name() string
 	GetTitle() string
+	GetSeries() string
 	GetPlace() string
 	GetDate() string
 	GetCollectionTitle() string
@@ -145,6 +146,7 @@ type SourceData struct {
 	Signature       string               `json:"signature"`
 	Source          string               `json:"source"`
 	Title           string               `json:"title"`
+	Series          string               `json:"series"`
 	Place           string               `json:"place"`
 	Date            string               `json:"date"`
 	CollectionTitle string               `json:"collectiontitle"`
@@ -173,6 +175,7 @@ func InitSourceData(source Source, ms mediaserver.Mediaserver) *SourceData {
 		Signature:       source.GetSignature(),
 		Source:          source.Name(),
 		Title:           source.GetTitle(),
+		Series:          source.GetSeries(),
 		Place:           source.GetPlace(),
 		Date:            source.GetDate(),
 		CollectionTitle: source.GetCollectionTitle(),

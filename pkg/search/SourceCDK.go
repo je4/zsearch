@@ -81,6 +81,10 @@ func (cdk *SourceCDK) GetTitle() string {
 	return "cdk.DData.Title"
 }
 
+func (cdk *SourceCDK) GetSeries() string {
+	return "cdk.DData.Series"
+}
+
 func (cdk *SourceCDK) GetPlace() string {
 	return "Basel"
 }

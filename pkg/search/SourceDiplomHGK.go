@@ -153,6 +153,10 @@ func (dhgk *SourceDiplomHGK) GetTitle() string {
 	return dhgk.DData.Title
 }
 
+func (dhgk *SourceDiplomHGK) GetSeries() string {
+	return strings.Join(dhgk.DData.Series, "/")
+}
+
 func (dhgk *SourceDiplomHGK) GetPlace() string {
 	return "Basel"
 }

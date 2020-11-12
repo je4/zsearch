@@ -27,7 +27,7 @@ import (
 )
 
 func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
-	// remove prefix and use whole rest of url as signature
+	// remove Prefix and use whole rest of url as signature
 	vars := mux.Vars(req)
 	sub := vars["sub"]
 	signature, ok := vars["signature"]
@@ -165,7 +165,7 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 	if !status.MetaOK {
 		w.WriteHeader(http.StatusForbidden)
 		// if there's no error Template, there's no help...
-		if tpl, ok := s.templates["forbidden"]; ok {
+		if tpl, ok := s.templates["forbidden.amp.gohtml"]; ok {
 			tpl.Execute(w, status)
 		}
 		return

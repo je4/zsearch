@@ -57,6 +57,10 @@ func (item *Item) GetTitle() string {
 
 }
 
+func (item *Item) GetSeries() string {
+	return item.Data.Series
+}
+
 func (item *Item) GetPlace() string {
 	return item.Data.Place
 

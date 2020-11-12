@@ -71,7 +71,7 @@ func (s *Server) sitemapHandler(w http.ResponseWriter, req *http.Request) {
 
 	startstr, ok := vars["start"]
 	if !ok {
-		var facets map[string]termFacet
+		var facets map[string]TermFacet
 		var filterField map[string][]string
 		var groups = []string{"global/guest"}
 		cfg := &SearchConfig{
@@ -116,7 +116,7 @@ func (s *Server) sitemapHandler(w http.ResponseWriter, req *http.Request) {
 			s.DoPanicf(w, http.StatusNotFound, "invalid start value %v", false, start)
 			return
 		}
-		var facets map[string]termFacet
+		var facets map[string]TermFacet
 		var filterField map[string][]string
 		var groups = []string{"global/guest"}
 		cfg := &SearchConfig{

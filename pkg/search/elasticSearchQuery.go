@@ -110,7 +110,7 @@ func (q *tElasticPrefixQuery) withRewrite(rewrite string) *tElasticPrefixQuery {
 	return q
 }
 func (q *tElasticPrefixQuery) FieldValue() *tElasticFieldValue {
-	return &tElasticFieldValue{"prefix": q}
+	return &tElasticFieldValue{"Prefix": q}
 }
 func elasticPrefixQuery(field, value string) *tElasticPrefixQuery {
 	return &tElasticPrefixQuery{
@@ -312,7 +312,7 @@ func (q *tElasticQuery) withTermQuery(bq *tElasticTermQuery) *tElasticQuery {
 	return q
 }
 func (q *tElasticQuery) withPrefixQuery(bq *tElasticPrefixQuery) *tElasticQuery {
-	(*q)["prefix"] = bq
+	(*q)["Prefix"] = bq
 	return q
 }
 func (q *tElasticQuery) withMatchQuery(bq *tElasticMatchQuery) *tElasticQuery {

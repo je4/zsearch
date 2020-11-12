@@ -267,9 +267,9 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]map[string][]string, []
 	if cfg.Facets != nil {
 		aggregations = elasticSearchAggregations()
 		for field, vals := range cfg.Facets {
-			aggregations.AddAggregation(field, elasticSearchAggregation(nil).withTerms(field, vals.limit, nil))
+			aggregations.AddAggregation(field, elasticSearchAggregation(nil).withTerms(field, vals.Limit, nil))
 			values := []string{}
-			for val, selected := range vals.selected {
+			for val, selected := range vals.Selected {
 				if selected {
 					values = append(values, val)
 				}
