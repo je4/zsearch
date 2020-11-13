@@ -206,9 +206,14 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		start = 0
 	}
 
+	var showJSON bool
 	filterOrg, filterField, qstr := s.string2QList(search, filterOrg)
-	subfiltername, ok := vars["subfilter"]
-	if ok {
+	subfiltername := vars["subfilter"]
+	if subfiltername == "data" {
+		subfiltername = ""
+		showJSON = true
+	}
+	if subfiltername != "" {
 		var f *SubFilter = nil
 		// check for configured subfilter
 		for _, sf := range s.subFilters {
@@ -398,15 +403,14 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	status.MetaDescription = "Integrated Catalogue of Mediathek HGK FHNW"
-	switch subfiltername {
-	case "data":
+	if showJSON {
 		enc := json.NewEncoder(w)
 		w.Header().Set("Content-type", "text/json")
 		if err := enc.Encode(status); err != nil {
 			s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal solr doc", true, jwt)
 			return
 		}
-	default:
+	} else {
 		w.Header().Set("Cache-Control", "max-age=14400, s-maxage=12200, stale-while-revalidate=9000, public")
 		if tpl, ok := s.templates["search.amp.gohtml"]; ok {
 			var cacheBuffer bytes.Buffer

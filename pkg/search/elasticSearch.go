@@ -209,10 +209,14 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]map[string][]string, []
 
 	filters := []*tElasticFieldValue{}
 	if cfg.IsAdmin == false {
-		filters = append(filters, elasticTermQuery("acl.meta", cfg.Groups[0], 0).FieldValue())
+		if len(cfg.Groups) > 0 {
+			filters = append(filters, elasticTermsQuery("acl.meta", 0, cfg.Groups...).FieldValue())
+		}
 	}
 	if cfg.ContentVisible {
-		filters = append(filters, elasticTermQuery("acl.content", cfg.Groups[0], 0).FieldValue())
+		if len(cfg.Groups) > 0 && !cfg.IsAdmin {
+			filters = append(filters, elasticTermsQuery("acl.content", 0, cfg.Groups...).FieldValue())
+		}
 		filters = append(filters, elasticExistsQuery("mediatype").FieldValue())
 	}
 

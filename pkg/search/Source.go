@@ -131,6 +131,7 @@ type Source interface {
 	GetMedia(ms mediaserver.Mediaserver) map[string]MediaList
 	GetPoster(ms mediaserver.Mediaserver) *Media
 	GetNotes() []Note
+	GetUrl() string
 	GetAbstract() string
 	GetReferences() []Reference
 	GetMeta() *Metalist
@@ -158,6 +159,7 @@ type SourceData struct {
 	Media           map[string]MediaList `json:"media"`
 	Poster          *Media               `json:"poster"`
 	Notes           []Note               `json:"notes"`
+	Url             string               `json:"url"`
 	Abstract        string               `json:"abstract"`
 	References      []Reference          `json:"references"`
 	Meta            *Metalist            `json:"meta"`
@@ -187,6 +189,7 @@ func InitSourceData(source Source, ms mediaserver.Mediaserver) *SourceData {
 		Media:           source.GetMedia(ms),
 		Poster:          source.GetPoster(ms),
 		Notes:           source.GetNotes(),
+		Url:             source.GetUrl(),
 		Abstract:        source.GetAbstract(),
 		References:      source.GetReferences(),
 		Meta:            source.GetMeta(),

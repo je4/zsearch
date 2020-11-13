@@ -27,6 +27,8 @@ var zoteroIgnoreMetaFields = []string{
 	"Title",
 	"Extra",
 	"Note",
+	"Series",
+	"Url",
 }
 
 type Item zotero.Item
@@ -59,6 +61,10 @@ func (item *Item) GetTitle() string {
 
 func (item *Item) GetSeries() string {
 	return item.Data.Series
+}
+
+func (item *Item) GetUrl() string {
+	return item.Data.Url
 }
 
 func (item *Item) GetPlace() string {
@@ -103,7 +109,10 @@ func (item *Item) GetACL() map[string][]string {
 	for key, val := range meta {
 		if strings.Index(key, "acl_") == 0 {
 			acltype := key[4:] // get rid of acl_
-			acls[acltype] = val
+			acls[acltype] = []string{}
+			for _, a := range val {
+				acls[acltype] = append(acls[acltype], strings.TrimSpace(a))
+			}
 		}
 	}
 	return acls

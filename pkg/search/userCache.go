@@ -92,18 +92,37 @@ func (u User) LinkSearch(query string, facets ...string) template.URL {
 
 }
 func (u User) LinkSignature(signature string) string {
-	/*
-		proto := "http"
-		if u.Server.srv.TLSConfig.Certificates != nil {
-			proto = "https"
-		}
-		urlstr := fmt.Sprintf("%s://%s/%s/%s", proto, u.Server.srv.Addr, u.Server.detailPrefix, signature)
-	*/
 	urlstr := fmt.Sprintf("%s/%s/%s", u.Server.addrExt, u.Server.prefixes["detail"], signature)
 	if u.LoggedIn {
 		jwt, err := NewJWT(
 			u.Server.jwtKey,
 			fmt.Sprintf("detail:%s", signature),
+			"HS256",
+			int64(u.Server.linkTokenExp.Seconds()),
+			"catalogue",
+			"mediathek",
+			u.Id)
+		if err != nil {
+			return fmt.Sprintf("ERROR: %v", err)
+		}
+		urlstr = fmt.Sprintf("%s?token=%s", urlstr, jwt)
+	} else {
+		if u.Server.ampCache != nil {
+			var err error
+			urlstr, err = u.Server.ampCache.BuildUrl(urlstr, amp.PAGE)
+			if err != nil {
+				return fmt.Sprintf("ERROR: %v", err)
+			}
+		}
+	}
+	return urlstr
+}
+func (u User) LinkCollections() string {
+	urlstr := fmt.Sprintf("%s/%s/%s", u.Server.addrExt, u.Server.prefixes["collections"])
+	if u.LoggedIn {
+		jwt, err := NewJWT(
+			u.Server.jwtKey,
+			"collections",
 			"HS256",
 			int64(u.Server.linkTokenExp.Seconds()),
 			"catalogue",

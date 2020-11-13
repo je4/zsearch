@@ -776,7 +776,7 @@ func (s *Server) GetClaimUser(claims map[string]interface{}) (*User, error) {
 	if err != nil {
 		return nil, emperror.Wrapf(err, "no userid in key")
 	}
-	groupstr, err := GetClaim(claims, "Groups")
+	groupstr, err := GetClaim(claims, "groups")
 	if err != nil {
 		groupstr = "global/guest;global/user"
 	}
