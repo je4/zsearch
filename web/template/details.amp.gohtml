@@ -52,12 +52,12 @@ limitations under the License.
     {{if len .Doc.Abstract}}<script async custom-element="amp-truncate-text" src="https://cdn.ampproject.org/v0/amp-truncate-text-0.1.js"></script>{{end}}
     <script async custom-element="amp-lightbox-gallery" src="https://cdn.ampproject.org/v0/amp-lightbox-gallery-0.1.js"></script>
     <script async custom-element="amp-accordion" src="https://cdn.ampproject.org/v0/amp-accordion-0.1.js"></script>
-    <script async custom-element="amp-video" src="https://cdn.ampproject.org/v0/amp-video-0.1.js"></script>
-    <script async custom-element="amp-audio" src="https://cdn.ampproject.org/v0/amp-audio-0.1.js"></script>
-    <script async custom-element="amp-image-lightbox" src="https://cdn.ampproject.org/v0/amp-image-lightbox-0.1.js"></script>
+    {{if .Doc.Media.video}}<script async custom-element="amp-video" src="https://cdn.ampproject.org/v0/amp-video-0.1.js"></script>
+    <script async custom-element="amp-video-docking" src="https://cdn.ampproject.org/v0/amp-video-docking-0.1.js"></script>{{end}}
+    {{if .Doc.Media.audio}}<script async custom-element="amp-audio" src="https://cdn.ampproject.org/v0/amp-audio-0.1.js"></script>{{end}}
+    {{if .Doc.Media.image}}<script async custom-element="amp-image-lightbox" src="https://cdn.ampproject.org/v0/amp-image-lightbox-0.1.js"></script>{{end}}
     {{if .Doc.Media.pdf}}<script async custom-element="amp-iframe" src="https://cdn.ampproject.org/v0/amp-iframe-0.1.js"></script>{{end}}
     <script async custom-element="amp-access" src="https://cdn.ampproject.org/v0/amp-access-0.1.js"></script>
-    <script async custom-element="amp-video-docking" src="https://cdn.ampproject.org/v0/amp-video-docking-0.1.js"></script>
     <script async custom-element="amp-user-notification" src="https://cdn.ampproject.org/v0/amp-user-notification-0.1.js"></script>
     <!-- END custom elements -->
 
@@ -141,7 +141,7 @@ limitations under the License.
                 </div>
                 {{if .Doc.Url}}
                 <div style="padding-top: 5px;">
-                    <a href="{{.Doc.Url}}" taget="_blank">{{.Doc.Url}}</a>
+                    <a href="{{.Doc.Url}}" target="_blank">{{.Doc.Url}}</a>
                 </div>
                 {{end}}
             </div>
