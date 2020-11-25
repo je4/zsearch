@@ -130,6 +130,11 @@ limitations under the License.
                 <div class="h4 md-h3">{{range $key, $person := .Doc.Persons}}{{ if $key }}; {{ end }}<a class="nobreak"href="{{$user.LinkSearch (printf "author:\"%s\"" $person.Name)}}">{{$person.Name}}</a>{{end}}</div>
             </div>
             <div class="col-12 self-start pb4">
+                {{if .Doc.Meta.VideoRecordingFormat}}
+                    {{if len .Doc.Meta.VideoRecordingFormat}}
+                        <b>Format:</b> {{.Doc.Meta.VideoRecordingFormat}}<br />
+                    {{end}}
+                {{end}}
                 {{if len .Doc.Abstract}}
                     <amp-truncate-text layout="fixed-height" height="8em">
                         {{nl2br .Doc.Abstract}}

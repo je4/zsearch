@@ -29,6 +29,11 @@ var zoteroIgnoreMetaFields = []string{
 	"Note",
 	"Series",
 	"Url",
+	"VideoRecordingFormat",
+
+	"ItemType",
+	"MTime",
+	"Version",
 }
 
 type Item zotero.Item
@@ -78,6 +83,12 @@ func (item *Item) GetDate() string {
 }
 
 func (item *Item) GetCollectionTitle() string {
+	meta := zotero.Text2Metadata(item.Group.Data.Description)
+	if titles, ok := meta["title"]; ok {
+		if len(titles) > 0 {
+			return titles[0]
+		}
+	}
 	return item.Group.Data.Name
 
 }
@@ -97,7 +108,7 @@ func (item *Item) GetPersons() []Person {
 }
 
 // name:value
-var zoteroTagVariable = regexp.MustCompile(`^(acl_meta|acl_content):(.+)$`)
+var zoteroTagACLVariable = regexp.MustCompile(`^acl_(meta|content|preview):(.+)$`)
 
 func (item *Item) GetACL() map[string][]string {
 	meta := zotero.Text2Metadata(item.Group.Data.Description)
@@ -109,12 +120,26 @@ func (item *Item) GetACL() map[string][]string {
 	for key, val := range meta {
 		if strings.Index(key, "acl_") == 0 {
 			acltype := key[4:] // get rid of acl_
-			acls[acltype] = []string{}
+			if _, ok := acls[acltype]; !ok {
+				acls[acltype] = []string{}
+			}
 			for _, a := range val {
 				acls[acltype] = append(acls[acltype], strings.TrimSpace(a))
 			}
 		}
 	}
+	for _, t := range item.Data.Tags {
+		matches := zoteroTagACLVariable.FindStringSubmatch(t.Tag)
+		if matches != nil {
+			acltype := matches[1]
+			group := matches[2]
+			if _, ok := acls[acltype]; !ok {
+				acls[acltype] = []string{}
+			}
+			acls[acltype] = append(acls[acltype], group)
+		}
+	}
+
 	return acls
 }
 
@@ -161,7 +186,7 @@ func (item *Item) GetTags() []string {
 	var tags []string
 	for _, t := range item.Data.Tags {
 		// ignore variables (i.e. <name>:<value>
-		if !zoteroTagVariable.MatchString(t.Tag) {
+		if !zoteroTagACLVariable.MatchString(t.Tag) {
 			tags = AppendIfMissing(tags, strings.ToLower(t.Tag))
 		}
 	}
