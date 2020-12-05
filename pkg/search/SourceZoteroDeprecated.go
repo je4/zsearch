@@ -65,7 +65,7 @@ var zoteroDeprecatedIgnoreMetaFields = []string{
 	"Note",
 }
 
-// name:value
+// Name:value
 var zoteroDeprecatedTagVariable = regexp.MustCompile(`^(acl_meta|acl_content):(.+)$`)
 
 func NewSourceZoteroDeprecated(entry *cacheEntry, mts *MTSolr) (*SourceZoteroDeprecated, error) {
@@ -211,7 +211,7 @@ func (zot *SourceZoteroDeprecated) GetPersons() []Person {
 
 func (zot *SourceZoteroDeprecated) getColl(key string) (*ZoteroCollection, error) {
 	if key == "" {
-		return nil, errors.New("empty collection key")
+		return nil, errors.New("empty collection Key")
 	}
 	for _, c := range zot.ZData.Data.Collections {
 		for _, coll := range zot.ZData.Collections {
@@ -226,7 +226,7 @@ func (zot *SourceZoteroDeprecated) getColl(key string) (*ZoteroCollection, error
 func (zot *SourceZoteroDeprecated) GetTags() []string {
 	var tags []string
 	for _, t := range zot.ZData.Data.Tags {
-		// ignore variables (i.e. <name>:<value>
+		// ignore variables (i.e. <Name>:<value>
 		if !zoteroDeprecatedTagVariable.MatchString(t.Tag) {
 			tags = AppendIfMissing(tags, strings.ToLower(t.Tag))
 		}
@@ -342,7 +342,7 @@ func (zot *SourceZoteroDeprecated) GetMedia(ms mediaserver.Mediaserver) map[stri
 			Duration: int64(meta.Duration),
 		})
 	}
-	// sort medias according to their name
+	// sort medias according to their Name
 	for _, t := range types {
 		sort.Sort(zot.medias[t])
 	}

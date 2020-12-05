@@ -58,8 +58,8 @@ func (rl *RelationList) UnmarshalJSON(data []byte) error {
 }
 
 type ZoteroCollectionData struct {
-	Key              string       `json:"key"`
-	Name             string       `json:"name"`
+	Key              string       `json:"Key"`
+	Name             string       `json:"Name"`
 	Version          int64        `json:"version"`
 	Relations        RelationList `json:"relations"`
 	ParentCollection Parent       `json:"parentCollection,omitempty"`
@@ -71,7 +71,7 @@ type ZoteroCollectionMeta struct {
 }
 
 type ZoteroCollection struct {
-	Key     string               `json:"key"`
+	Key     string               `json:"Key"`
 	Version int64                `json:"version"`
 	Library ZoteroLibrary        `json:"library,omitempty"`
 	Links   interface{}          `json:"links,omitempty"`
@@ -141,7 +141,7 @@ func (pc *Parent) UnmarshalJSON(data []byte) error {
 type ZoteroLibrary struct {
 	Type  string      `json:"type"`
 	Id    int64       `json:"id"`
-	Name  string      `json:"name"`
+	Name  string      `json:"Name"`
 	Links interface{} `json:"links"`
 }
 
@@ -154,7 +154,7 @@ type ZoteroGroupMeta struct {
 type ZoteroGroupData struct {
 	Id             int64   `json:"id"`
 	Version        int64   `json:"version"`
-	Name           string  `json:"name"`
+	Name           string  `json:"Name"`
 	Owner          int64   `json:"owner"`
 	Type           string  `json:"type"`
 	Description    string  `json:"description"`
@@ -175,7 +175,7 @@ type ZoteroGroup struct {
 }
 
 type ZoteroData struct {
-	Key         string             `json:"key"`
+	Key         string             `json:"Key"`
 	Version     int                `json:"version"`
 	Library     ZoteroLibrary      `json:"library"`
 	Links       interface{}        `json:"links"`
@@ -186,7 +186,7 @@ type ZoteroData struct {
 	Collections []ZoteroCollection `json:"collections,omitempty"`
 }
 type ItemDataBase struct {
-	Key          string           `json:"key,omitempty"`
+	Key          string           `json:"Key,omitempty"`
 	Version      int64            `json:"version"`
 	ItemType     string           `json:"itemType"`
 	Tags         []ItemTag        `json:"tags"`

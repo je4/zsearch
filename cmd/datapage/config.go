@@ -102,8 +102,11 @@ type Cfg_ElasticSearch struct {
 }
 
 type Cfg_Google struct {
-	Apikey           string            `toml:"apikey"`
-	CustomSearchKeys map[string]string `toml:"searchkeys"`
+	Apikey           string `toml:"apikey"`
+	CustomSearchKeys map[string]struct {
+		Key  string
+		Name string
+	} `toml:"searchkeys"`
 }
 
 type Config struct {

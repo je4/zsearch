@@ -31,7 +31,7 @@ type ClusterResultStatus struct {
 	Items             []GoogleResultItem
 	TotalResults      string
 	SearchString      string
-	Searches          []string
+	Searches          []KV
 	CSEBase           string
 	SearchToken       string
 	SearchName        string
@@ -41,15 +41,15 @@ func (s *Server) clusterHandler(w http.ResponseWriter, req *http.Request) {
 
 	vars := mux.Vars(req)
 
-	csekey, ok := vars["csekey"]
+	clusterkey, ok := vars["csekey"]
 	if !ok {
 		s.DoPanicf(w, http.StatusNotFound, "no csekey in url", false)
 		return
 	}
 
-	cx, ok := s.googleCSEKey[csekey]
+	cx, ok := s.googleCSEKey[clusterkey]
 	if !ok {
-		s.DoPanicf(w, http.StatusNotFound, "invalid key %v", false, csekey)
+		s.DoPanicf(w, http.StatusNotFound, "invalid Key %v", false, clusterkey)
 		return
 	}
 
@@ -105,7 +105,7 @@ func (s *Server) clusterHandler(w http.ResponseWriter, req *http.Request) {
 	}{
 		Search: search,
 		Start:  start,
-		Name:   csekey,
+		Name:   clusterkey,
 	})
 	if err != nil {
 		s.DoPanicf(w, http.StatusInternalServerError, "cannot create hash", false)
@@ -129,14 +129,14 @@ func (s *Server) clusterHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	searches := []string{}
-	for s, _ := range s.googleCSEKey {
-		searches = append(searches, s)
+	searches := []KV{}
+	for s, v := range s.googleCSEKey {
+		searches = append(searches, KV{s, v.Name})
 	}
 
 	var status *ClusterResultStatus
 	if search != "" {
-		resp, err := s.google.Cse.List().Q(search).Start(start).Cx(cx).Do()
+		resp, err := s.google.Cse.List().Q(search).Start(start).Cx(cx.Key).Do()
 		if err != nil {
 			s.DoPanicf(w, http.StatusInternalServerError, "cannot search: %v", false, err)
 			return
@@ -167,7 +167,7 @@ func (s *Server) clusterHandler(w http.ResponseWriter, req *http.Request) {
 			Items:             []GoogleResultItem{},
 			Searches:          searches,
 			CSEBase:           fmt.Sprintf("%s/%s", s.addrExt, s.prefixes["cluster"]),
-			SearchName:        csekey,
+			SearchName:        clusterkey,
 		}
 		status.SearchResultRows = int64(len(resp.Items))
 
@@ -210,7 +210,7 @@ func (s *Server) clusterHandler(w http.ResponseWriter, req *http.Request) {
 			Items:             []GoogleResultItem{},
 			Searches:          searches,
 			CSEBase:           fmt.Sprintf("%s/%s", s.addrExt, s.prefixes["cluster"]),
-			SearchName:        csekey,
+			SearchName:        clusterkey,
 		}
 	}
 	jwt, ok := req.URL.Query()["token"]
@@ -223,7 +223,7 @@ func (s *Server) clusterHandler(w http.ResponseWriter, req *http.Request) {
 		tokenstring := jwt[0]
 		if tokenstring != "" {
 			status.Token = tokenstring
-			user, err := s.userFromToken(tokenstring, "search")
+			user, err := s.userFromToken(tokenstring, fmt.Sprintf("cluster/%s", clusterkey))
 			if err != nil {
 				status.Notifications = append(status.Notifications, Notification{
 					Id:      "notificationInvalidAccessToken",

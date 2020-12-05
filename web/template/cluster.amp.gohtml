@@ -15,7 +15,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
+{{$user := .User}}
 <!doctype html>
 <html ⚡="" lang="en">
 
@@ -180,9 +180,9 @@ limitations under the License.
                 <div class="commerce-side-panel pt4 pr4 self-center">
                     {{range $key, $srch := .Searches}}
                         <div class="gsearch-w100 gsearch-input gsearch-input-radio inline-block relative m0 p0 mb3">
-                            <a href="{{$cseBase}}/{{$srch}}?searchtext={{$searchString}}">
-                            <button class="gsearch-facet{{if eq $currentSrch $srch}}-inv{{end}} caps full-width">
-                                {{$srch}}
+                            <a href="{{$user.LinkSubject "cluster" $srch.Key (printf "cluster/%s" $srch.Key) (print "searchtext=" $searchString)}}">
+                            <button class="gsearch-facet{{if eq $currentSrch $srch.Key}}-inv{{end}} caps full-width">
+                                {{$srch.Name}}
                             </button>
                             </a>
                         </div>
@@ -231,9 +231,9 @@ limitations under the License.
                         <div class="commerce-select-wrapper inline-block md-mr1 pl2 md-hide lg-hide">
                             {{range $key, $srch := .Searches}}
                                     <div class="gsearch-w100 gsearch-input gsearch-input-radio inline-block relative m0 p0 mb3">
-                                        <a href="{{$cseBase}}/{{$srch}}?searchtext={{$searchString}}">
-                                            <button class="gsearch-facet{{if eq $currentSrch $srch}}-inv{{end}} gsearch-btn caps">
-                                                {{$srch}}
+                                        <a href="{{$user.LinkSubject "cluster" $srch.Key (printf "cluster/%s" $srch.Key) (print "searchtext=" $searchString)}}">
+                                            <button class="gsearch-facet{{if eq $currentSrch $srch.Key}}-inv{{end}} gsearch-btn caps">
+                                                {{$srch.Name}}
                                             </button>
                                         </a>
                                     </div>

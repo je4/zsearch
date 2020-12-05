@@ -114,6 +114,19 @@ type CollectionsStatus struct {
 	MetaDescription     string
 }
 
+type ClusterStatus struct {
+	BaseStatus
+
+	SearchResult        template.JS
+	Result              []*SourceData
+	QueryApi            template.URL
+	SearchResultStart   int
+	SearchResultRows    int
+	SearchResultTotal   int
+	SearchResultVisible bool
+	MetaDescription     string
+}
+
 type ImageSearchStatus struct {
 	Type              string
 	Notifications     []Notification
@@ -136,7 +149,7 @@ type ImageSearchStatus struct {
 }
 
 type SubFilter struct {
-	Name   string `toml:"name"`
+	Name   string `toml:"Name"`
 	Label  string `toml:"label"`
 	Filter string `toml:"filter"`
 }
@@ -145,7 +158,7 @@ type NetGroups map[string][]*net.IPNet
 
 type facetField struct {
 	Id       string `json:"id"`
-	Name     string `json:"name"`
+	Name     string `json:"Name"`
 	Selected bool   `json:"Selected"`
 }
 
@@ -181,6 +194,8 @@ type SearchResultItem struct {
 	Poster        *Media              `json:"poster"`
 	Highlight     map[string][]string `json:"highlight"`
 }
+
+type KV struct{ Key, Name string }
 
 func (ng NetGroups) Contains(str string) []string {
 	var groups []string
@@ -233,9 +248,10 @@ type Server struct {
 	subFilters         []SubFilter
 	funcMap            template.FuncMap
 	collectionsCatalog string
+	clusterCatalog     string
 	queryCache         gcache.Cache
 	google             *customsearch.Service
-	googleCSEKey       map[string]string
+	googleCSEKey       map[string]KV
 }
 
 func NewServer(
@@ -244,41 +260,30 @@ func NewServer(
 	google *customsearch.Service,
 	templateFiles map[string][]string,
 	templateDev bool,
-	addr,
-	addrExt,
-	mediaserver,
-	mediaserverkey string,
+	addr, addrExt, mediaserver, mediaserverkey string,
 	mediatokenexp time.Duration,
 	log *logging.Logger,
 	accesslog io.Writer,
 	prefixes map[string]string,
-	staticDir,
-	staticCacheControl,
-	jwtKey string,
+	staticDir, staticCacheControl, jwtKey string,
 	jwtAlg []string,
 	linkTokenExp time.Duration,
-	loginUrl,
-	loginIssuer string,
-	guestGroup string,
-	adminGroup string,
-	AmpCache string,
-	ampApiKeyFile string,
+	loginUrl, loginIssuer, guestGroup, adminGroup, AmpCache, ampApiKeyFile string,
 	searchFields map[string]string,
 	facets SolrFacetList,
 	locations NetGroups,
 	icons map[string]string,
 	baseFilter string,
 	subFilter []SubFilter,
-	collectionsCatalog string,
-	googleCSEKey map[string]string,
-) (*Server, error) {
+	collectionsCatalog, clusterCatalog string,
+	googleCSEKey map[string]KV) (*Server, error) {
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		//log.Panicf("cannot split address %s: %v", addr, err)
 		return nil, emperror.Wrapf(err, "cannot split address %s", addr)
 	}
 
-	// load private api key
+	// load private api Key
 	privateKeyFile, err := os.Open(ampApiKeyFile)
 	if err != nil {
 		return nil, emperror.Wrapf(err, "cannot open %s", ampApiKeyFile)
@@ -291,7 +296,7 @@ func NewServer(
 	privateKeyFile.Close()
 	ampApiKey, err := x509.ParsePKCS1PrivateKey(data.Bytes)
 	if err != nil {
-		return nil, emperror.Wrapf(err, "cannot parse private key %s", string(data.Bytes))
+		return nil, emperror.Wrapf(err, "cannot parse private Key %s", string(data.Bytes))
 	}
 
 	aCaches, err := amp.GetCaches()
@@ -334,6 +339,7 @@ func NewServer(
 		templates:          make(map[string]*template.Template),
 		funcMap:            template.FuncMap{},
 		collectionsCatalog: collectionsCatalog,
+		clusterCatalog:     clusterCatalog,
 		queryCache:         gcache.New(100).ARC().Expiration(time.Hour * 3).Build(),
 		googleCSEKey:       googleCSEKey,
 		templatesFiles:     templateFiles,
@@ -732,6 +738,7 @@ func (s *Server) ListenAndServe(cert, key string) error {
 		}(http.FileServer(http.Dir(s.staticDir))))).Methods("GET")
 
 	// google search
+	router.HandleFunc(fmt.Sprintf("/%s", s.prefixes["cluster"]), s.clusterAllHandler).Methods("GET")
 	router.HandleFunc(fmt.Sprintf("/%s/{csekey}", s.prefixes["cluster"]), s.clusterHandler).Methods("GET")
 	router.HandleFunc(fmt.Sprintf("/%s/{csekey}", s.prefixes["cse"]), s.googleHandler).Methods("GET")
 
@@ -774,7 +781,7 @@ func (s *Server) Shutdown(ctx context.Context) error {
 func (s *Server) GetClaimUser(claims map[string]interface{}) (*User, error) {
 	id, err := GetClaim(claims, "userId")
 	if err != nil {
-		return nil, emperror.Wrapf(err, "no userid in key")
+		return nil, emperror.Wrapf(err, "no userid in Key")
 	}
 	groupstr, err := GetClaim(claims, "groups")
 	if err != nil {
@@ -787,7 +794,7 @@ func (s *Server) GetClaimUser(claims map[string]interface{}) (*User, error) {
 	email, _ := GetClaim(claims, "email")
 	expval, ok := claims["exp"]
 	if !ok {
-		return nil, emperror.Wrapf(err, "no exp in key")
+		return nil, emperror.Wrapf(err, "no exp in Key")
 	}
 	exp, ok := expval.(float64)
 	if !ok {

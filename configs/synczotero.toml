@@ -6,7 +6,7 @@ groups = [
     # 2545256, # HGK Collections
     # 2553473, # HGK Publikationen
     # 2512784, # HGK Events
-    2206003, # ACT Basel  // indexer - not yet implemented
+    # 2206003, # ACT Basel  // indexer - not yet implemented
     # 2486551, # ACT 2020
     # 1510019, # Hyperwerk
     # 2329831, # HGK Fotoarchiv
@@ -20,9 +20,10 @@ groups = [
     # 2608921, # Institut Kunst
     # 1510009, # Institut Kunst intern
     # 704562, # Handapparate
-    # 2514673, # rimab
+    ## 2514673, # rimab
+    ## 2171465, # basle_bibliography_for_historical_performance_practice
     # 2068924, # summe2017
-    # 2579176, # Wissenscluster
+    2579176, # Wissenscluster
     # 2604593, # Peter von Arx
     # 2571475, # IKUVID
     # 1510020, # Institut Industrial Design / Thesen

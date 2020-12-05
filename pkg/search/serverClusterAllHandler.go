@@ -17,9 +17,7 @@ limitations under the License.
 package search
 
 import (
-	"encoding/json"
 	"fmt"
-	"github.com/gorilla/mux"
 	"html/template"
 	"net"
 	"net/http"
@@ -28,8 +26,6 @@ import (
 
 func (s *Server) clusterAllHandler(w http.ResponseWriter, req *http.Request) {
 	var err error
-	vars := mux.Vars(req)
-	subfiltername, ok := vars["subfilter"]
 
 	if pusher, ok := w.(http.Pusher); ok {
 		// Push is supported.
@@ -45,7 +41,7 @@ func (s *Server) clusterAllHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	status := CollectionsStatus{
+	status := ClusterStatus{
 		BaseStatus: BaseStatus{
 			User:          nil,
 			Token:         "",
@@ -66,7 +62,7 @@ func (s *Server) clusterAllHandler(w http.ResponseWriter, req *http.Request) {
 			},
 		},
 		QueryApi: template.URL(fmt.Sprintf("%s/search", s.prefixes["api"])),
-		Result:   map[string][]*SourceData{},
+		Result:   []*SourceData{},
 	}
 
 	jwt, ok := req.URL.Query()["token"]
@@ -79,7 +75,7 @@ func (s *Server) clusterAllHandler(w http.ResponseWriter, req *http.Request) {
 		tokenstring := jwt[0]
 		if tokenstring != "" {
 			status.Token = tokenstring
-			user, err := s.userFromToken(tokenstring, "search")
+			user, err := s.userFromToken(tokenstring, "cluster")
 			if err != nil {
 				status.Notifications = append(status.Notifications, Notification{
 					Id:      "notificationInvalidAccessToken",
@@ -115,11 +111,11 @@ func (s *Server) clusterAllHandler(w http.ResponseWriter, req *http.Request) {
 		status.User.Groups = append(status.User.Groups, grp)
 	}
 
-	qstr := "*:*"
-	s.log.Infof("Query: %s", qstr)
+	//qstr := "*:*"
+	//s.log.Infof("Query: %s", qstr)
 
 	filters_fields := make(map[string][]string)
-	filters_fields["catalog"] = []string{s.collectionsCatalog}
+	filters_fields["catalog"] = []string{s.clusterCatalog}
 
 	var facets map[string]TermFacet
 	cfg := &SearchConfig{
@@ -140,17 +136,8 @@ func (s *Server) clusterAllHandler(w http.ResponseWriter, req *http.Request) {
 
 	// sort documents into result sets
 	for _, doc := range docs {
-		for _, tag := range doc.Tags {
-			if r := tagFieldRegexp.FindStringSubmatch(tag); r != nil {
-				field := r[2]
-				if _, ok := status.Result[field]; !ok {
-					status.Result[field] = []*SourceData{}
-				}
-				if srch, ok := (*doc.Meta)["Archive"]; ok && strings.TrimSpace(srch) != "" {
-					status.Result[field] = append(status.Result[field], doc)
-					break
-				}
-			}
+		if srch, ok := (*doc.Meta)["Archive"]; ok && strings.TrimSpace(srch) != "" {
+			status.Result = append(status.Result, doc)
 		}
 	}
 
@@ -159,22 +146,12 @@ func (s *Server) clusterAllHandler(w http.ResponseWriter, req *http.Request) {
 	status.SearchResultTotal = int(total)
 	status.SearchResultStart = int(0)
 
-	status.MetaDescription = "Collections of Mediathek HGK FHNW"
-	switch subfiltername {
-	case "data":
-		enc := json.NewEncoder(w)
-		w.Header().Set("Content-type", "text/json")
-		if err := enc.Encode(status); err != nil {
-			s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal solr doc", true, jwt)
+	status.MetaDescription = "Search Cluster of Mediathek HGK FHNW"
+	w.Header().Set("Cache-Control", "max-age=14400, s-maxage=12200, stale-while-revalidate=9000, public")
+	if tpl, ok := s.templates["clusterall.amp.gohtml"]; ok {
+		if err := tpl.Execute(w, status); err != nil {
+			s.DoPanicf(w, http.StatusInternalServerError, "cannot render template: %v", false, err)
 			return
-		}
-	default:
-		w.Header().Set("Cache-Control", "max-age=14400, s-maxage=12200, stale-while-revalidate=9000, public")
-		if tpl, ok := s.templates["clusterall.amp.gohtml"]; ok {
-			if err := tpl.Execute(w, status); err != nil {
-				s.DoPanicf(w, http.StatusInternalServerError, "cannot render template: %v", false, err)
-				return
-			}
 		}
 	}
 	return

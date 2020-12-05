@@ -107,7 +107,7 @@ func (item *Item) GetPersons() []Person {
 	return persons
 }
 
-// name:value
+// Name:value
 var zoteroTagACLVariable = regexp.MustCompile(`^acl_(meta|content|preview):(.+)$`)
 
 func (item *Item) GetACL() map[string][]string {
@@ -185,7 +185,7 @@ func (item *Item) GetCategories() []string {
 func (item *Item) GetTags() []string {
 	var tags []string
 	for _, t := range item.Data.Tags {
-		// ignore variables (i.e. <name>:<value>
+		// ignore variables (i.e. <Name>:<value>
 		if !zoteroTagACLVariable.MatchString(t.Tag) {
 			tags = AppendIfMissing(tags, strings.ToLower(t.Tag))
 		}

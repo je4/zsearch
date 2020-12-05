@@ -30,7 +30,7 @@ func (s *Server) googleHandler(w http.ResponseWriter, req *http.Request) {
 
 	cx, ok := s.googleCSEKey[csekey]
 	if !ok {
-		s.DoPanicf(w, http.StatusNotFound, "invalid key %v", false, csekey)
+		s.DoPanicf(w, http.StatusNotFound, "invalid Key %v", false, csekey)
 		return
 	}
 
@@ -74,7 +74,7 @@ func (s *Server) googleHandler(w http.ResponseWriter, req *http.Request) {
 			Title:         "Wissenscluster",
 		},
 		SearchName: csekey,
-		CX:         cx,
+		CX:         cx.Key,
 		Searches:   searches,
 	}
 

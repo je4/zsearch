@@ -44,7 +44,7 @@ type SourceDiplomHGKFile struct {
 	Year       string                  `json:"year"`
 	IDPerson   string                  `json:"idperson"`
 	FileID     string                  `json:"fileid"`
-	Name       string                  `json:"name"`
+	Name       string                  `json:"Name"`
 	Filename   string                  `json:"filename"`
 	Thumbname  string                  `json:"thumbname"`
 	Webname    string                  `json:"webname"`
@@ -63,7 +63,7 @@ type ResourceParam struct {
 
 type Resource struct {
 	Src   string        `json:"src"`
-	Name  string        `json:"name"`
+	Name  string        `json:"Name"`
 	Param ResourceParam `json:"param"`
 }
 
@@ -260,7 +260,7 @@ func (dhgk *SourceDiplomHGK) GetMedia(ms mediaserver.Mediaserver) map[string]Med
 			Duration: file.Metadata.Duration,
 		})
 	}
-	// sort medias according to their name
+	// sort medias according to their Name
 	for _, t := range types {
 		sort.Sort(dhgk.medias[t])
 	}

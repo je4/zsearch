@@ -76,8 +76,8 @@ func (jdm *JSONDomainMap) setBlockChildQuery(allChildrenQuery string) *JSONDomai
  * Join modifies the current domain by selecting the documents whose values in field {@code to} match values for the
  * field {@code from} in the current domain.
  *
- * @param from a field-name whose values are matched against {@code to} by the join
- * @param to a field name whose values should match values specified by the {@code from} field
+ * @param from a field-Name whose values are matched against {@code to} by the join
+ * @param to a field Name whose values should match values specified by the {@code from} field
  */
 func (jdm *JSONDomainMap) setJoinTransformation(from, to string) *JSONDomainMap {
 	(*jdm)["join"] = map[string]interface{}{"from": from, "to": to}

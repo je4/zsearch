@@ -152,7 +152,7 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 				} else {
 					status.Doc.References[key].Title = doc.Signature
 					// remove reference if no rights
-					// removeRefs = append(removeRefs, key)
+					// removeRefs = append(removeRefs, Key)
 				}
 			}
 		}

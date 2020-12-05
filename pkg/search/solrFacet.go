@@ -2,7 +2,7 @@ package search
 
 type SolrFacet struct {
 	Label    string          `json:"label,omitempty"`
-	Name     string          `json:"name,omitempty"`
+	Name     string          `json:"Name,omitempty"`
 	Field    string          `json:"field"`
 	Prefix   string          `json:"Prefix,omitempty"`
 	Restrict map[string]bool `json:"restrict,omitempty"`

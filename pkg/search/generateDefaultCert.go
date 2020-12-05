@@ -45,7 +45,7 @@ func DefaultCertificate() (*tls.Certificate, error) {
 	return &certificate, nil
 }
 
-// KeyPair generates cert and key files.
+// KeyPair generates cert and Key files.
 func KeyPair(domain string, expiration time.Time) ([]byte, []byte, error) {
 	rsaPrivKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {

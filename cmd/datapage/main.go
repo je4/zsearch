@@ -221,6 +221,10 @@ func main() {
 		})
 	}
 
+	var kt = make(map[string]search.KV)
+	for k, v := range config.Google.CustomSearchKeys {
+		kt[k] = search.KV{v.Key, v.Name}
+	}
 	srv, err := search.NewServer(
 		searchEngine,
 		uc,
@@ -253,7 +257,8 @@ func main() {
 		config.Query.BaseFilter,
 		subfilters,
 		config.CollectionsCatalog,
-		config.Google.CustomSearchKeys,
+		config.ClusterCatalog,
+		kt,
 	)
 
 	if err != nil {

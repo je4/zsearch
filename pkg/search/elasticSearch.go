@@ -60,7 +60,7 @@ type tElasticResultHits struct {
 }
 
 type tElasticResultAggregationBucket struct {
-	Key      string `json:"key"`
+	Key      string `json:"Key"`
 	DocCount int64  `json:"doc_count"`
 }
 
@@ -227,9 +227,9 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]map[string][]string, []
 				switch fld {
 				case "category":
 					filters = append(filters, elasticPrefixQuery(fld, val).FieldValue())
-				case "persons.name":
+				case "persons.Name":
 					filters = append(filters, elasticNestedQuery("persons",
-						elasticQuery().withTermQuery(elasticTermQuery("persons.name.keyword", val, 0))).FieldValue())
+						elasticQuery().withTermQuery(elasticTermQuery("persons.Name.keyword", val, 0))).FieldValue())
 				default:
 					filters = append(filters, elasticTermQuery(fld, val, 0).FieldValue())
 				}
@@ -248,7 +248,7 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]map[string][]string, []
 		matchqueries = append(matchqueries,
 			elasticNestedQuery("persons", elasticQuery().withBooleanQuery(elasticBooleanQuery(0).withMust(
 				elasticSimpleQueryString(qstr).
-					withFields([]string{"persons.name^5"}).
+					withFields([]string{"persons.Name^5"}).
 					withOperatorOR().
 					FieldValue()))).FieldValue())
 		matchqueries = append(matchqueries,

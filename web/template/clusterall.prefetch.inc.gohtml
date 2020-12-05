@@ -1,0 +1,9 @@
+<!-- BEGIN prefetch images -->
+{{range $key, $item := .Result}}
+    {{if $item.Poster}}
+        {{$image := $item.Poster}}
+        <link rel="preload" as="image"
+              href="{{medialink $image.Uri "resize" "size260x260/formatWEBP" false}}">
+    {{end}}
+{{end}}
+<!-- END prefetch images -->

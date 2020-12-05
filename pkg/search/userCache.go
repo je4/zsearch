@@ -24,6 +24,7 @@ import (
 	"github.com/pkg/errors"
 	"html/template"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -139,6 +140,48 @@ func (u User) LinkCollections() string {
 			if err != nil {
 				return fmt.Sprintf("ERROR: %v", err)
 			}
+		}
+	}
+	return urlstr
+}
+func (u User) LinkSubject(area, sub, subject string, params ...string) string {
+	prefix, ok := u.Server.prefixes[area]
+	if !ok {
+		u.Server.log.Errorf("invalid area %s in link", area)
+		return fmt.Sprintf("#invalid area %s in link", area)
+	}
+	var urlstr string
+	if sub != "" {
+		urlstr = fmt.Sprintf("%s/%s/%s", u.Server.addrExt, prefix, sub)
+	} else {
+		urlstr = fmt.Sprintf("%s/%s", u.Server.addrExt, prefix)
+	}
+	if u.LoggedIn {
+		jwt, err := NewJWT(
+			u.Server.jwtKey,
+			subject,
+			"HS256",
+			int64(u.Server.linkTokenExp.Seconds()),
+			"catalogue",
+			"mediathek",
+			u.Id)
+		if err != nil {
+			return fmt.Sprintf("ERROR: %v", err)
+		}
+		urlstr = fmt.Sprintf("%s?token=%s", urlstr, jwt)
+		if len(params) > 0 {
+			urlstr += "&" + strings.Join(params, "&")
+		}
+	} else {
+		if u.Server.ampCache != nil {
+			var err error
+			urlstr, err = u.Server.ampCache.BuildUrl(urlstr, amp.PAGE)
+			if err != nil {
+				return fmt.Sprintf("ERROR: %v", err)
+			}
+		}
+		if len(params) > 0 {
+			urlstr += "?" + strings.Join(params, "&")
 		}
 	}
 	return urlstr

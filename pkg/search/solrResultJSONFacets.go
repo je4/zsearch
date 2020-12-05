@@ -41,7 +41,7 @@ func (fb *SolrResultJSONFacetBucket) Init(data interface{}) error {
 }
 
 type SolrResultJSONFacetElement struct {
-	//Name    string                      `json:"name"`
+	//Name    string                      `json:"Name"`
 	Buckets []*SolrResultJSONFacetBucket `json:"buckets"`
 }
 
@@ -99,7 +99,7 @@ func (fa *SolrResultJSONFacets) Init(data interface{}) error {
 		switch t := val.(type) {
 		case float64:
 			if name != "count" {
-				return fmt.Errorf("invalid name for number type: %s", name)
+				return fmt.Errorf("invalid Name for number type: %s", name)
 			}
 			fa.Count = int64(t)
 		default:
