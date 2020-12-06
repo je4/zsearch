@@ -15,9 +15,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-
 <!doctype html>
 <html ⚡="" lang="en">
+{{$user := .User}}
 
 <head>
     <meta charset="utf-8">
@@ -201,6 +201,11 @@ limitations under the License.
 
     <!-- END - virtual states for search interaction -->
     <section class="commerce-listing-content mx-auto flex flex-wrap pb4">
+        {{if .EmptySearch}}
+            <div class="col-3 flex flex-column xs-hide sm-hide">
+                &nbsp;
+            </div>
+        {{else}}
             <!-- BEGIN - Facets wide -->
             <div class="col-3 flex flex-column xs-hide sm-hide">
                 <div class="commerce-side-panel pt4 pr4 self-center">
@@ -237,6 +242,7 @@ limitations under the License.
                 </div>
             </div>
             <!-- END - Facets wide -->
+        {{end}}
             <div class="col-12 md-col-9 pt2 pb3 md-px4 md-pt1 md-pb7">
                 <div class="md-commerce-header relative md-flex flex-wrap items-center md-mx0 md-mb2">
                     <!-- BEGIN - FORM -->
@@ -301,6 +307,7 @@ limitations under the License.
                                 {{end}}
                             {{end}}
                         </div>
+                        {{if not .EmptySearch}}
                         <!-- BEGIN - Facets small -->
                         <div class="commerce-select-wrapper inline-block md-mr1 pl2 md-hide lg-hide">
                             {{range $key, $type := .Facet}}
@@ -331,8 +338,22 @@ limitations under the License.
                             </button>
                         </div>
                         <!-- END - Facets small -->
+                        {{end}}
                     </div>
                 </div>
+                {{if .EmptySearch}}
+                    <h2>Welcome to the media library.</h2>
+                    Please feel free to search through our digital special <a href="{{$user.LinkSubject "collections" "" "collections"}}">collections and estates</a>
+                    <p>&nbsp;</p>
+                    <h3><div class="inline">{{.SearchResultTotal}}</div> items total </h3><p />
+                    <div class="inline">{{index (index .Stats "mediatype") "image"}}</div> items with attached image files<p />
+                    <div class="inline">{{index (index .Stats "mediatype") "video"}}</div> items with attached videos files<p />
+                    <div class="inline">{{index (index .Stats "mediatype") "audio"}}</div> items with attached audio files<p />
+                    <div class="inline">{{index (index .Stats "mediatype") "pdf"}}</div> items with attached pdf files<p />
+                        <br/>
+                    <h4><div class="inline">{{index (index .Stats "acl.content") "global/guest"}}</div> items available without login</h4><p />
+
+                {{else}}
                 <div>
                     <h2 style="padding-left:16px;" class="h6">
                         <div class="inline">{{.SearchResultTotal}}</div> items
@@ -495,11 +516,11 @@ limitations under the License.
                 <!-- --------------------------------
                     END - Content small
                 -------------------------------- -->
-
                 <br />
 
                 <!-- Paging -->
                 {{template "searchNav.inc.gohtml" . | arg "navPrefix" "bottom" | arg "tabIndex" 5 }}
+                {{end}}
 
             </div>
         </section>

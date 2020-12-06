@@ -179,6 +179,10 @@ func (dhgk *SourceDiplomHGK) GetExtra() *Metalist {
 	return &result
 }
 
+func (dhgk *SourceDiplomHGK) GetVars() *Varlist {
+	return &Varlist{}
+}
+
 func (dhgk *SourceDiplomHGK) GetAbstract() string {
 	return strings.TrimSpace(dhgk.DData.Beschreibung)
 }

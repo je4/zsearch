@@ -204,6 +204,66 @@ func (mte *MTElasticSearch) LoadDocs(ids []string, ctx context.Context) (map[str
 	return result, nil
 }
 
+func (mte *MTElasticSearch) StatsByACL(catalog string) (int64, FacetCountResult, error) {
+	query := elasticQuery()
+	filters := []*tElasticFieldValue{}
+	if catalog != "" {
+		filters = append(filters, elasticTermsQuery("catalog", 0, catalog).FieldValue())
+	}
+	bq := elasticBooleanQuery(0)
+	if len(filters) > 0 {
+		bq.withFilter(filters...)
+	}
+	query.withBooleanQuery(bq)
+
+	aggregations := elasticSearchAggregations()
+	aggregations.AddAggregation("acl.meta", elasticSearchAggregation(nil).withTerms("acl.meta", 0, nil))
+	aggregations.AddAggregation("acl.content", elasticSearchAggregation(nil).withTerms("acl.content", 0, nil))
+	aggregations.AddAggregation("mediatype", elasticSearchAggregation(nil).withTerms("mediatype", 0, nil))
+
+	fq := elasticSearch(query, aggregations, nil, nil, 0, 0).withTrackTotalHits()
+
+	jsonstr, err := json.Marshal(fq)
+	if err != nil {
+		return 0, nil, emperror.Wrapf(err, "cannot marshal %v", fq)
+	}
+	mte.log.Debugf("%v", string(jsonstr))
+	buf := bytes.NewBuffer(jsonstr)
+	res, err := mte.es.Search(
+		mte.es.Search.WithIndex(mte.index),
+		mte.es.Search.WithBody(buf),
+		mte.es.Search.WithTrackTotalHits(true),
+	)
+	if err != nil {
+		return 0, nil, emperror.Wrapf(err, "cannot query %v", string(jsonstr))
+	}
+	defer res.Body.Close()
+
+	var result tElasticResult
+	if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
+		return 0, nil, emperror.Wrap(err, "cannot unmarshal result")
+	}
+	if res.IsError() {
+		errstr := fmt.Sprintf(
+			"Elastic error: %v - %v at %v:%v",
+			result.Error.Type,
+			result.Error.Reason,
+			result.Error.CausedBy.Line,
+			result.Error.CausedBy.Col,
+		)
+		return 0, nil, fmt.Errorf("%s\n%s", errstr, jsonstr)
+	}
+
+	var fcr FacetCountResult = make(FacetCountResult)
+	for name, agg := range result.Aggregations {
+		fcr[name] = map[string]int{}
+		for _, bucket := range agg.Buckets {
+			fcr[name][bucket.Key] = int(bucket.DocCount)
+		}
+	}
+	return result.Hits.Total.Value, fcr, nil
+}
+
 func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]map[string][]string, []*SourceData, int64, FacetCountResult, error) {
 	query := elasticQuery()
 

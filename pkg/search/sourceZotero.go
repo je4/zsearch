@@ -453,6 +453,19 @@ func (item *Item) GetExtra() *Metalist {
 	return &result
 }
 
+func (item *Item) GetVars() *Varlist {
+	ml := Varlist{}
+	meta := zotero.Text2Metadata(item.Group.Data.Description)
+	ml.AppendMap(meta)
+	meta2 := zotero.Text2Metadata(item.Data.AbstractNote)
+	ml.AppendMap(meta2)
+	for _, tag := range item.GetTags() {
+		meta := zotero.Text2Metadata(tag)
+		ml.AppendMap(meta)
+	}
+	return ml.Unique()
+}
+
 func (item *Item) GetContentType() string {
 	am := strings.TrimSpace(item.Data.ArtworkMedium)
 	if am != "" {

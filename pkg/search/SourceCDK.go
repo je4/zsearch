@@ -107,6 +107,10 @@ func (cdk *SourceCDK) GetExtra() *Metalist {
 	return &result
 }
 
+func (cdk *SourceCDK) GetVars() *Varlist {
+	return &Varlist{}
+}
+
 func (cdk *SourceCDK) GetAbstract() string {
 	return "strings.TrimSpace(cdk.DData.Beschreibung)"
 }

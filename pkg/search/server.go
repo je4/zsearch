@@ -99,6 +99,8 @@ type SearchStatus struct {
 	Facet               map[string]map[string]FacetCountField
 	CoreFacets          []string
 	MetaDescription     string
+	EmptySearch         bool
+	Stats               FacetCountResult
 }
 
 type CollectionsStatus struct {
@@ -244,7 +246,7 @@ type Server struct {
 	facets             SolrFacetList
 	locations          NetGroups
 	icons              map[string]string
-	baseFilter         string
+	baseCatalog        string
 	subFilters         []SubFilter
 	funcMap            template.FuncMap
 	collectionsCatalog string
@@ -273,7 +275,7 @@ func NewServer(
 	facets SolrFacetList,
 	locations NetGroups,
 	icons map[string]string,
-	baseFilter string,
+	baseCatalog string,
 	subFilter []SubFilter,
 	collectionsCatalog, clusterCatalog string,
 	googleCSEKey map[string]KV) (*Server, error) {
@@ -334,7 +336,7 @@ func NewServer(
 		facets:             facets,
 		locations:          locations,
 		icons:              icons,
-		baseFilter:         baseFilter,
+		baseCatalog:        baseCatalog,
 		subFilters:         subFilter,
 		templates:          make(map[string]*template.Template),
 		funcMap:            template.FuncMap{},

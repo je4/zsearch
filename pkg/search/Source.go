@@ -115,6 +115,75 @@ func (ml Metalist) MarshalJSON() ([]byte, error) {
 	return json.Marshal(arr)
 }
 
+type Varlist map[string][]string
+
+func (vl *Varlist) UnmarshalJSON(b []byte) error {
+	type kv struct {
+		Key   string   `json:"Key"`
+		Value []string `json:"value"`
+	}
+	var arr []kv
+
+	m := Varlist{}
+	if err := json.Unmarshal(b, &arr); err != nil {
+		return err
+	}
+	for _, val := range arr {
+		m[val.Key] = val.Value
+	}
+	*vl = m
+	return nil
+}
+
+func (vl Varlist) MarshalJSON() ([]byte, error) {
+	type kv struct {
+		Key   string   `json:"Key"`
+		Value []string `json:"value"`
+	}
+	var arr []kv
+	for key, val := range vl {
+		arr = append(arr, kv{Key: key, Value: val})
+	}
+	return json.Marshal(arr)
+}
+
+func (vl Varlist) Append(key string, values []string) {
+	if _, ok := vl[key]; !ok {
+		vl[key] = []string{}
+	}
+	vl[key] = append(vl[key], values...)
+}
+
+func (vl Varlist) AppendMap(mv map[string][]string) {
+	for key, values := range mv {
+		vl.Append(key, values)
+	}
+}
+
+func (vl Varlist) Unique() *Varlist {
+	// todo: optimize it
+	unique := func(arr []string) []string {
+		occured := map[string]bool{}
+		result := []string{}
+		for e := range arr {
+			// check if already the mapped
+			// variable is set to true or not
+			if occured[arr[e]] != true {
+				occured[arr[e]] = true
+				// Append to result slice.
+				result = append(result, arr[e])
+			}
+		}
+
+		return result
+	}
+	result := Varlist{}
+	for key, values := range vl {
+		result.Append(key, unique(values))
+	}
+	return &result
+}
+
 type Source interface {
 	GetSignature() string
 	Name() string
@@ -136,6 +205,7 @@ type Source interface {
 	GetReferences() []Reference
 	GetMeta() *Metalist
 	GetExtra() *Metalist
+	GetVars() *Varlist
 	GetContentType() string
 	GetQueries() []Query
 	GetSolrDoc() *solr.Document
@@ -164,6 +234,7 @@ type SourceData struct {
 	References      []Reference          `json:"references"`
 	Meta            *Metalist            `json:"meta"`
 	Extra           *Metalist            `json:"extra"`
+	Vars            *Varlist             `json:"vars"`
 	Type            string               `json:"type"`
 	Queries         []Query              `json:"queries"`
 	ContentStr      string               `json:"-"`
@@ -194,6 +265,7 @@ func InitSourceData(source Source, ms mediaserver.Mediaserver) *SourceData {
 		References:      source.GetReferences(),
 		Meta:            source.GetMeta(),
 		Extra:           source.GetExtra(),
+		Vars:            source.GetVars(),
 		Type:            source.GetContentType(),
 		Queries:         source.GetQueries(),
 		ContentStr:      source.GetContentString(),

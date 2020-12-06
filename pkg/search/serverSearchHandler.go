@@ -78,10 +78,13 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 			AmpBase:  "",
 			Type:     "search",
 		},
-		QueryApi:   "api/search",
-		Facet:      make(map[string]map[string]FacetCountField),
-		CoreFacets: []string{},
-		Filter:     make(map[string][]string),
+		QueryApi:        "api/search",
+		Facet:           make(map[string]map[string]FacetCountField),
+		CoreFacets:      []string{},
+		Filter:          make(map[string][]string),
+		Stats:           FacetCountResult{},
+		EmptySearch:     false,
+		MetaDescription: "Integrated Catalogue of Mediathek HGK FHNW",
 	}
 
 	jwt, ok := req.URL.Query()["token"]
@@ -213,6 +216,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		subfiltername = ""
 		showJSON = true
 	}
+
 	if subfiltername != "" {
 		var f *SubFilter = nil
 		// check for configured subfilter
@@ -282,6 +286,64 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
+	if len(filterField) == 0 && qstr == "" {
+		total, facets, err := s.mts.StatsByACL(s.baseCatalog)
+		if err != nil {
+			s.DoPanicf(w, http.StatusInternalServerError, "cannot get statistics: %v", false, err)
+			return
+		}
+		s.log.Infof("total records: %v", total)
+		s.log.Infof("statistics by ACL: %v", facets)
+		status.EmptySearch = true
+		status.Stats = facets
+		status.SearchResultTotal = int(total)
+
+		result, err := s.queryCache.Get("empty")
+		if err != nil && err != gcache.KeyNotFoundError {
+			s.DoPanicf(w, http.StatusInternalServerError, "cannot access cache: %v", false, err)
+			return
+		}
+		if err != gcache.KeyNotFoundError {
+			s.log.Info("serving from cache")
+			dt, err := Decompress(result.([]byte))
+			if err != nil {
+				s.DoPanicf(w, http.StatusInternalServerError, "cannot decompress cache: %v", false, err)
+				return
+			}
+			w.Header().Set("Cache-Control", "max-age=14400, s-maxage=12200, stale-while-revalidate=9000, public")
+			io.WriteString(w, string(dt))
+			return
+		}
+		if showJSON {
+			enc := json.NewEncoder(w)
+			w.Header().Set("Content-type", "text/json")
+			if err := enc.Encode(status); err != nil {
+				s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal solr doc", true, jwt)
+				return
+			}
+		} else {
+			w.Header().Set("Cache-Control", "max-age=14400, s-maxage=12200, stale-while-revalidate=9000, public")
+			if tpl, ok := s.templates["search.amp.gohtml"]; ok {
+				var cacheBuffer bytes.Buffer
+				writer := io.MultiWriter(&cacheBuffer, w)
+				if err := tpl.Execute(writer, status); err != nil {
+					s.DoPanicf(w, http.StatusInternalServerError, "cannot render template: %v", false, err)
+					return
+				}
+				if err := s.queryCache.Set("empty", Compress(cacheBuffer.Bytes())); err != nil {
+					s.DoPanicf(w, http.StatusInternalServerError, "cannot cache result: %v", false, err)
+					return
+				}
+			}
+		}
+	}
+
+	if s.baseCatalog != "" {
+		if _, ok := filterField["catalog"]; !ok {
+			filterField["catalog"] = []string{}
+		}
+		filterField["catalog"] = append(filterField["catalog"], s.baseCatalog)
+	}
 	cfg := &SearchConfig{
 		Fields:         make(map[string][]string),
 		QStr:           qstr,
@@ -402,7 +464,6 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	status.MetaDescription = "Integrated Catalogue of Mediathek HGK FHNW"
 	if showJSON {
 		enc := json.NewEncoder(w)
 		w.Header().Set("Content-type", "text/json")

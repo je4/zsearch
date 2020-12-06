@@ -254,7 +254,7 @@ func main() {
 		facets,
 		locations,
 		config.Icons,
-		config.Query.BaseFilter,
+		config.Query.BaseCatalog,
 		subfilters,
 		config.CollectionsCatalog,
 		config.ClusterCatalog,

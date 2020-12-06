@@ -178,6 +178,10 @@ func (zot *SourceZoteroDeprecated) GetExtra() *Metalist {
 	return &result
 }
 
+func (zot *SourceZoteroDeprecated) GetVars() *Varlist {
+	return &Varlist{}
+}
+
 func (zot *SourceZoteroDeprecated) GetAbstract() string {
 	return strings.TrimSpace(zot.ZData.Data.AbstractNote + "\n" + zot.ZData.Data.Extra)
 }

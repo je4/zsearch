@@ -92,8 +92,8 @@ type SubFilter struct {
 }
 
 type Query struct {
-	BaseFilter string      `toml:"basefilter"`
-	SubFilter  []SubFilter `toml:"subfilter"`
+	BaseCatalog string      `toml:"basecatalog"`
+	SubFilter   []SubFilter `toml:"subfilter"`
 }
 
 type Cfg_ElasticSearch struct {
