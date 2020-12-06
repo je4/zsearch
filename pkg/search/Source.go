@@ -46,12 +46,12 @@ func GUnzip(data string) (string, error) {
 }
 
 type Person struct {
-	Name string `json:"Name"`
+	Name string `json:"name"`
 	Role string `json:"role"`
 }
 
 type Media struct {
-	Name     string `json:"Name"`
+	Name     string `json:"name"`
 	Mimetype string `json:"mimetype"`
 	Type     string `json:"type"`
 	Uri      string `json:"uri"`
@@ -87,7 +87,7 @@ type Metalist map[string]string
 
 func (ml *Metalist) UnmarshalJSON(b []byte) error {
 	type kv struct {
-		Key   string `json:"Key"`
+		Key   string `json:"key"`
 		Value string `json:"value"`
 	}
 	var arr []kv
@@ -105,7 +105,7 @@ func (ml *Metalist) UnmarshalJSON(b []byte) error {
 
 func (ml Metalist) MarshalJSON() ([]byte, error) {
 	type kv struct {
-		Key   string `json:"Key"`
+		Key   string `json:"key"`
 		Value string `json:"value"`
 	}
 	var arr []kv
@@ -119,7 +119,7 @@ type Varlist map[string][]string
 
 func (vl *Varlist) UnmarshalJSON(b []byte) error {
 	type kv struct {
-		Key   string   `json:"Key"`
+		Key   string   `json:"key"`
 		Value []string `json:"value"`
 	}
 	var arr []kv
@@ -137,7 +137,7 @@ func (vl *Varlist) UnmarshalJSON(b []byte) error {
 
 func (vl Varlist) MarshalJSON() ([]byte, error) {
 	type kv struct {
-		Key   string   `json:"Key"`
+		Key   string   `json:"key"`
 		Value []string `json:"value"`
 	}
 	var arr []kv

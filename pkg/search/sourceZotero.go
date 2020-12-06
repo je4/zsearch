@@ -113,21 +113,15 @@ var zoteroTagACLVariable = regexp.MustCompile(`^acl_(meta|content|preview):(.+)$
 func (item *Item) GetACL() map[string][]string {
 	meta := zotero.Text2Metadata(item.Group.Data.Description)
 	meta2 := zotero.Text2Metadata(item.Data.AbstractNote)
-	for key, val := range meta2 {
-		meta[key] = val
+	if len(meta2) > 0 {
+		meta = meta2
 	}
-	acls := make(map[string][]string)
-	for key, val := range meta {
-		if strings.Index(key, "acl_") == 0 {
-			acltype := key[4:] // get rid of acl_
-			if _, ok := acls[acltype]; !ok {
-				acls[acltype] = []string{}
-			}
-			for _, a := range val {
-				acls[acltype] = append(acls[acltype], strings.TrimSpace(a))
-			}
+	/*
+		for key, val := range meta2 {
+			meta[key] = val
 		}
-	}
+	*/
+	acls := make(map[string][]string)
 	for _, t := range item.Data.Tags {
 		matches := zoteroTagACLVariable.FindStringSubmatch(t.Tag)
 		if matches != nil {
@@ -137,6 +131,20 @@ func (item *Item) GetACL() map[string][]string {
 				acls[acltype] = []string{}
 			}
 			acls[acltype] = append(acls[acltype], group)
+		}
+	}
+
+	if len(acls) == 0 || len(meta2) > 0 {
+		for key, val := range meta {
+			if strings.Index(key, "acl_") == 0 {
+				acltype := key[4:] // get rid of acl_
+				if _, ok := acls[acltype]; !ok {
+					acls[acltype] = []string{}
+				}
+				for _, a := range val {
+					acls[acltype] = append(acls[acltype], strings.TrimSpace(a))
+				}
+			}
 		}
 	}
 

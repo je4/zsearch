@@ -230,13 +230,13 @@ limitations under the License.
                         <!-- BEGIN - Facets small -->
                         <div class="commerce-select-wrapper inline-block md-mr1 pl2 md-hide lg-hide">
                             {{range $key, $srch := .Searches}}
-                                    <div class="gsearch-w100 gsearch-input gsearch-input-radio inline-block relative m0 p0 mb3">
+                                    <!-- <div class="gsearch-w100 gsearch-input gsearch-input-radio inline-block relative m0 p0 mb3"> -->
                                         <a href="{{$user.LinkSubject "cluster" $srch.Key (printf "cluster/%s" $srch.Key) (print "searchtext=" $searchString)}}">
                                             <button class="gsearch-facet{{if eq $currentSrch $srch.Key}}-inv{{end}} gsearch-btn caps">
                                                 {{$srch.Name}}
                                             </button>
                                         </a>
-                                    </div>
+                                    <!-- </div> -->
                             {{end}}
                         </div>
                         <!-- END - Facets small -->
@@ -245,7 +245,7 @@ limitations under the License.
            {{if ne .SearchString ""}}
                 <div>
                     <h2 style="padding-left:16px;" class="h6">
-                        <div class="inline">{{.SearchResultTotal}}</div> items
+                        <!-- <div class="inline">{{.SearchResultTotal}}</div> items -->
                         [<div class="inline">{{add .SearchResultStart 1}}</div> -
                         <div class="inline">{{add .SearchResultStart .SearchResultRows}}</div>]
                     </h2>
