@@ -19,6 +19,7 @@ package main
 import (
 	"database/sql"
 	"flag"
+	"github.com/araddon/dateparse"
 	"github.com/dgraph-io/badger/v2"
 	"github.com/goph/emperror"
 	"github.com/je4/zsearch/pkg/mediaserver"
@@ -34,12 +35,20 @@ import (
 func main() {
 
 	cfgfile := flag.String("cfg", "./synczotero.toml", "locations of config file")
+	sinceFlag := flag.String("since", "1970-01-01T00:00:00", "time of last sync")
+	loop := flag.Bool("loop", false, "true for endless looping")
 	flag.Parse()
 	config := LoadConfig(*cfgfile)
 
 	// create logger instance
 	log, lf := search.CreateLogger("synczotero", config.Logfile, config.Loglevel)
 	defer lf.Close()
+
+	since, err := dateparse.ParseAny(*sinceFlag)
+	if err != nil {
+		log.Panicf("cannot parse since parameter %v", *sinceFlag)
+		return
+	}
 
 	stat, err := os.Stat(config.CacheDir)
 	if err != nil {
@@ -153,33 +162,41 @@ func main() {
 		return
 	}
 
-	for _, groupid := range config.Groups {
-		group, err := zot.LoadGroupLocal(groupid)
-		if err != nil {
-			log.Errorf("cannot load groups: %v", err)
+	for {
+		now := time.Now()
+		for _, groupid := range config.Groups {
+			group, err := zot.LoadGroupLocal(groupid)
+			if err != nil {
+				log.Errorf("cannot load groups: %v", err)
+				break
+			}
+			//since := time.Date(1970, 01, 01, 0, 0, 0, 0, time.Local)
+			group.IterateItemsAllLocal(
+				&since,
+				func(item *zotero.Item) error {
+					if item.Data.ParentItem != "" {
+						return nil
+					}
+					_type, err := item.GetType()
+					if err != nil {
+						return emperror.Wrapf(err, "cannot get item type")
+					}
+					if _type == "attachment" {
+						return nil
+					}
+					i := (*search.Item)(item)
+					if err := mte.Update(i, ms); err != nil {
+						return emperror.Wrapf(err, "cannot update item")
+					}
+					return nil
+				},
+			)
+		}
+		if !*loop {
 			break
 		}
-		since := time.Date(1970, 01, 01, 0, 0, 0, 0, time.Local)
-		group.IterateItemsAllLocal(
-			&since,
-			func(item *zotero.Item) error {
-				if item.Data.ParentItem != "" {
-					return nil
-				}
-				_type, err := item.GetType()
-				if err != nil {
-					return emperror.Wrapf(err, "cannot get item type")
-				}
-				if _type == "attachment" {
-					return nil
-				}
-				i := (*search.Item)(item)
-				if err := mte.Update(i, ms); err != nil {
-					return emperror.Wrapf(err, "cannot update item")
-				}
-				return nil
-			},
-		)
+		since = now
+		log.Infof("sleeping %v", config.Sleep.Duration.String())
+		time.Sleep(config.Sleep.Duration)
 	}
-
 }

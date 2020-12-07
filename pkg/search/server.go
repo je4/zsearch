@@ -697,17 +697,30 @@ func (s *Server) ListenAndServe(cert, key string) error {
 		Methods("GET")
 
 	// https://data.mediathek.hgk.fhnw.ch/detail/[signature]
-	mainRegexp := regexp.MustCompile(fmt.Sprintf("^/%s/([^/]+)(/(.+))?$", s.prefixes["detail"]))
+	//mainRegexp := regexp.MustCompile(fmt.Sprintf("^/%s(/[^/]+)+$", s.prefixes["detail"]))
+	mainRegexp := regexp.MustCompile(fmt.Sprintf("^/%s/(.+)$", s.prefixes["detail"]))
 	router.
 		MatcherFunc(func(r *http.Request, rm *mux.RouteMatch) bool {
-			matches := mainRegexp.FindSubmatch([]byte(r.URL.Path))
-			if len(matches) == 0 {
+			matches := mainRegexp.FindStringSubmatch(r.URL.Path)
+			if len(matches) < 2 {
+				return false
+			}
+			parts := strings.Split(matches[1], "/")
+			// we need minimum the signature
+			if len(parts) == 0 {
 				return false
 			}
 			rm.Vars = map[string]string{}
-			rm.Vars["signature"] = string(matches[1])
-			if matches[3] != nil {
-				rm.Vars["sub"] = string(matches[3])
+			rm.Vars["signature"] = parts[0]
+			if len(parts) == 2 {
+				if strings.ToLower(parts[1]) == "data" {
+					rm.Vars["sub"] = "data"
+				} else {
+					rm.Vars["subfilter"] = parts[1]
+				}
+			} else if len(parts) == 3 {
+				rm.Vars["subfilter"] = parts[1]
+				rm.Vars["sub"] = parts[2]
 			}
 			return true
 		}).

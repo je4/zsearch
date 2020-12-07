@@ -61,7 +61,6 @@ func (item *Item) GetSignature() string {
 
 func (item *Item) GetTitle() string {
 	return item.Data.Title
-
 }
 
 func (item *Item) GetSeries() string {
@@ -113,14 +112,20 @@ var zoteroTagACLVariable = regexp.MustCompile(`^acl_(meta|content|preview):(.+)$
 func (item *Item) GetACL() map[string][]string {
 	meta := zotero.Text2Metadata(item.Group.Data.Description)
 	meta2 := zotero.Text2Metadata(item.Data.AbstractNote)
-	if len(meta2) > 0 {
-		meta = meta2
-	}
-	/*
-		for key, val := range meta2 {
-			meta[key] = val
+	first := true
+	for key, vals := range meta2 {
+		if strings.HasPrefix(key, "acl_") {
+			// if we have the first acl clear the acl from library
+			if first {
+				meta = make(map[string][]string)
+				first = false
+			}
+			if _, ok := meta[key]; !ok {
+				meta[key] = []string{}
+			}
+			meta[key] = append(meta[key], vals...)
 		}
-	*/
+	}
 	acls := make(map[string][]string)
 	for _, t := range item.Data.Tags {
 		matches := zoteroTagACLVariable.FindStringSubmatch(t.Tag)
@@ -136,7 +141,7 @@ func (item *Item) GetACL() map[string][]string {
 
 	if len(acls) == 0 || len(meta2) > 0 {
 		for key, val := range meta {
-			if strings.Index(key, "acl_") == 0 {
+			if strings.HasPrefix(key, "acl_") {
 				acltype := key[4:] // get rid of acl_
 				if _, ok := acls[acltype]; !ok {
 					acls[acltype] = []string{}
@@ -489,6 +494,13 @@ func (item *Item) GetContentType() string {
 
 func (item *Item) GetQueries() []Query {
 	queries := []Query{}
+	for _, catalog := range item.GetCatalogs() {
+		queries = append(queries, Query{
+			Label:  fmt.Sprintf("catalog - %s", catalog),
+			Search: fmt.Sprintf(`catalog:"%v"`, catalog),
+		})
+	}
+	title := item.GetCollectionTitle()
 	for _, collection := range item.Data.Collections {
 		parentColl, err := item.Group.GetCollectionByKeyLocal(collection)
 		if err != nil {
@@ -500,13 +512,13 @@ func (item *Item) GetQueries() []Query {
 				break
 			}
 			queries = append(queries, Query{
-				Label:  fmt.Sprintf("%s - %s - %s", item.Group.Data.Name, parentColl.Data.Name, subParentColl.Data.Name),
+				Label:  fmt.Sprintf("%s - %s - %s", title, parentColl.Data.Name, subParentColl.Data.Name),
 				Search: fmt.Sprintf(`cat:"%v!!%v!!%v!!%v"`, item.Name(), item.Group.Data.Name, parentColl.Data.Name, subParentColl.Data.Name),
 			})
 		}
 
 		queries = append(queries, Query{
-			Label:  fmt.Sprintf("%s - %s", item.Group.Data.Name, parentColl.Data.Name),
+			Label:  fmt.Sprintf("%s - %s", title, parentColl.Data.Name),
 			Search: fmt.Sprintf(`cat:"%v!!%v!!%v"`, item.Name(), item.Group.Data.Name, parentColl.Data.Name),
 		})
 

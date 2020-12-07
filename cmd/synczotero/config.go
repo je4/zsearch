@@ -21,7 +21,18 @@ import (
 	"github.com/BurntSushi/toml"
 	"log"
 	"strings"
+	"time"
 )
+
+type duration struct {
+	time.Duration
+}
+
+func (d *duration) UnmarshalText(text []byte) error {
+	var err error
+	d.Duration, err = time.ParseDuration(string(text))
+	return err
+}
 
 type Cfg_database struct {
 	ServerType string
@@ -59,6 +70,7 @@ type Config struct {
 	ElasticSearch       Cfg_ElasticSearch `toml:"elasticsearch"`
 	CacheDir            string            `toml:"cachedir"`
 	ClearCacheOnStartup bool              `toml:"clearcacheonstartup"`
+	Sleep               duration          `toml:"sleep"`
 	Mediaserver         MediaserverMySQL  `toml:"mediaserver"`
 	Zotero              Cfg_Zotero        `toml:"zotero"`
 	S3                  Cfg_S3            `toml:"s3"`
