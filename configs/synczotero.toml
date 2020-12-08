@@ -22,7 +22,7 @@ groups = [
     # 2329831, # HGK Fotoarchiv
     # 2250437, # Grenzgang
     # 704562,  # Handapparate
-    # 2545256, # HGK Collections
+    2545256, # HGK Collections
     # 2570300, # hphuser_import
     # 1510019, # Hyperwerk
     # 2571475, # IKUVID

@@ -21,11 +21,15 @@ import (
 	"compress/gzip"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
+	isoduration "github.com/channelmeter/iso8601duration"
 	"github.com/goph/emperror"
 	"github.com/je4/zsearch/pkg/mediaserver"
 	"github.com/vanng822/go-solr/solr"
 	"html/template"
 	"io"
+	"strings"
+	"time"
 )
 
 func GUnzip(data string) (string, error) {
@@ -241,6 +245,7 @@ type SourceData struct {
 	ContentMime     string               `json:"-"`
 	HasMedia        bool                 `json:"hasmedia"`
 	Mediatype       []string             `json:"mediatype"`
+	Timestamp       time.Time            `json:"timestamp"`
 }
 
 func InitSourceData(source Source, ms mediaserver.Mediaserver) *SourceData {
@@ -271,10 +276,140 @@ func InitSourceData(source Source, ms mediaserver.Mediaserver) *SourceData {
 		ContentStr:      source.GetContentString(),
 		ContentMime:     source.GetContentMime(),
 		Mediatype:       []string{},
+		Timestamp:       time.Now(),
 	}
 	sd.HasMedia = len(sd.Media) > 0
 	for mt, _ := range sd.Media {
 		sd.Mediatype = append(sd.Mediatype, mt)
 	}
 	return sd
+}
+
+type JSONData map[string]interface{}
+
+func (jd JSONData) set(key string, value interface{}) {
+	jd[key] = value
+}
+
+func (jd JSONData) add(key string, value interface{}) {
+	if _, ok := jd[key]; !ok {
+		jd[key] = []interface{}{}
+	}
+	if _, ok := jd[key].([]interface{}); ok {
+		jd[key] = append(jd[key].([]interface{}), value)
+	}
+}
+
+type OGData map[string][]string
+
+func (og OGData) add(key, val string) {
+	if _, ok := og[key]; !ok {
+		og[key] = []string{}
+	}
+	og[key] = append(og[key], val)
+}
+
+func (og OGData) set(key, val string) {
+	og[key] = []string{val}
+}
+func (sd *SourceData) GetJsonLD(self string, mediaserver func(uri string, params ...string) (string, error)) (result interface{}) {
+	if videos, ok := sd.Media["video"]; ok {
+		if len(videos) > 0 {
+			video := videos[0]
+			vData := make(JSONData)
+			vData.set("@type", "VideoObject")
+			vData.set("@context", "http://schema.org")
+			vData.set("url", self)
+			vData.set("contenturl", self)
+			vData.set("name", sd.Title)
+			vData.set("description", sd.Abstract)
+
+			// director / actor / ...
+			for _, p := range sd.Persons {
+				switch p.Role {
+				case "director":
+					vData.add("director", p.Name)
+				default:
+					vData.add("actor", p.Name)
+				}
+			}
+			if sd.Poster != nil {
+				if imgUrl, err := mediaserver(sd.Poster.Uri, "resize", fmt.Sprintf("size%vx%v", sd.Poster.Width, sd.Poster.Height), "formatJPEG"); err == nil {
+					vData.set("thumbnailUrl", imgUrl)
+					thumb := make(JSONData)
+					thumb.set("@type", "ImageObject")
+					thumb.set("url", imgUrl)
+					thumb.set("width", fmt.Sprintf("%v", sd.Poster.Width))
+					thumb.set("height", fmt.Sprintf("%v", sd.Poster.Height))
+					vData.set("thumbnail", thumb)
+				}
+			}
+			// duration / width / height
+			var isoDuration = isoduration.Duration{}
+			isoDuration.Hours = int(video.Duration / 3600)
+			isoDuration.Minutes = (int(video.Duration) % 3600) / 60
+			isoDuration.Seconds = int(video.Duration) % 60
+			vData.set("duration", fmt.Sprintf("%v", isoDuration.String()))
+			vData.set("width", fmt.Sprintf("%v", video.Width))
+			vData.set("height", fmt.Sprintf("%v", video.Height))
+			vData.set("uploadDate", sd.Timestamp.Format("2006-01-02T15:04:05Z"))
+			return vData
+		}
+	}
+	return nil
+}
+
+func (sd *SourceData) GetOpenGraph(self string, mediaserver func(uri string, params ...string) (string, error)) (namespace string, ogstr string) {
+	var ogdata = make(OGData)
+
+	namespace = "https://ogp.me/ns#"
+
+	ogdata.set("title", sd.Title)
+	ogdata.set("type", "website")
+	ogdata.set("url", self)
+	switch sd.Type {
+	}
+	if videos, ok := sd.Media["video"]; ok {
+		if len(videos) > 0 {
+			namespace = "https://ogp.me/ns/video#"
+			video := videos[0]
+			// type
+			ogdata.set("type", "video.other")
+
+			// director / actor / ...
+			for _, p := range sd.Persons {
+				switch p.Role {
+				case "director":
+					ogdata.add("video:director", p.Name)
+				case "artist":
+					ogdata.add("video:director", p.Name)
+				default:
+					ogdata.add(fmt.Sprintf("video:actor:%s", p.Role), p.Name)
+				}
+			}
+			// duration / width / height
+			ogdata.set("video:duration", fmt.Sprintf("%v", video.Duration))
+			ogdata.set("video:width", fmt.Sprintf("%v", video.Width))
+			ogdata.set("video:height", fmt.Sprintf("%v", video.Height))
+
+			// release
+			ogdata.set("video:release_data", sd.Date)
+
+			// url
+			ogdata.set("video:url", self)
+		}
+	}
+	ogdata.set("description", sd.Abstract)
+	if sd.Poster != nil {
+		if imgUrl, err := mediaserver(sd.Poster.Uri, "resize", fmt.Sprintf("size%vx%v", sd.Poster.Width, sd.Poster.Height), "formatJPEG"); err == nil {
+			ogdata.set("image", imgUrl)
+			ogdata.set("image:width", fmt.Sprintf("%v", sd.Poster.Width))
+			ogdata.set("image:height", fmt.Sprintf("%v", sd.Poster.Height))
+			ogdata.set("image:type", "image/jpeg")
+		}
+	}
+	for key, vals := range ogdata {
+		ogstr += fmt.Sprintf(`   <meta property="og:%s" value="%s">`, key, strings.Join(vals, "; ")) + "\n"
+	}
+	return namespace, ogstr
 }

@@ -1,6 +1,6 @@
 {
-  "version": 8,
-  "mapping_version": 2,
+  "version": 9,
+  "mapping_version": 3,
   "settings_version": 1,
   "aliases_version": 1,
   "routing_num_shards": 1024,
@@ -538,6 +538,9 @@
               "type": "long"
             }
           }
+        },
+        "timestamp": {
+          "type": "date"
         }
       }
     }

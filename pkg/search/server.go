@@ -54,6 +54,9 @@ type Notification struct {
 }
 
 type BaseStatus struct {
+	OGPNamespace  string
+	OGPMeta       string
+	JsonLD        string
 	Type          string
 	Notifications []Notification
 	User          *User

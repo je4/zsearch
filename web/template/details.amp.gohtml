@@ -18,7 +18,7 @@ limitations under the License.
 <!doctype html>
 {{$user := .User}}
 <!-- only open pages and not logged in user can become an AMP page -->
-<html {{if .IsAmp}}⚡="" {{end}}lang="en">
+<html {{if .IsAmp}}⚡="" {{end}}lang="en"{{if ne .OGPNamespace ""}} prefix="og: {{.OGPNamespace}}"{{end}}>
 
 <head>
     <meta charset="utf-8">
@@ -26,6 +26,8 @@ limitations under the License.
     {{if not .MetaPublic}}<meta name="robots" content="noindex">{{end}}
     <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
     <meta name="Description" content="{{.MetaDescription}}">
+
+    {{html .OGPMeta}}
 
     <script async="" src="https://cdn.ampproject.org/v0.js"></script>
 
@@ -222,6 +224,8 @@ limitations under the License.
 <!-- End Navbar -->
 
 {{template "footer.inc.gohtml" . }}
+
+{{html .JsonLD}}
 
 </body>
 </html>

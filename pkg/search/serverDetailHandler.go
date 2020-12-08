@@ -87,6 +87,7 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 	if status.User == nil {
 		status.User = NewGuestUser(s)
 	}
+
 	ip, _, _ := net.SplitHostPort(req.RemoteAddr)
 	for _, grp := range s.locations.Contains(ip) {
 		status.User.Groups = append(status.User.Groups, grp)
@@ -102,6 +103,11 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	status.Doc = doc
+	status.BaseStatus.OGPNamespace, status.BaseStatus.OGPMeta = doc.GetOpenGraph(req.URL.Path, s.mediaserverUri2Url)
+	ldo := doc.GetJsonLD(req.URL.Path, s.mediaserverUri2Url)
+	if jsonstr, err := json.Marshal([]interface{}{ldo}); err == nil {
+		status.BaseStatus.JsonLD = fmt.Sprintf(`<script type="application/ld+json">%s</script>`, string(jsonstr)) + "\n"
+	}
 
 	for acl, groups := range status.Doc.ACL {
 		for _, group := range groups {

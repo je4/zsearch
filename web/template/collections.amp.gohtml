@@ -18,7 +18,7 @@ limitations under the License.
 
 <!doctype html>
 <html ⚡="" lang="en">
-
+{{$user := .User}}
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
@@ -163,7 +163,7 @@ limitations under the License.
                                         </div>
                                         <div style="display:table-cell; vertical-align: top;">
                                             <div style="height:100%; overflow:hidden;">
-                                                <a style="text-decoration: none;" href="{{$baseurl}}/search/{{$item.Signature}}">
+                                                <a style="text-decoration: none;" href="{{$user.LinkSubject "search" $item.Signature "search"}}">
                                                 <b>{{$item.Title}}</b>
                                                 {{if not (eq $item.Date "")}}<br />{{$item.Date}}{{end}}
                                                 </a>
@@ -192,7 +192,7 @@ limitations under the License.
                     <h3 style="padding-bottom: 12px;">{{title $area}}</h3>
                     {{range $key, $item := $items}}
                         <div style="padding-left:16px; padding-bottom: 15px; overflow:hidden; margin-bottom: 2px;" class="md-result-list relative md-flex flex-wrap items-center md-mx0">
-                            <a style="text-decoration: none;" href="{{$baseurl}}/search/{{$item.Signature}}">
+                            <a style="text-decoration: none;" href="{{$user.LinkSubject "search" $item.Signature "search"}}">
                                 <div>
                                     <b>{{$item.Title}}</b>
                                     {{if not (eq $item.Date "")}}<br />{{$item.Date}}{{end}}

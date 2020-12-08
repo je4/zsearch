@@ -164,7 +164,8 @@ func (s *Server) sitemapHandler(w http.ResponseWriter, req *http.Request) {
 		for _, item := range docs {
 			us := fmt.Sprintf("%s/%s/%s", s.addrExt, s.prefixes["detail"], item.Signature)
 			u := &sitemap.URL{
-				Loc: us,
+				Loc:     us,
+				LastMod: &item.Timestamp,
 			}
 			if videos, hasVideo := item.Media["video"]; hasVideo {
 				if len(videos) > 0 {
