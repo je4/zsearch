@@ -32,7 +32,7 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 	sub := vars["sub"]
 	signature, ok := vars["signature"]
 	if !ok {
-		s.DoPanicf(w, http.StatusBadRequest, "no signature in url: %s", false, req.URL.Path)
+		s.DoPanicf(nil, req, w, http.StatusBadRequest, "no signature in url: %s", false, req.URL.Path)
 		return
 	}
 
@@ -63,7 +63,7 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 	if ok {
 		// jwt in parameter?
 		if len(jwt) == 0 {
-			s.DoPanicf(w, http.StatusForbidden, "invalid token %v", false, jwt)
+			s.DoPanicf(nil, req, w, http.StatusForbidden, "invalid token %v", false, jwt)
 			return
 		}
 		tokenstring := jwt[0]
@@ -77,7 +77,7 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 				})
 				status.User = NewGuestUser(s)
 				status.User.LoggedOut = true
-				//				s.DoPanicf(w, http.StatusForbidden, "%v", err)
+				//				s.DoPanicf(nil, req, w, http.StatusForbidden, "%v", err)
 				//				return
 			} else {
 				status.User = user
@@ -95,15 +95,15 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 
 	doc, err := s.mts.LoadEntity(signature)
 	if err != nil {
-		s.DoPanicf(w, http.StatusNotFound, "error loading signature %s: %v", false, signature, err)
+		s.DoPanicf(status.User, req, w, http.StatusNotFound, "we could not find signature #%s", false, signature)
 		return
 	}
 	if doc == nil {
-		s.DoPanicf(w, http.StatusInternalServerError, "data of signature %s is nil", false, signature)
+		s.DoPanicf(status.User, req, w, http.StatusInternalServerError, "data of signature %s is nil", false, signature)
 		return
 	}
 	status.Doc = doc
-	status.BaseStatus.OGPNamespace, status.BaseStatus.OGPMeta = doc.GetOpenGraph(req.URL.Path, s.mediaserverUri2Url)
+	status.BaseStatus.OGPNamespace, status.BaseStatus.OGPMeta = doc.GetOpenGraph("1102189490244305", s.addrExt+req.URL.Path, s.mediaserverUri2Url)
 	ldo := doc.GetJsonLD(req.URL.Path, s.mediaserverUri2Url)
 	if jsonstr, err := json.Marshal([]interface{}{ldo}); err == nil {
 		status.BaseStatus.JsonLD = fmt.Sprintf(`<script type="application/ld+json">%s</script>`, string(jsonstr)) + "\n"
@@ -195,7 +195,9 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 		metadescription += "\nAbstract: " + doc.Abstract
 	}
 	status.MetaDescription = strings.ReplaceAll(metadescription, "\"", "'")
-
+	if len(status.MetaDescription) >= 160 {
+		status.MetaDescription = status.MetaDescription[0:155] + "..."
+	}
 	if pusher, ok := w.(http.Pusher); ok {
 		// Push is supported.
 		furl := "/" + s.prefixes["static"] + "/font/inter/Inter-roman.var.woff2?v=3.15"
@@ -215,7 +217,7 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 		enc := json.NewEncoder(w)
 		w.Header().Set("Content-type", "text/json")
 		if err := enc.Encode(status); err != nil {
-			s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal solr doc", true, jwt)
+			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot marshal solr doc", true, jwt)
 			return
 		}
 	case "meta":
@@ -225,7 +227,7 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 		if tpl, ok := s.templates["details.amp.gohtml"]; ok {
 			err = tpl.Execute(w, status)
 			if err != nil {
-				s.DoPanicf(w, http.StatusInternalServerError, "cannot parse template: %+v", false, err)
+				s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot parse template: %+v", false, err)
 				return
 			}
 		}

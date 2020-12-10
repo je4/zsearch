@@ -322,7 +322,24 @@ func (sd *SourceData) GetJsonLD(self string, mediaserver func(uri string, params
 			vData.set("url", self)
 			vData.set("contenturl", self)
 			vData.set("name", sd.Title)
-			vData.set("description", sd.Abstract)
+			description := sd.Abstract
+			pd := ""
+			if sd.Place != "" {
+				pd = sd.Place
+			}
+			if sd.Date != "" {
+				if pd != "" {
+					pd += ", "
+				}
+				pd += sd.Date
+			}
+			if pd != "" {
+				if description != "" {
+					description += "\n\n"
+				}
+				description += pd
+			}
+			vData.set("description", description)
 
 			// director / actor / ...
 			for _, p := range sd.Persons {
@@ -359,57 +376,61 @@ func (sd *SourceData) GetJsonLD(self string, mediaserver func(uri string, params
 	return nil
 }
 
-func (sd *SourceData) GetOpenGraph(self string, mediaserver func(uri string, params ...string) (string, error)) (namespace string, ogstr string) {
+func (sd *SourceData) GetOpenGraph(app_id, self string, mediaserver func(uri string, params ...string) (string, error)) (namespace string, ogstr string) {
 	var ogdata = make(OGData)
 
 	namespace = "https://ogp.me/ns#"
 
-	ogdata.set("title", sd.Title)
-	ogdata.set("type", "website")
-	ogdata.set("url", self)
+	ogdata.set("fb:app_id", app_id)
+	ogdata.set("og:title", sd.Title)
+	ogdata.set("og:type", "website")
+	ogdata.set("og:url", self)
 	switch sd.Type {
 	}
 	if videos, ok := sd.Media["video"]; ok {
 		if len(videos) > 0 {
-			namespace = "https://ogp.me/ns/video#"
+			//namespace = "https://ogp.me/ns/video#"
 			video := videos[0]
 			// type
-			ogdata.set("type", "video.other")
+			ogdata.set("og:type", "video.other")
 
 			// director / actor / ...
 			for _, p := range sd.Persons {
 				switch p.Role {
 				case "director":
-					ogdata.add("video:director", p.Name)
+					ogdata.add("og:video:director", p.Name)
 				case "artist":
-					ogdata.add("video:director", p.Name)
+					ogdata.add("og:video:director", p.Name)
 				default:
-					ogdata.add(fmt.Sprintf("video:actor:%s", p.Role), p.Name)
+					ogdata.add(fmt.Sprintf("og:video:actor:%s", p.Role), p.Name)
 				}
 			}
 			// duration / width / height
-			ogdata.set("video:duration", fmt.Sprintf("%v", video.Duration))
-			ogdata.set("video:width", fmt.Sprintf("%v", video.Width))
-			ogdata.set("video:height", fmt.Sprintf("%v", video.Height))
+			ogdata.set("og:video:duration", fmt.Sprintf("%v", video.Duration))
+			ogdata.set("og:video:width", fmt.Sprintf("%v", video.Width))
+			ogdata.set("og:video:height", fmt.Sprintf("%v", video.Height))
 
 			// release
-			ogdata.set("video:release_data", sd.Date)
+			ogdata.set("og:video:release_data", sd.Date)
 
 			// url
-			ogdata.set("video:url", self)
+			ogdata.set("og:video:url", self)
+			ogdata.set("og:video:secure_url", self)
 		}
 	}
-	ogdata.set("description", sd.Abstract)
+	ogdata.set("og:description", sd.Abstract)
 	if sd.Poster != nil {
 		if imgUrl, err := mediaserver(sd.Poster.Uri, "resize", fmt.Sprintf("size%vx%v", sd.Poster.Width, sd.Poster.Height), "formatJPEG"); err == nil {
-			ogdata.set("image", imgUrl)
-			ogdata.set("image:width", fmt.Sprintf("%v", sd.Poster.Width))
-			ogdata.set("image:height", fmt.Sprintf("%v", sd.Poster.Height))
-			ogdata.set("image:type", "image/jpeg")
+			ogdata.set("og:image", imgUrl)
+			ogdata.set("og:image:url", imgUrl)
+			ogdata.set("og:image:secure_url", imgUrl)
+			ogdata.set("og:image:width", fmt.Sprintf("%v", sd.Poster.Width))
+			ogdata.set("og:image:height", fmt.Sprintf("%v", sd.Poster.Height))
+			ogdata.set("og:image:type", "image/jpeg")
 		}
 	}
 	for key, vals := range ogdata {
-		ogstr += fmt.Sprintf(`   <meta property="og:%s" value="%s">`, key, strings.Join(vals, "; ")) + "\n"
+		ogstr += fmt.Sprintf(`   <meta property="%s" value="%s">`, key, strings.Join(vals, "; ")) + "\n"
 	}
 	return namespace, ogstr
 }

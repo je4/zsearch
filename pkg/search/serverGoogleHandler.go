@@ -24,13 +24,13 @@ func (s *Server) googleHandler(w http.ResponseWriter, req *http.Request) {
 
 	csekey, ok := vars["csekey"]
 	if !ok {
-		s.DoPanicf(w, http.StatusNotFound, "no csekey in url", false)
+		s.DoPanicf(nil, req, w, http.StatusNotFound, "no csekey in url", false)
 		return
 	}
 
 	cx, ok := s.googleCSEKey[csekey]
 	if !ok {
-		s.DoPanicf(w, http.StatusNotFound, "invalid Key %v", false, csekey)
+		s.DoPanicf(nil, req, w, http.StatusNotFound, "invalid Key %v", false, csekey)
 		return
 	}
 
@@ -82,7 +82,7 @@ func (s *Server) googleHandler(w http.ResponseWriter, req *http.Request) {
 	if ok {
 		// jwt in parameter?
 		if len(jwt) == 0 {
-			s.DoPanicf(w, http.StatusForbidden, "invalid token %v", false, jwt)
+			s.DoPanicf(nil, req, w, http.StatusForbidden, "invalid token %v", false, jwt)
 			return
 		}
 		tokenstring := jwt[0]
@@ -114,7 +114,7 @@ func (s *Server) googleHandler(w http.ResponseWriter, req *http.Request) {
 		var cacheBuffer bytes.Buffer
 		writer := io.MultiWriter(&cacheBuffer, w)
 		if err := tpl.Execute(writer, status); err != nil {
-			s.DoPanicf(w, http.StatusInternalServerError, "cannot render template: %v", false, err)
+			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot render template: %v", false, err)
 			return
 		}
 	}

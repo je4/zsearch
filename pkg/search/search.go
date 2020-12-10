@@ -16,25 +16,44 @@ type Search struct {
 	sync.Mutex
 	log *logging.Logger
 	se  SearchEngine
+	sync.WaitGroup
+	cacheexpiry time.Duration
 }
 
 type FacetCountResult map[string]map[string]int
 
-func NewSearch(se SearchEngine, expiration time.Duration, cachesize int, db *badger.DB, log *logging.Logger) (*Search, error) {
+type cacheStruct struct {
+	Src       SourceData
+	Timestamp time.Time
+}
+
+func NewSearch(se SearchEngine, cachesize int, duration time.Duration, db *badger.DB, log *logging.Logger) (*Search, error) {
 	s := &Search{
-		db:    db,
-		Mutex: sync.Mutex{},
-		log:   log,
-		se:    se,
+		db:          db,
+		Mutex:       sync.Mutex{},
+		log:         log,
+		se:          se,
+		WaitGroup:   sync.WaitGroup{},
+		cacheexpiry: duration,
 	}
 	return s, nil
+}
+
+func (s *Search) clearCache() error {
+	s.Add(1)
+	defer s.Done()
+	return s.db.DropAll()
 }
 
 /*
 store SourceData in cache
 */
 func (s *Search) storeCache(src *SourceData) error {
-	jsonstr, err := bson.Marshal(*src)
+	s.Wait()
+	jsonstr, err := bson.Marshal(cacheStruct{
+		Src:       *src,
+		Timestamp: time.Now(),
+	})
 	if err != nil {
 		return emperror.Wrapf(err, "cannot marshal source data of %v", src.Signature)
 	}
@@ -51,6 +70,7 @@ func (s *Search) storeCache(src *SourceData) error {
 retrieve SourceData from cache
 */
 func (s *Search) getFromCache(id string) (*SourceData, error) {
+	s.Wait()
 	var result *SourceData
 	if err := s.db.View(func(txn *badger.Txn) error {
 		it, err := txn.Get([]byte(id))
@@ -61,7 +81,7 @@ func (s *Search) getFromCache(id string) (*SourceData, error) {
 			return fmt.Errorf("item %s not in cache", id)
 		}
 		if err := it.Value(func(v []byte) error {
-			var doc = &SourceData{}
+			var doc = &cacheStruct{}
 
 			// decompress...
 			data, err := Decompress(v)
@@ -72,8 +92,15 @@ func (s *Search) getFromCache(id string) (*SourceData, error) {
 			if err := bson.Unmarshal(data, doc); err != nil {
 				return emperror.Wrapf(err, "cannot unmarshal json %s", string(v))
 			}
-			s.log.Infof("document %s found in cache", id)
-			result = doc
+
+			// check cache expiration
+			if time.Now().After(doc.Timestamp.Add(s.cacheexpiry)) {
+				s.log.Infof("timestamp %v", doc.Timestamp.String())
+				return fmt.Errorf("timestamp %v", doc.Timestamp.String())
+			} else {
+				s.log.Infof("document %s found in cache", id)
+			}
+			result = &doc.Src
 			return nil
 		}); err != nil {
 			return emperror.Wrapf(err, "cannot load item %s", id)

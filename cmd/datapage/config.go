@@ -141,6 +141,7 @@ type Config struct {
 	AmpApiKey           string              `toml:"ampapikey"`
 	CacheDir            string              `toml:"cachedir"`
 	ClearCacheOnStartup bool                `toml:"clearcacheonstartup"`
+	CacheExpiry         duration            `toml:"cacheexpiry"`
 	SearchFields        map[string]string   `toml:"searchfields"`
 	Facets              []Facet             `toml:"facets"`
 	Locations           []Network           `toml:"locations"`
@@ -180,6 +181,9 @@ func LoadConfig(filepath string) Config {
 			log.Fatalf("could not find prefix.%s in config file", name)
 		}
 		conf.Prefixes[name] = strings.Trim(val, "/")
+	}
+	if conf.CacheExpiry.Duration == 0 {
+		conf.CacheExpiry.Duration = 3 * time.Hour
 	}
 	return conf
 }

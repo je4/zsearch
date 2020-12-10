@@ -69,12 +69,28 @@ type Config struct {
 	Loglevel            string            `toml:"loglevel"`
 	ElasticSearch       Cfg_ElasticSearch `toml:"elasticsearch"`
 	CacheDir            string            `toml:"cachedir"`
+	StaticDir           string            `toml:"staticdir"`
+	AddrExt             string            `toml:"addrext"`
+	Prefixes            map[string]string `toml:"prefix"`
+	SitemapPrefix       string            `toml:"sitemapprefix"`
 	ClearCacheOnStartup bool              `toml:"clearcacheonstartup"`
 	Sleep               duration          `toml:"sleep"`
 	Mediaserver         MediaserverMySQL  `toml:"mediaserver"`
 	Zotero              Cfg_Zotero        `toml:"zotero"`
 	S3                  Cfg_S3            `toml:"s3"`
 	Groups              []int64           `toml:"groups"`
+}
+
+var prefixNames = []string{
+	"detail",
+	//	"update",
+	//	"search",
+	//	"images",
+	//	"collections",
+	//	"cse",
+	//	"cluster",
+	//	"api",
+	"static",
 }
 
 func LoadConfig(filepath string) Config {
@@ -86,5 +102,18 @@ func LoadConfig(filepath string) Config {
 	fmt.Sprintf("%v", m)
 	// make sure, that medaiserver url ends with an /
 	conf.Mediaserver.Url = strings.TrimRight(conf.Mediaserver.Url, "/")
+
+	conf.AddrExt = strings.TrimRight(conf.AddrExt, "/")
+
+	// clean prefixes
+	// check existence to avoid error handling on future prefix access
+	for _, name := range prefixNames {
+		val, ok := conf.Prefixes[name]
+		if !ok {
+			log.Fatalf("could not find prefix.%s in config file", name)
+		}
+		conf.Prefixes[name] = strings.Trim(val, "/")
+	}
+
 	return conf
 }

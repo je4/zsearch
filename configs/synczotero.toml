@@ -1,7 +1,12 @@
 logfile = "" # log file location
 loglevel = "DEBUG" # CRITICAL|ERROR|WARNING|NOTICE|INFO|DEBUG
 cachedir = "C:/temp/badger"
+staticdir = "C:/temp/sitemap"
+sitemapprefix = "catalogue"
+addrext = "https://localhost:443/"
 sleep = "1m"
+
+
 groups = [
     ## 2553473, # HGK Publikationen
     ## 2514673, # rimab
@@ -44,6 +49,17 @@ groups = [
     # 2559823, # videowochen_im_wenkenpark
     # 2579176, # Wissenscluster
 ]
+
+[prefix]
+    detail = "/detail"
+    update = "/update"
+    search = "/search"
+    collections = "/collections"
+    cse = "/cse"
+    cluster = "/cluster"
+    api = "/api"
+    static = "/static"
+    images = "/images"
 
 
 [elasticsearch]

@@ -1,6 +1,6 @@
 package search
 
-// this file im imported from traefik proxy code
+// this file is imported from traefik proxy code
 // https://github.com/traefik/traefik
 // https://github.com/traefik/traefik/blob/5c853766e8cd0328e9c9393d6d99503d778f889b/pkg/tls/generate/generate.go
 

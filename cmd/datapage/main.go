@@ -172,13 +172,13 @@ func main() {
 			return
 		}
 	*/
-	mtElasticWrapper, err := search.NewMTElasticSearch(config.ElasticSearch.Endpoint, config.ElasticSearch.Index, db, log)
+	mtElasticWrapper, err := search.NewMTElasticSearch(config.ElasticSearch.Endpoint, config.ElasticSearch.Index, log)
 	if err != nil {
 		log.Panicf("cannot initialize solr search wrapper: %v", err)
 		return
 	}
 
-	searchEngine, err := search.NewSearch(mtElasticWrapper, config.Solr.CacheExpiration.Duration, config.Solr.CacheSize, db, log)
+	searchEngine, err := search.NewSearch(mtElasticWrapper, config.Solr.CacheSize, config.CacheExpiry.Duration, db, log)
 	if err != nil {
 		log.Panicf("cannot initialize solr search engine: %v", err)
 		return

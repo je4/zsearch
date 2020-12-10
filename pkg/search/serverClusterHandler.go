@@ -43,13 +43,13 @@ func (s *Server) clusterHandler(w http.ResponseWriter, req *http.Request) {
 
 	clusterkey, ok := vars["csekey"]
 	if !ok {
-		s.DoPanicf(w, http.StatusNotFound, "no csekey in url", false)
+		s.DoPanicf(nil, req, w, http.StatusNotFound, "no csekey in url", false)
 		return
 	}
 
 	cx, ok := s.googleCSEKey[clusterkey]
 	if !ok {
-		s.DoPanicf(w, http.StatusNotFound, "invalid Key %v", false, clusterkey)
+		s.DoPanicf(nil, req, w, http.StatusNotFound, "invalid Key %v", false, clusterkey)
 		return
 	}
 
@@ -108,20 +108,20 @@ func (s *Server) clusterHandler(w http.ResponseWriter, req *http.Request) {
 		Name:   clusterkey,
 	})
 	if err != nil {
-		s.DoPanicf(w, http.StatusInternalServerError, "cannot create hash", false)
+		s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot create hash", false)
 		return
 	}
 
 	result, err := s.queryCache.Get(hash)
 	if err != nil && err != gcache.KeyNotFoundError {
-		s.DoPanicf(w, http.StatusInternalServerError, "cannot access cache: %v", false, err)
+		s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot access cache: %v", false, err)
 		return
 	}
 	if err != gcache.KeyNotFoundError {
 		s.log.Info("serving from cache")
 		dt, err := Decompress(result.([]byte))
 		if err != nil {
-			s.DoPanicf(w, http.StatusInternalServerError, "cannot decompress cache: %v", false, err)
+			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot decompress cache: %v", false, err)
 			return
 		}
 		w.Header().Set("Cache-Control", "max-age=14400, s-maxage=12200, stale-while-revalidate=9000, public")
@@ -138,7 +138,7 @@ func (s *Server) clusterHandler(w http.ResponseWriter, req *http.Request) {
 	if search != "" {
 		resp, err := s.google.Cse.List().Q(search).Start(start).Cx(cx.Key).Do()
 		if err != nil {
-			s.DoPanicf(w, http.StatusInternalServerError, "cannot search: %v", false, err)
+			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot search: %v", false, err)
 			return
 		}
 
@@ -217,7 +217,7 @@ func (s *Server) clusterHandler(w http.ResponseWriter, req *http.Request) {
 	if ok {
 		// jwt in parameter?
 		if len(jwt) == 0 {
-			s.DoPanicf(w, http.StatusForbidden, "invalid token %v", false, jwt)
+			s.DoPanicf(nil, req, w, http.StatusForbidden, "invalid token %v", false, jwt)
 			return
 		}
 		tokenstring := jwt[0]
@@ -249,7 +249,7 @@ func (s *Server) clusterHandler(w http.ResponseWriter, req *http.Request) {
 			"mediathek",
 			status.User.Id)
 		if err != nil {
-			s.DoPanicf(w, http.StatusInternalServerError, "create token: %v", false, err)
+			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "create token: %v", false, err)
 			return
 		}
 		status.SearchToken = jwt
@@ -264,11 +264,11 @@ func (s *Server) clusterHandler(w http.ResponseWriter, req *http.Request) {
 		var cacheBuffer bytes.Buffer
 		writer := io.MultiWriter(&cacheBuffer, w)
 		if err := tpl.Execute(writer, status); err != nil {
-			s.DoPanicf(w, http.StatusInternalServerError, "cannot render template: %v", false, err)
+			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot render template: %v", false, err)
 			return
 		}
 		if err := s.queryCache.Set(hash, Compress(cacheBuffer.Bytes())); err != nil {
-			s.DoPanicf(w, http.StatusInternalServerError, "cannot cache result: %v", false, err)
+			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot cache result: %v", false, err)
 			return
 		}
 	}

@@ -494,12 +494,6 @@ func (item *Item) GetContentType() string {
 
 func (item *Item) GetQueries() []Query {
 	queries := []Query{}
-	for _, catalog := range item.GetCatalogs() {
-		queries = append(queries, Query{
-			Label:  fmt.Sprintf("catalog - %s", catalog),
-			Search: fmt.Sprintf(`catalog:"%v"`, catalog),
-		})
-	}
 	title := item.GetCollectionTitle()
 	for _, collection := range item.Data.Collections {
 		parentColl, err := item.Group.GetCollectionByKeyLocal(collection)
@@ -531,6 +525,12 @@ func (item *Item) GetQueries() []Query {
 		queries = append(queries, Query{
 			Label:  "Group",
 			Search: item.Data.ArchiveLocation,
+		})
+	}
+	for _, catalog := range item.GetCatalogs() {
+		queries = append(queries, Query{
+			Label:  fmt.Sprintf("catalog - %s", catalog),
+			Search: fmt.Sprintf(`catalog:"%v"`, catalog),
 		})
 	}
 	return queries

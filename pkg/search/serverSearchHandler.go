@@ -91,7 +91,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 	if ok {
 		// jwt in parameter?
 		if len(jwt) == 0 {
-			s.DoPanicf(w, http.StatusForbidden, "invalid token %v", false, jwt)
+			s.DoPanicf(nil, req, w, http.StatusForbidden, "invalid token %v", false, jwt)
 			return
 		}
 		tokenstring := jwt[0]
@@ -123,7 +123,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 			"mediathek",
 			status.User.Id)
 		if err != nil {
-			s.DoPanicf(w, http.StatusInternalServerError, "create token: %v", false, err)
+			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "create token: %v", false, err)
 			return
 		}
 		status.QueryApi = template.URL(fmt.Sprintf("%s/%s?token=%s", s.addrExt, "api/search", jwt))
@@ -230,11 +230,11 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 			// load as collection
 			doc, err := s.mts.LoadEntity(subfiltername)
 			if err != nil {
-				s.DoPanicf(w, http.StatusNotFound, "error loading signature %s: %v", false, subfiltername, err)
+				s.DoPanicf(nil, req, w, http.StatusNotFound, "error loading signature %s: %v", false, subfiltername, err)
 				return
 			}
 			if doc == nil {
-				s.DoPanicf(w, http.StatusInternalServerError, "data of signature %s is nil", false, subfiltername)
+				s.DoPanicf(nil, req, w, http.StatusInternalServerError, "data of signature %s is nil", false, subfiltername)
 				return
 			}
 			if filter, ok := (*doc.Meta)["Archive"]; ok {
@@ -289,7 +289,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 	if len(filterField) == 0 && qstr == "" {
 		total, facets, err := s.mts.StatsByACL(s.baseCatalog)
 		if err != nil {
-			s.DoPanicf(w, http.StatusInternalServerError, "cannot get statistics: %v", false, err)
+			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot get statistics: %v", false, err)
 			return
 		}
 		s.log.Infof("total records: %v", total)
@@ -300,14 +300,14 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 
 		result, err := s.queryCache.Get("empty")
 		if err != nil && err != gcache.KeyNotFoundError {
-			s.DoPanicf(w, http.StatusInternalServerError, "cannot access cache: %v", false, err)
+			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot access cache: %v", false, err)
 			return
 		}
 		if err != gcache.KeyNotFoundError {
 			s.log.Info("serving from cache")
 			dt, err := Decompress(result.([]byte))
 			if err != nil {
-				s.DoPanicf(w, http.StatusInternalServerError, "cannot decompress cache: %v", false, err)
+				s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot decompress cache: %v", false, err)
 				return
 			}
 			w.Header().Set("Cache-Control", "max-age=14400, s-maxage=12200, stale-while-revalidate=9000, public")
@@ -318,7 +318,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 			enc := json.NewEncoder(w)
 			w.Header().Set("Content-type", "text/json")
 			if err := enc.Encode(status); err != nil {
-				s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal solr doc", true, jwt)
+				s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot marshal solr doc", true, jwt)
 				return
 			}
 		} else {
@@ -327,11 +327,11 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 				var cacheBuffer bytes.Buffer
 				writer := io.MultiWriter(&cacheBuffer, w)
 				if err := tpl.Execute(writer, status); err != nil {
-					s.DoPanicf(w, http.StatusInternalServerError, "cannot render template: %v", false, err)
+					s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot render template: %v", false, err)
 					return
 				}
 				if err := s.queryCache.Set("empty", Compress(cacheBuffer.Bytes())); err != nil {
-					s.DoPanicf(w, http.StatusInternalServerError, "cannot cache result: %v", false, err)
+					s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot cache result: %v", false, err)
 					return
 				}
 			}
@@ -358,20 +358,20 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 
 	hk, err := Hash(cfg)
 	if err != nil {
-		s.DoPanicf(w, http.StatusInternalServerError, "cannot hash config: %v", false, err)
+		s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot hash config: %v", false, err)
 		return
 	}
 
 	result, err := s.queryCache.Get(hk)
 	if err != nil && err != gcache.KeyNotFoundError {
-		s.DoPanicf(w, http.StatusInternalServerError, "cannot access cache: %v", false, err)
+		s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot access cache: %v", false, err)
 		return
 	}
 	if err != gcache.KeyNotFoundError {
 		s.log.Info("serving from cache")
 		dt, err := Decompress(result.([]byte))
 		if err != nil {
-			s.DoPanicf(w, http.StatusInternalServerError, "cannot decompress cache: %v", false, err)
+			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot decompress cache: %v", false, err)
 			return
 		}
 		w.Header().Set("Cache-Control", "max-age=14400, s-maxage=12200, stale-while-revalidate=9000, public")
@@ -381,12 +381,12 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 
 	highlights, docs, total, facetFieldCount, err := s.mts.Search(cfg)
 	if err != nil {
-		s.DoPanicf(w, http.StatusInternalServerError, "cannot execute solr query: %v", false, err)
+		s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot execute solr query: %v", false, err)
 		return
 	}
 	status.Result, err = s.doc2result("", "", docs, total, facetFieldCount, facets, 0, status.User, "", highlights)
 	if err != nil {
-		s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal result: %v", false, err)
+		s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot marshal result: %v", false, err)
 		return
 	}
 
@@ -468,7 +468,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		enc := json.NewEncoder(w)
 		w.Header().Set("Content-type", "text/json")
 		if err := enc.Encode(status); err != nil {
-			s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal solr doc", true, jwt)
+			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot marshal solr doc", true, jwt)
 			return
 		}
 	} else {
@@ -477,11 +477,11 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 			var cacheBuffer bytes.Buffer
 			writer := io.MultiWriter(&cacheBuffer, w)
 			if err := tpl.Execute(writer, status); err != nil {
-				s.DoPanicf(w, http.StatusInternalServerError, "cannot render template: %v", false, err)
+				s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot render template: %v", false, err)
 				return
 			}
 			if err := s.queryCache.Set(hk, Compress(cacheBuffer.Bytes())); err != nil {
-				s.DoPanicf(w, http.StatusInternalServerError, "cannot cache result: %v", false, err)
+				s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot cache result: %v", false, err)
 				return
 			}
 		}

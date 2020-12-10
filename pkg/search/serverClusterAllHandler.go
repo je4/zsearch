@@ -69,7 +69,7 @@ func (s *Server) clusterAllHandler(w http.ResponseWriter, req *http.Request) {
 	if ok {
 		// jwt in parameter?
 		if len(jwt) == 0 {
-			s.DoPanicf(w, http.StatusForbidden, "invalid token %v", false, jwt)
+			s.DoPanicf(nil, req, w, http.StatusForbidden, "invalid token %v", false, jwt)
 			return
 		}
 		tokenstring := jwt[0]
@@ -101,7 +101,7 @@ func (s *Server) clusterAllHandler(w http.ResponseWriter, req *http.Request) {
 			"mediathek",
 			status.User.Id)
 		if err != nil {
-			s.DoPanicf(w, http.StatusInternalServerError, "create token: %v", false, err)
+			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "create token: %v", false, err)
 			return
 		}
 		status.QueryApi = template.URL(fmt.Sprintf("%s/%s?token=%s", s.addrExt, "api/search", jwt))
@@ -130,7 +130,7 @@ func (s *Server) clusterAllHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	_, docs, total, _, err := s.mts.Search(cfg)
 	if err != nil {
-		s.DoPanicf(w, http.StatusInternalServerError, "cannot execute solr query: %v", false, err)
+		s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot execute solr query: %v", false, err)
 		return
 	}
 
@@ -150,7 +150,7 @@ func (s *Server) clusterAllHandler(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Cache-Control", "max-age=14400, s-maxage=12200, stale-while-revalidate=9000, public")
 	if tpl, ok := s.templates["clusterall.amp.gohtml"]; ok {
 		if err := tpl.Execute(w, status); err != nil {
-			s.DoPanicf(w, http.StatusInternalServerError, "cannot render template: %v", false, err)
+			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot render template: %v", false, err)
 			return
 		}
 	}

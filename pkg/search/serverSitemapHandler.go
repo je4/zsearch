@@ -31,39 +31,39 @@ import (
 
 var sitemapSize = 5000
 
-func (s *Server) sitemapHandler(w http.ResponseWriter, req *http.Request) {
+func (s *Server) __DELETE__sitemapHandler(w http.ResponseWriter, req *http.Request) {
 	var sitemapTemplatesSignature = fmt.Sprintf("%s:sitemap", s.prefixes["api"])
 
 	vars := mux.Vars(req)
 
 	jwt, ok := req.URL.Query()["token"]
 	if !ok {
-		s.DoPanicf(w, http.StatusForbidden, "no token to access template reload", true)
+		s.DoPanicf(nil, req, w, http.StatusForbidden, "no token to access template reload", true)
 		return
 	}
 	// jwt in parameter?
 	if len(jwt) == 0 {
-		s.DoPanicf(w, http.StatusForbidden, "invalid token %v", false, jwt)
+		s.DoPanicf(nil, req, w, http.StatusForbidden, "invalid token %v", false, jwt)
 		return
 	}
 	tokenstring := jwt[0]
 	if tokenstring == "" {
-		s.DoPanicf(w, http.StatusForbidden, "empty token to access template reload", true)
+		s.DoPanicf(nil, req, w, http.StatusForbidden, "empty token to access template reload", true)
 		return
 	}
 	claims, err := CheckJWTValid(tokenstring, s.jwtKey, s.jwtAlg)
 	if err != nil {
-		s.DoPanicf(w, http.StatusForbidden, "invalid access token - %v: %v", true, tokenstring, err)
+		s.DoPanicf(nil, req, w, http.StatusForbidden, "invalid access token - %v: %v", true, tokenstring, err)
 		return
 	}
 	sub, err := GetClaim(claims, "sub")
 	if err != nil {
-		s.DoPanicf(w, http.StatusForbidden, "no sub in token - %v", true, tokenstring)
+		s.DoPanicf(nil, req, w, http.StatusForbidden, "no sub in token - %v", true, tokenstring)
 		return
 	}
 	// sub correct?
 	if strings.ToLower(sub) != strings.ToLower(sitemapTemplatesSignature) {
-		s.DoPanicf(w, http.StatusForbidden, "invalid subject %v token, should be %v - %v", true, sub, sitemapTemplatesSignature, tokenstring)
+		s.DoPanicf(nil, req, w, http.StatusForbidden, "invalid subject %v token, should be %v - %v", true, sub, sitemapTemplatesSignature, tokenstring)
 		return
 	}
 
@@ -88,7 +88,7 @@ func (s *Server) sitemapHandler(w http.ResponseWriter, req *http.Request) {
 
 		_, _, total, _, err := s.mts.Search(cfg)
 		if err != nil {
-			s.DoPanicf(w, http.StatusInternalServerError, "cannot execute solr query: %v", false, err)
+			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot execute solr query: %v", false, err)
 			return
 		}
 
@@ -101,7 +101,7 @@ func (s *Server) sitemapHandler(w http.ResponseWriter, req *http.Request) {
 
 		xmlbytes, err = xml.Marshal(sitemapindex)
 		if err != nil {
-			s.DoPanicf(w, http.StatusInternalServerError, "cannot marshal xml: %v", false, err)
+			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot marshal xml: %v", false, err)
 			return
 		}
 		w.Header().Set("Content-Type", "text/xml")
@@ -109,11 +109,11 @@ func (s *Server) sitemapHandler(w http.ResponseWriter, req *http.Request) {
 	} else {
 		start, err := strconv.ParseInt(startstr, 10, 64)
 		if err != nil {
-			s.DoPanicf(w, http.StatusInternalServerError, "cannot parse start parameter %s: %v", false, startstr, err)
+			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot parse start parameter %s: %v", false, startstr, err)
 			return
 		}
 		if int(start)%sitemapSize != 0 {
-			s.DoPanicf(w, http.StatusNotFound, "invalid start value %v", false, start)
+			s.DoPanicf(nil, req, w, http.StatusNotFound, "invalid start value %v", false, start)
 			return
 		}
 		var facets map[string]TermFacet
@@ -133,20 +133,20 @@ func (s *Server) sitemapHandler(w http.ResponseWriter, req *http.Request) {
 
 		hk, err := Hash(cfg)
 		if err != nil {
-			s.DoPanicf(w, http.StatusInternalServerError, "cannot hash config: %v", false, err)
+			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot hash config: %v", false, err)
 			return
 		}
 
 		result, err := s.queryCache.Get(hk)
 		if err != nil && err != gcache.KeyNotFoundError {
-			s.DoPanicf(w, http.StatusInternalServerError, "cannot access cache: %v", false, err)
+			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot access cache: %v", false, err)
 			return
 		}
 		if err != gcache.KeyNotFoundError {
 			s.log.Info("serving from cache")
 			dt, err := Decompress(result.([]byte))
 			if err != nil {
-				s.DoPanicf(w, http.StatusInternalServerError, "cannot decompress cache: %v", false, err)
+				s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot decompress cache: %v", false, err)
 				return
 			}
 			w.Header().Set("Cache-Control", "max-age=14400, s-maxage=12200, stale-while-revalidate=9000, public")
@@ -157,7 +157,7 @@ func (s *Server) sitemapHandler(w http.ResponseWriter, req *http.Request) {
 
 		_, docs, _, _, err := s.mts.Search(cfg)
 		if err != nil {
-			s.DoPanicf(w, http.StatusInternalServerError, "cannot execute solr query: %v", false, err)
+			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot execute solr query: %v", false, err)
 			return
 		}
 		sm := sitemap.New()
@@ -173,13 +173,13 @@ func (s *Server) sitemapHandler(w http.ResponseWriter, req *http.Request) {
 					if item.Poster != nil {
 						us, err = s.mediaserverUri2Url(item.Poster.Uri, "resize", "size800x600", "formatPNG")
 						if err != nil {
-							s.DoPanicf(w, http.StatusInternalServerError, "cannot parse poster media uri %s: %v", false, item.Poster.Uri, err)
+							s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot parse poster media uri %s: %v", false, item.Poster.Uri, err)
 							return
 						}
 					}
 					playerLoc, err := s.mediaserverUri2Url(videos[0].Uri, "iframe")
 					if err != nil {
-						s.DoPanicf(w, http.StatusInternalServerError, "cannot parse video0 media uri %s: %v", false, videos[0].Uri, err)
+						s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot parse video0 media uri %s: %v", false, videos[0].Uri, err)
 						return
 					}
 

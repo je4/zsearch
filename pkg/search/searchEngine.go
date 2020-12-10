@@ -23,6 +23,15 @@ type SearchConfig struct {
 	IsAdmin        bool
 }
 
+type ScrollConfig struct {
+	Fields         map[string][]string
+	QStr           string
+	FiltersFields  map[string][]string
+	Groups         []string
+	ContentVisible bool
+	IsAdmin        bool
+}
+
 type SearchEngine interface {
 	Update(source Source, ms mediaserver.Mediaserver) error
 	LoadDocs(ids []string, ctx context.Context) (map[string]*SourceData, error)

@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/dgraph-io/badger/v2"
 	elasticsearch "github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
 	"github.com/goph/emperror"
@@ -13,6 +12,7 @@ import (
 	"github.com/op/go-logging"
 	"log"
 	"strings"
+	"time"
 )
 
 type tElasticFieldValue map[string]interface{}
@@ -79,6 +79,7 @@ type tElasticResult struct {
 	Hits         tElasticResultHits         `json:"hits,omitempty"`
 	Aggregations tElasticResultAggregations `json:"aggregations,omitempty"`
 	Status       float64                    `json:"status"`
+	ScrollId     string                     `json:"_scroll_id,omitempty"`
 }
 
 type tElasticMGetResultDoc struct {
@@ -121,13 +122,23 @@ func elasticSearch(query *tElasticQuery, aggregations *tElasticSearchAggregation
 	}
 }
 
+type tElasticScroll struct {
+	Query *tElasticQuery `json:"query"`
+}
+
+func elasticScroll(query *tElasticQuery) *tElasticScroll {
+	return &tElasticScroll{
+		Query: query,
+	}
+}
+
 type MTElasticSearch struct {
 	es    *elasticsearch.Client
 	index string
 	log   *logging.Logger
 }
 
-func NewMTElasticSearch(urls []string, index string, db *badger.DB, log *logging.Logger) (*MTElasticSearch, error) {
+func NewMTElasticSearch(urls []string, index string, log *logging.Logger) (*MTElasticSearch, error) {
 	es, err := elasticsearch.NewClient(elasticsearch.Config{
 		Addresses: urls,
 	})
@@ -143,7 +154,12 @@ func NewMTElasticSearch(urls []string, index string, db *badger.DB, log *logging
 }
 
 func (mte *MTElasticSearch) Update(source Source, ms mediaserver.Mediaserver) error {
+	return mte.UpdateTimestamp(source, ms, time.Now())
+}
+
+func (mte *MTElasticSearch) UpdateTimestamp(source Source, ms mediaserver.Mediaserver, timestamp time.Time) error {
 	sourceData := InitSourceData(source, ms)
+	sourceData.Timestamp = timestamp
 	jsonstr, err := json.Marshal(sourceData)
 	if err != nil {
 		return emperror.Wrapf(err, "cannot marshal json")
@@ -262,6 +278,127 @@ func (mte *MTElasticSearch) StatsByACL(catalog string) (int64, FacetCountResult,
 		}
 	}
 	return result.Hits.Total.Value, fcr, nil
+}
+
+func (mte *MTElasticSearch) Scroll(cfg *ScrollConfig, callback func(data *SourceData) error) error {
+	query := elasticQuery()
+
+	filters := []*tElasticFieldValue{}
+	if cfg.IsAdmin == false {
+		if len(cfg.Groups) > 0 {
+			filters = append(filters, elasticTermsQuery("acl.meta", 0, cfg.Groups...).FieldValue())
+		}
+	}
+	if cfg.ContentVisible {
+		if len(cfg.Groups) > 0 && !cfg.IsAdmin {
+			filters = append(filters, elasticTermsQuery("acl.content", 0, cfg.Groups...).FieldValue())
+		}
+		filters = append(filters, elasticExistsQuery("mediatype").FieldValue())
+	}
+
+	matchqueries := []*tElasticFieldValue{}
+	if len(cfg.FiltersFields) > 0 {
+		for fld, vals := range cfg.FiltersFields {
+			for _, val := range vals {
+				switch fld {
+				case "category":
+					filters = append(filters, elasticPrefixQuery(fld, val).FieldValue())
+				case "persons.name":
+					filters = append(filters, elasticNestedQuery("persons",
+						elasticQuery().withTermQuery(elasticTermQuery("persons.name.keyword", val, 0))).FieldValue())
+				default:
+					filters = append(filters, elasticTermQuery(fld, val, 0).FieldValue())
+				}
+			}
+		}
+	}
+
+	qstr := strings.TrimSpace(cfg.QStr)
+	if len(qstr) > 0 {
+		matchqueries = append(matchqueries,
+			elasticNestedQuery("media.pdf", elasticQuery().withBooleanQuery(elasticBooleanQuery(0).withMust(
+				elasticSimpleQueryString(qstr).
+					withFields([]string{"media.pdf.fulltext^1"}).
+					withOperatorOR().
+					FieldValue()))).FieldValue())
+		matchqueries = append(matchqueries,
+			elasticNestedQuery("persons", elasticQuery().withBooleanQuery(elasticBooleanQuery(0).withMust(
+				elasticSimpleQueryString(qstr).
+					withFields([]string{"persons.name^5"}).
+					withOperatorOR().
+					FieldValue()))).FieldValue())
+		matchqueries = append(matchqueries,
+			elasticSimpleQueryString(qstr).
+				withFields([]string{"title^4", "abstract^3", "notes^3"}).
+				withOperatorOR().
+				FieldValue())
+	}
+	bq := elasticBooleanQuery(0)
+	if len(matchqueries) > 0 {
+		bq.withShould(1, matchqueries...)
+	}
+	if len(filters) > 0 {
+		bq.withFilter(filters...)
+	}
+	query.withBooleanQuery(bq)
+
+	fq := elasticScroll(query)
+
+	// jsonstr, err := json.MarshalIndent(fq, "", "   ")
+	jsonstr, err := json.Marshal(fq)
+	if err != nil {
+		return emperror.Wrapf(err, "cannot marshal %v", fq)
+	}
+	mte.log.Debugf("%v", string(jsonstr))
+	buf := bytes.NewBuffer(jsonstr)
+	res, err := mte.es.Search(
+		mte.es.Search.WithIndex(mte.index),
+		mte.es.Search.WithBody(buf),
+		mte.es.Search.WithSize(5000),
+		mte.es.Search.WithScroll(1*time.Minute),
+	)
+	if err != nil {
+		return emperror.Wrapf(err, "cannot query %v", string(jsonstr))
+	}
+
+	for {
+
+		var result tElasticResult
+		if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
+			res.Body.Close()
+			return emperror.Wrap(err, "cannot unmarshal result")
+		}
+		res.Body.Close()
+		if res.IsError() {
+			errstr := fmt.Sprintf(
+				"Elastic error: %v - %v at %v:%v",
+				result.Error.Type,
+				result.Error.Reason,
+				result.Error.CausedBy.Line,
+				result.Error.CausedBy.Col,
+			)
+			return fmt.Errorf("%s\n%s", errstr, jsonstr)
+		}
+
+		for _, sd := range result.Hits.Hits {
+			if err := callback(&sd.Source); err != nil {
+				return emperror.Wrapf(err, "error in callback for id %v", sd.Id)
+			}
+		}
+
+		if len(result.Hits.Hits) == 0 {
+			break
+		}
+
+		res, err = mte.es.Scroll(
+			mte.es.Scroll.WithScrollID(result.ScrollId),
+			mte.es.Scroll.WithScroll(1*time.Minute),
+		)
+		if err != nil {
+			return emperror.Wrapf(err, "cannot query %v", string(jsonstr))
+		}
+	}
+	return nil
 }
 
 func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]map[string][]string, []*SourceData, int64, FacetCountResult, error) {
@@ -409,4 +546,110 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]map[string][]string, []
 		}
 	}
 	return highlightarr, sdarr, result.Hits.Total.Value, fcr, nil
+}
+
+func (mte *MTElasticSearch) LastUpdate(cfg *ScrollConfig) (time.Time, error) {
+	var lastUpdate time.Time
+
+	query := elasticQuery()
+
+	filters := []*tElasticFieldValue{}
+	if cfg.IsAdmin == false {
+		if len(cfg.Groups) > 0 {
+			filters = append(filters, elasticTermsQuery("acl.meta", 0, cfg.Groups...).FieldValue())
+		}
+	}
+	if cfg.ContentVisible {
+		if len(cfg.Groups) > 0 && !cfg.IsAdmin {
+			filters = append(filters, elasticTermsQuery("acl.content", 0, cfg.Groups...).FieldValue())
+		}
+		filters = append(filters, elasticExistsQuery("mediatype").FieldValue())
+	}
+
+	matchqueries := []*tElasticFieldValue{}
+	if len(cfg.FiltersFields) > 0 {
+		for fld, vals := range cfg.FiltersFields {
+			for _, val := range vals {
+				switch fld {
+				case "category":
+					filters = append(filters, elasticPrefixQuery(fld, val).FieldValue())
+				case "persons.name":
+					filters = append(filters, elasticNestedQuery("persons",
+						elasticQuery().withTermQuery(elasticTermQuery("persons.name.keyword", val, 0))).FieldValue())
+				default:
+					if strings.HasSuffix(val, "*") {
+						filters = append(filters, elasticPrefixQuery(fld, strings.TrimRight(val, "*")).FieldValue())
+					} else {
+						filters = append(filters, elasticTermQuery(fld, val, 0).FieldValue())
+					}
+				}
+			}
+		}
+	}
+
+	qstr := strings.TrimSpace(cfg.QStr)
+	if len(qstr) > 0 {
+		matchqueries = append(matchqueries,
+			elasticNestedQuery("media.pdf", elasticQuery().withBooleanQuery(elasticBooleanQuery(0).withMust(
+				elasticSimpleQueryString(qstr).
+					withFields([]string{"media.pdf.fulltext^1"}).
+					withOperatorOR().
+					FieldValue()))).FieldValue())
+		matchqueries = append(matchqueries,
+			elasticNestedQuery("persons", elasticQuery().withBooleanQuery(elasticBooleanQuery(0).withMust(
+				elasticSimpleQueryString(qstr).
+					withFields([]string{"persons.name^5"}).
+					withOperatorOR().
+					FieldValue()))).FieldValue())
+		matchqueries = append(matchqueries,
+			elasticSimpleQueryString(qstr).
+				withFields([]string{"title^4", "abstract^3", "notes^3"}).
+				withOperatorOR().
+				FieldValue())
+	}
+	bq := elasticBooleanQuery(0)
+	if len(matchqueries) > 0 {
+		bq.withShould(1, matchqueries...)
+	}
+	if len(filters) > 0 {
+		bq.withFilter(filters...)
+	}
+	query.withBooleanQuery(bq)
+
+	fq := elasticSearch(query, nil, nil, nil, 0, 1)
+
+	jsonstr, err := json.Marshal(fq)
+	if err != nil {
+		return lastUpdate, emperror.Wrapf(err, "cannot marshal %v", fq)
+	}
+	mte.log.Debugf("%v", string(jsonstr))
+	buf := bytes.NewBuffer(jsonstr)
+	res, err := mte.es.Search(
+		mte.es.Search.WithIndex(mte.index),
+		mte.es.Search.WithBody(buf),
+	)
+	if err != nil {
+		return lastUpdate, emperror.Wrapf(err, "cannot query %v", string(jsonstr))
+	}
+	defer res.Body.Close()
+	var result tElasticResult
+	if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
+		return lastUpdate, emperror.Wrap(err, "cannot unmarshal result")
+	}
+	if res.IsError() {
+		errstr := fmt.Sprintf(
+			"Elastic error: %v - %v at %v:%v",
+			result.Error.Type,
+			result.Error.Reason,
+			result.Error.CausedBy.Line,
+			result.Error.CausedBy.Col,
+		)
+		return lastUpdate, fmt.Errorf("%s\n%s", errstr, jsonstr)
+	}
+
+	if len(result.Hits.Hits) != 1 {
+		return lastUpdate, nil
+	}
+	sd := result.Hits.Hits[0]
+	return sd.Source.Timestamp, nil
 }

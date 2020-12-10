@@ -532,13 +532,47 @@ func (s *Server) mediaserverUri2Url(uri string, params ...string) (string, error
 	return u, nil
 }
 
-func (s *Server) DoPanicf(writer http.ResponseWriter, status int, message string, json bool, a ...interface{}) (err error) {
+func (s *Server) DoPanicf(user *User, req *http.Request, writer http.ResponseWriter, status int, message string, json bool, a ...interface{}) (err error) {
 	msg := fmt.Sprintf(message, a...)
 	if json {
 		s.DoPanicJSON(writer, status, msg)
 	} else {
-		s.DoPanic(writer, status, msg)
+		if user == nil {
+			user = NewGuestUser(s)
+		}
+		data := struct {
+			BaseStatus
+			Error   string
+			Message string
+		}{
+			BaseStatus: BaseStatus{
+				Type:          "error",
+				User:          user,
+				Self:          fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(req.URL.Path, "/")),
+				BaseUrl:       s.addrExt,
+				SelfPath:      req.URL.Path,
+				LoginUrl:      s.loginUrl,
+				Notifications: []Notification{},
+				Token:         "",
+				Prefixes: map[string]string{
+					"detail":      s.prefixes["detail"],
+					"search":      s.prefixes["search"],
+					"collections": s.prefixes["collections"],
+					"cluster":     s.prefixes["cluster"],
+					"google":      s.prefixes["cse"],
+				},
+				AmpBase: "",
+				Title:   "",
+			},
+			Error:   fmt.Sprintf("%v - %s", status, http.StatusText(status)),
+			Message: msg,
+		}
+		writer.WriteHeader(http.StatusNotFound)
+		if tpl, ok := s.templates["error.amp.gohtml"]; ok {
+			tpl.Execute(writer, data)
+		}
 	}
+
 	return
 }
 
@@ -761,14 +795,14 @@ func (s *Server) ListenAndServe(cert, key string) error {
 	router.HandleFunc(fmt.Sprintf("/%s/{csekey}", s.prefixes["cse"]), s.googleHandler).Methods("GET")
 
 	router.HandleFunc(fmt.Sprintf("/%s/reloadtemplates", s.prefixes["api"]), s.reloadTemplateHandler).Methods("GET")
-	router.HandleFunc(fmt.Sprintf("/%s/sitemap", s.prefixes["api"]), s.sitemapHandler).Methods("GET")
-	router.HandleFunc(fmt.Sprintf("/%s/sitemap/{start:[0-9]+}", s.prefixes["api"]), s.sitemapHandler).Methods("GET")
+	//	router.HandleFunc(fmt.Sprintf("/%s/sitemap", s.prefixes["api"]), s.sitemapHandler).Methods("GET")
+	//	router.HandleFunc(fmt.Sprintf("/%s/sitemap/{start:[0-9]+}", s.prefixes["api"]), s.sitemapHandler).Methods("GET")
 	router.HandleFunc("/google54f060b89e33248e.html", func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("Content-type", "text/html")
 		writer.Write([]byte("google-site-verification: google54f060b89e33248e.html\n"))
 	})
 
-	loggedRouter := handlers.LoggingHandler(s.accesslog, router)
+	loggedRouter := handlers.CombinedLoggingHandler(s.accesslog, router)
 	addr := net.JoinHostPort(s.host, s.port)
 	s.srv = &http.Server{
 		Handler: loggedRouter,
