@@ -318,10 +318,11 @@ func (sd *SourceData) GetJsonLD(self string, mediaserver func(uri string, params
 			video := videos[0]
 			vData := make(JSONData)
 			vData.set("@type", "VideoObject")
-			vData.set("@context", "http://schema.org")
+			vData.set("@context", "https://schema.org")
 			vData.set("url", self)
 			vData.set("contenturl", self)
 			vData.set("name", sd.Title)
+
 			description := sd.Abstract
 			pd := ""
 			if sd.Place != "" {
@@ -352,14 +353,32 @@ func (sd *SourceData) GetJsonLD(self string, mediaserver func(uri string, params
 			}
 			if sd.Poster != nil {
 				if imgUrl, err := mediaserver(sd.Poster.Uri, "resize", fmt.Sprintf("size%vx%v", sd.Poster.Width, sd.Poster.Height), "formatJPEG"); err == nil {
-					vData.set("thumbnailUrl", imgUrl)
+					vData.add("thumbnailUrl", imgUrl)
 					thumb := make(JSONData)
 					thumb.set("@type", "ImageObject")
 					thumb.set("url", imgUrl)
 					thumb.set("width", fmt.Sprintf("%v", sd.Poster.Width))
 					thumb.set("height", fmt.Sprintf("%v", sd.Poster.Height))
-					vData.set("thumbnail", thumb)
+					vData.add("thumbnail", thumb)
 				}
+			}
+			if imgUrl, err := mediaserver(sd.Poster.Uri, "resize", fmt.Sprintf("size%vx%v", 640, 480), "crop", "formatJPEG"); err == nil {
+				vData.add("thumbnailUrl", imgUrl)
+				thumb := make(JSONData)
+				thumb.set("@type", "ImageObject")
+				thumb.set("url", imgUrl)
+				thumb.set("width", "640")
+				thumb.set("height", "480")
+				vData.add("thumbnail", thumb)
+			}
+			if imgUrl, err := mediaserver(sd.Poster.Uri, "resize", fmt.Sprintf("size%vx%v", 480, 480), "crop", "formatJPEG"); err == nil {
+				vData.add("thumbnailUrl", imgUrl)
+				thumb := make(JSONData)
+				thumb.set("@type", "ImageObject")
+				thumb.set("url", imgUrl)
+				thumb.set("width", "480")
+				thumb.set("height", "480")
+				vData.add("thumbnail", thumb)
 			}
 			// duration / width / height
 			var isoDuration = isoduration.Duration{}

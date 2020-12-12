@@ -19,6 +19,7 @@ package search
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/goph/emperror"
 	"github.com/gorilla/mux"
 	"github.com/juliangruber/go-intersect"
 	"net"
@@ -26,23 +27,24 @@ import (
 	"strings"
 )
 
-func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
-	// remove Prefix and use whole rest of url as signature
-	vars := mux.Vars(req)
-	sub := vars["sub"]
-	signature, ok := vars["signature"]
-	if !ok {
-		s.DoPanicf(nil, req, w, http.StatusBadRequest, "no signature in url: %s", false, req.URL.Path)
-		return
-	}
+type ErrorHTTPStatus struct {
+	status int
+	err    error
+}
 
+func (err *ErrorHTTPStatus) Error() string {
+	return fmt.Sprintf("%s - %s", http.StatusText(err.status), err.err.Error())
+}
+
+func (s *Server) getDetailStatus(signature, path, tokenstring, remoteHost string) (*DetailStatus, error) {
 	status := DetailStatus{
 		BaseStatus: BaseStatus{
 			Type:          "detail",
 			User:          nil,
-			Self:          fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(req.URL.Path, "/")),
+			Self:          fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(path, "/")),
+			Canonical:     fmt.Sprintf("%s/%s/%s", s.addrExt, s.prefixes["detail"], signature),
 			BaseUrl:       s.addrExt,
-			SelfPath:      req.URL.Path,
+			SelfPath:      path,
 			LoginUrl:      s.loginUrl,
 			Notifications: []Notification{},
 			Token:         "",
@@ -59,52 +61,47 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 		ContentOK: false,
 		MetaOK:    false,
 	}
-	jwt, ok := req.URL.Query()["token"]
-	if ok {
-		// jwt in parameter?
-		if len(jwt) == 0 {
-			s.DoPanicf(nil, req, w, http.StatusForbidden, "invalid token %v", false, jwt)
-			return
-		}
-		tokenstring := jwt[0]
-		if tokenstring != "" {
-			status.Token = tokenstring
-			user, err := s.userFromToken(tokenstring, "detail:"+signature)
-			if err != nil {
-				status.Notifications = append(status.Notifications, Notification{
-					Id:      "notificationInvalidAccessToken",
-					Message: fmt.Sprintf("%s - User logged out", err.Error()),
-				})
-				status.User = NewGuestUser(s)
-				status.User.LoggedOut = true
-				//				s.DoPanicf(nil, req, w, http.StatusForbidden, "%v", err)
-				//				return
-			} else {
-				status.User = user
-			}
+	if tokenstring != "" {
+		status.Token = tokenstring
+		user, err := s.userFromToken(tokenstring, "detail:"+signature)
+		if err != nil {
+			status.Notifications = append(status.Notifications, Notification{
+				Id:      "notificationInvalidAccessToken",
+				Message: fmt.Sprintf("%s - User logged out", err.Error()),
+			})
+			status.User = NewGuestUser(s)
+			status.User.LoggedOut = true
+			//				s.DoPanicf(nil, req, w, http.StatusForbidden, "%v", err)
+			//				return
+		} else {
+			status.User = user
 		}
 	}
+
 	if status.User == nil {
 		status.User = NewGuestUser(s)
 	}
 
-	ip, _, _ := net.SplitHostPort(req.RemoteAddr)
-	for _, grp := range s.locations.Contains(ip) {
+	for _, grp := range s.locations.Contains(remoteHost) {
 		status.User.Groups = append(status.User.Groups, grp)
 	}
 
 	doc, err := s.mts.LoadEntity(signature)
 	if err != nil {
-		s.DoPanicf(status.User, req, w, http.StatusNotFound, "we could not find signature #%s", false, signature)
-		return
+		return nil, &ErrorHTTPStatus{
+			status: http.StatusNotFound,
+			err:    emperror.Wrapf(err, "we could not find signature #%s", signature),
+		}
 	}
 	if doc == nil {
-		s.DoPanicf(status.User, req, w, http.StatusInternalServerError, "data of signature %s is nil", false, signature)
-		return
+		return nil, &ErrorHTTPStatus{
+			status: http.StatusInternalServerError,
+			err:    emperror.Wrapf(err, "data of signature #%s is nil", signature),
+		}
 	}
 	status.Doc = doc
-	status.BaseStatus.OGPNamespace, status.BaseStatus.OGPMeta = doc.GetOpenGraph("1102189490244305", s.addrExt+req.URL.Path, s.mediaserverUri2Url)
-	ldo := doc.GetJsonLD(req.URL.Path, s.mediaserverUri2Url)
+	status.BaseStatus.OGPNamespace, status.BaseStatus.OGPMeta = doc.GetOpenGraph("1102189490244305", s.addrExt+path, s.mediaserverUri2Url)
+	ldo := doc.GetJsonLD(path, s.mediaserverUri2Url)
 	if jsonstr, err := json.Marshal([]interface{}{ldo}); err == nil {
 		status.BaseStatus.JsonLD = fmt.Sprintf(`<script type="application/ld+json">%s</script>`, string(jsonstr)) + "\n"
 	}
@@ -168,20 +165,11 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 		status.Doc.References = append(status.Doc.References[:key], status.Doc.References[key+1:]...)
 	}
 
-	if !status.MetaOK {
-		w.WriteHeader(http.StatusForbidden)
-		// if there's no error Template, there's no help...
-		if tpl, ok := s.templates["forbidden.amp.gohtml"]; ok {
-			tpl.Execute(w, status)
-		}
-		return
-	}
-
 	status.Title = status.Doc.CollectionTitle
 	status.IsAmp = !status.User.LoggedIn && !status.User.LoggedOut && status.MetaOK
 
 	metadescription := ""
-	metadescription = fmt.Sprintf("Title: %s", doc.Title)
+	//	metadescription = fmt.Sprintf("Title: %s", doc.Title)
 	if len(doc.Persons) > 0 {
 		metadescription += fmt.Sprintf("\nAuthor: ")
 		for k, p := range doc.Persons {
@@ -198,6 +186,59 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 	if len(status.MetaDescription) >= 160 {
 		status.MetaDescription = status.MetaDescription[0:155] + "..."
 	}
+
+	return &status, nil
+}
+
+func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
+	// remove Prefix and use whole rest of url as signature
+	vars := mux.Vars(req)
+	//	sub := vars["sub"]
+	data := vars["data"] == "data"
+	//embed := vars["embed"] == "embed"
+	signature, ok := vars["signature"]
+	if !ok {
+		s.DoPanicf(nil, req, w, http.StatusBadRequest, "no signature in url: %s", false, req.URL.Path)
+		return
+	}
+	var tokenstring string
+	jwt, ok := req.URL.Query()["token"]
+	if ok {
+		if len(jwt) > 0 {
+			tokenstring = jwt[0]
+		}
+	}
+
+	remoteHost, _, _ := net.SplitHostPort(req.Host)
+	status, err := s.getDetailStatus(signature, req.URL.Path, tokenstring, remoteHost)
+	if err != nil {
+		if ehs, ok := err.(*ErrorHTTPStatus); ok {
+			s.DoPanicf(nil, req, w, ehs.status, ehs.err.Error(), false)
+		} else {
+			s.DoPanicf(nil, req, w, http.StatusInternalServerError, err.Error(), false)
+		}
+		return
+	}
+
+	if !status.MetaOK {
+		w.WriteHeader(http.StatusForbidden)
+		// if there's no error Template, there's no help...
+		if tpl, ok := s.templates["forbidden.amp.gohtml"]; ok {
+			tpl.Execute(w, status)
+		}
+		return
+	}
+
+	if data {
+		w.Header().Set("Content-type", "text/json")
+		enc := json.NewEncoder(w)
+		if err := enc.Encode(status); err != nil {
+			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot marshal solr doc", true, jwt)
+			return
+		}
+		return
+	}
+
 	if pusher, ok := w.(http.Pusher); ok {
 		// Push is supported.
 		furl := "/" + s.prefixes["static"] + "/font/inter/Inter-roman.var.woff2?v=3.15"
@@ -212,26 +253,14 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	switch sub {
-	case "data":
-		enc := json.NewEncoder(w)
-		w.Header().Set("Content-type", "text/json")
-		if err := enc.Encode(status); err != nil {
-			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot marshal solr doc", true, jwt)
+	if tpl, ok := s.templates["details.amp.gohtml"]; ok {
+		err = tpl.Execute(w, status)
+		if err != nil {
+			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot parse template: %+v", false, err)
 			return
-		}
-	case "meta":
-		w.Header().Set("Content-type", doc.ContentMime)
-		w.Write([]byte(doc.ContentStr))
-	default:
-		if tpl, ok := s.templates["details.amp.gohtml"]; ok {
-			err = tpl.Execute(w, status)
-			if err != nil {
-				s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot parse template: %+v", false, err)
-				return
-			}
 		}
 	}
 
 	//	w.Write([]byte(fmt.Sprintf("%s/%s", access, signature)))
+
 }

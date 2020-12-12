@@ -61,6 +61,7 @@ type BaseStatus struct {
 	Notifications []Notification
 	User          *User
 	Self          string
+	Canonical     string
 	Token         string
 	BaseUrl       string
 	Prefixes      map[string]string
@@ -734,33 +735,22 @@ func (s *Server) ListenAndServe(cert, key string) error {
 		Methods("GET")
 
 	// https://data.mediathek.hgk.fhnw.ch/detail/[signature]
-	//mainRegexp := regexp.MustCompile(fmt.Sprintf("^/%s(/[^/]+)+$", s.prefixes["detail"]))
-	mainRegexp := regexp.MustCompile(fmt.Sprintf("^/%s/(.+)$", s.prefixes["detail"]))
+	detailRegexp := regexp.MustCompile(fmt.Sprintf("/%s/(?P<signature>[^/]+)(/(?P<collection>[^/]+-[^/]+))?(/(?P<embed>embed)/(?P<embedSig>[^/]+)/(?P<embedId>[^/]+))?(/(?P<data>data))?(/(?P<rest>.*))?$", s.prefixes["detail"]))
+	detailMatcher := func(r *http.Request, rm *mux.RouteMatch) bool {
+		matches := detailRegexp.FindStringSubmatch(r.URL.Path)
+		if matches == nil {
+			return false
+		}
+		rm.Vars = make(map[string]string)
+		for i, name := range detailRegexp.SubexpNames() {
+			if i != 0 && name != "" {
+				rm.Vars[name] = matches[i]
+			}
+		}
+		return true
+	}
 	router.
-		MatcherFunc(func(r *http.Request, rm *mux.RouteMatch) bool {
-			matches := mainRegexp.FindStringSubmatch(r.URL.Path)
-			if len(matches) < 2 {
-				return false
-			}
-			parts := strings.Split(matches[1], "/")
-			// we need minimum the signature
-			if len(parts) == 0 {
-				return false
-			}
-			rm.Vars = map[string]string{}
-			rm.Vars["signature"] = parts[0]
-			if len(parts) == 2 {
-				if strings.ToLower(parts[1]) == "data" {
-					rm.Vars["sub"] = "data"
-				} else {
-					rm.Vars["subfilter"] = parts[1]
-				}
-			} else if len(parts) == 3 {
-				rm.Vars["subfilter"] = parts[1]
-				rm.Vars["sub"] = parts[2]
-			}
-			return true
-		}).
+		MatcherFunc(detailMatcher).
 		Handler(handlers.CompressHandler(func() http.Handler { return http.HandlerFunc(s.detailHandler) }())).
 		Methods("GET")
 
