@@ -190,6 +190,78 @@ func (s *Server) getDetailStatus(signature, path, tokenstring, remoteHost string
 	return &status, nil
 }
 
+func (s *Server) detailEmbedHandler(w http.ResponseWriter, req *http.Request) {
+	// remove Prefix and use whole rest of url as signature
+	vars := mux.Vars(req)
+	signature, ok := vars["signature"]
+	if !ok {
+		s.DoPanicf(nil, req, w, http.StatusBadRequest, "no signature in url: %s", false, req.URL.Path)
+		return
+	}
+	var tokenstring string
+	jwt, ok := req.URL.Query()["token"]
+	if ok {
+		if len(jwt) > 0 {
+			tokenstring = jwt[0]
+		}
+	}
+
+	remoteHost, _, _ := net.SplitHostPort(req.Host)
+	status, err := s.getDetailStatus(signature, req.URL.Path, tokenstring, remoteHost)
+	if err != nil {
+		if ehs, ok := err.(*ErrorHTTPStatus); ok {
+			s.DoPanicf(nil, req, w, ehs.status, ehs.err.Error(), false)
+		} else {
+			s.DoPanicf(nil, req, w, http.StatusInternalServerError, err.Error(), false)
+		}
+		return
+	}
+
+	if !status.MetaOK || !status.ContentOK {
+		w.WriteHeader(http.StatusForbidden)
+		// if there's no error Template, there's no help...
+		if tpl, ok := s.templates["forbidden.amp.gohtml"]; ok {
+			tpl.Execute(w, status)
+		}
+		return
+	}
+
+	newStatus := struct {
+		Media    Media
+		Link     string
+		LinkText string
+	}{Link: status.Canonical, LinkText: fmt.Sprintf("%s at %s", status.Title, "Mediathek HGK")}
+
+	uri := fmt.Sprintf("mediaserver:%s/%s", vars["embedCollection"], vars["embedSignature"])
+	var template string
+	for t, medias := range status.Doc.Media {
+		for _, media := range medias {
+			if media.Uri == uri {
+				newStatus.Media = media
+				switch t {
+				case "video":
+					template = "embedVideo.gohtml"
+					break
+				}
+			}
+			if template != "" {
+				break
+			}
+		}
+	}
+	if template == "" {
+		s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot embed media #%v", false, uri)
+		return
+	}
+	if tpl, ok := s.templates[template]; ok {
+		err = tpl.Execute(w, newStatus)
+		if err != nil {
+			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot parse template: %+v", false, err)
+			return
+		}
+	}
+}
+
 func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 	// remove Prefix and use whole rest of url as signature
 	vars := mux.Vars(req)

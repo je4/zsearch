@@ -37,11 +37,13 @@ import (
 	"google.golang.org/api/customsearch/v1"
 	"html/template"
 	"io"
+	"mime"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"regexp"
+	"runtime"
 	"runtime/debug"
 	"sort"
 	"strings"
@@ -713,44 +715,22 @@ func (s *Server) ListenAndServe(cert, key string) error {
 		Handler(handlers.CompressHandler(func() http.Handler { return http.HandlerFunc(s.searchHandler) }())).
 		Methods("GET")
 
-	collectionsRegexp := regexp.MustCompile(fmt.Sprintf("/%s(/(.+))?$", s.prefixes["collections"]))
-	collectionsMatcher := func(r *http.Request, rm *mux.RouteMatch) bool {
-		matches := collectionsRegexp.FindSubmatch([]byte(r.URL.Path))
-		if len(matches) == 0 {
-			return false
-		}
-		rm.Vars = map[string]string{}
-		if len(matches) >= 3 {
-			if matches[2] != nil {
-				filter := string(matches[2])
-				rm.Vars = map[string]string{}
-				rm.Vars["subfilter"] = filter
-			}
-		}
-		return true
-	}
+	collectionsRegexp := regexp.MustCompile(fmt.Sprintf("/%s(/(?P<subfilter>.+))?$", s.prefixes["collections"]))
 	router.
-		MatcherFunc(collectionsMatcher).
+		MatcherFunc(buildMatcher(collectionsRegexp)).
 		Handler(handlers.CompressHandler(func() http.Handler { return http.HandlerFunc(s.collectionsHandler) }())).
 		Methods("GET")
 
-	// https://data.mediathek.hgk.fhnw.ch/detail/[signature]
-	detailRegexp := regexp.MustCompile(fmt.Sprintf("/%s/(?P<signature>[^/]+)(/(?P<collection>[^/]+-[^/]+))?(/(?P<embed>embed)/(?P<embedSig>[^/]+)/(?P<embedId>[^/]+))?(/(?P<data>data))?(/(?P<rest>.*))?$", s.prefixes["detail"]))
-	detailMatcher := func(r *http.Request, rm *mux.RouteMatch) bool {
-		matches := detailRegexp.FindStringSubmatch(r.URL.Path)
-		if matches == nil {
-			return false
-		}
-		rm.Vars = make(map[string]string)
-		for i, name := range detailRegexp.SubexpNames() {
-			if i != 0 && name != "" {
-				rm.Vars[name] = matches[i]
-			}
-		}
-		return true
-	}
+	// https://data.mediathek.hgk.fhnw.ch/detail/[signature]/embed/[embedCollection|/[embedSignature]
+	embedRegexp := regexp.MustCompile(fmt.Sprintf("/%s/(?P<signature>[^/]+)/embed/(?P<embedCollection>[^/]+)/(?P<embedSignature>[^/]+)(/(?P<rest>.*))?$", s.prefixes["detail"]))
 	router.
-		MatcherFunc(detailMatcher).
+		MatcherFunc(buildMatcher(embedRegexp)).
+		Handler(handlers.CompressHandler(func() http.Handler { return http.HandlerFunc(s.detailEmbedHandler) }())).
+		Methods("GET")
+	// https://data.mediathek.hgk.fhnw.ch/detail/[signature]
+	detailRegexp := regexp.MustCompile(fmt.Sprintf("/%s/(?P<signature>[^/]+)(/(?P<collection>[^/]+-[^/]+))?(/(?P<data>data))?(/(?P<rest>.*))?$", s.prefixes["detail"]))
+	router.
+		MatcherFunc(buildMatcher(detailRegexp)).
 		Handler(handlers.CompressHandler(func() http.Handler { return http.HandlerFunc(s.detailHandler) }())).
 		Methods("GET")
 
@@ -770,6 +750,11 @@ func (s *Server) ListenAndServe(cert, key string) error {
 		Methods("GET")
 
 	// the static fileserver
+	// trouble with mimetypes on windows
+	if runtime.GOOS == "windows" {
+		mime.AddExtensionType(".js", "application/javascript; charset=utf-8")
+		mime.AddExtensionType(".css", "text/css; charset=utf-8")
+	}
 	router.
 		PathPrefix(fmt.Sprintf("/%s", s.prefixes["static"])).
 		Handler(http.StripPrefix("/"+s.prefixes["static"], func(h http.Handler) http.Handler {

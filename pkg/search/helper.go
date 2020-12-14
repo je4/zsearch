@@ -23,12 +23,14 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/golang/snappy"
 	"github.com/goph/emperror"
+	"github.com/gorilla/mux"
 	"github.com/op/go-logging"
 	"go.mongodb.org/mongo-driver/bson"
 	"golang.org/x/net/idna"
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -109,6 +111,22 @@ func GetClaim(claim map[string]interface{}, name string) (string, error) {
 		return "", fmt.Errorf("claim %s not a string", name)
 	}
 	return valstr, nil
+}
+
+func buildMatcher(reg *regexp.Regexp) func(r *http.Request, rm *mux.RouteMatch) bool {
+	return func(r *http.Request, rm *mux.RouteMatch) bool {
+		matches := reg.FindStringSubmatch(r.URL.Path)
+		if matches == nil {
+			return false
+		}
+		rm.Vars = make(map[string]string)
+		for i, name := range reg.SubexpNames() {
+			if i != 0 && name != "" {
+				rm.Vars[name] = matches[i]
+			}
+		}
+		return true
+	}
 }
 
 func CheckRequestJWT(req *http.Request, secret string, alg []string, subject string) error {
