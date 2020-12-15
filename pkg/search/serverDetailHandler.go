@@ -230,7 +230,12 @@ func (s *Server) detailEmbedHandler(w http.ResponseWriter, req *http.Request) {
 		Media    Media
 		Link     string
 		LinkText string
-	}{Link: status.Canonical, LinkText: fmt.Sprintf("%s at %s", status.Title, "Mediathek HGK")}
+		BaseUrl  string
+	}{
+		Link:     status.Canonical,
+		LinkText: fmt.Sprintf(`"%s" aus "%s"`, status.Doc.Title, status.Title),
+		BaseUrl:  status.BaseUrl,
+	}
 
 	uri := fmt.Sprintf("mediaserver:%s/%s", vars["embedCollection"], vars["embedSignature"])
 	var template string

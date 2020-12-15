@@ -8,6 +8,16 @@
     <link href="https://vjs.zencdn.net/7.10.2/video-js.css" rel="stylesheet" />
     <link href="/static/css/videojs-overlay-hyperlink.css" rel="stylesheet">
 
+    <!-- preload standart font -->
+    <link rel="preload" as="font"
+          href="{{.BaseUrl}}/static/font/inter/Inter-roman.var.woff2?v=3.15"
+          type="font/woff2"
+          crossorigin="anonymous">
+    <link rel="preload" as="font"
+          href="{{.BaseUrl}}/static/font/inter/Inter-Bold.woff2?v=3.15"
+          type="font/woff2"
+          crossorigin="anonymous">
+
     <!-- If you'd like to support IE8 (for Video.js versions prior to v7) -->
     <!-- <script src="https://vjs.zencdn.net/ie8/1.1.2/videojs-ie8.min.js"></script> -->
     <style>
@@ -78,7 +88,7 @@
     (function(window, videojs) {
         var player = window.player = videojs('zsearch-video');
         player.overlay({
-            content: '<a href=# onclick="location.href={{js .Link}};return false;">{{.LinkText}}</a>',
+            content: '<a href=# onclick="location.href=\'{{js .Link}}\';return false;">{{.LinkText}} at Mediathek HGK</a>',
             debug: true,
             overlays: [{
                 start: 'loadedmetadata',
