@@ -3,3 +3,4 @@ configs/search.toml
 *.pem
 web/static/ionicons/*
 
+/web/static/videojs/

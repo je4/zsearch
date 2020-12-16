@@ -16,7 +16,7 @@
 }
 
 .vjs-overlay>a {
-    text-decoration: none;
+    text-decoration: underline;
 }
 .video-js .vjs-overlay-no-background{
     max-width:33%
@@ -81,6 +81,9 @@
 @media (prefers-color-scheme: light) {
     .video-js .vjs-overlay{
         color:#000;
+    }
+    .vjs-overlay>a {
+        color: black;
     }
     .video-js .vjs-overlay-background{
         background-color:#646464;
