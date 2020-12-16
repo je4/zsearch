@@ -36,7 +36,7 @@ import (
 )
 
 func buildSitemap(mte *search.MTElasticSearch, config *Config, log *logging.Logger) error {
-	var size int64 = 5000
+	var size int64 = 3000
 	cfg := &search.ScrollConfig{
 		FiltersFields:  make(map[string][]string),
 		QStr:           "",
@@ -48,17 +48,20 @@ func buildSitemap(mte *search.MTElasticSearch, config *Config, log *logging.Logg
 	var counter int64 = 0
 	var sitemapNo int64 = 0
 	var sitemapindex *sitemap.SitemapIndex = sitemap.NewSitemapIndex()
-	var sm *sitemap.Sitemap
+	var sm *sitemap.Sitemap = sitemap.New()
+
 	if err := mte.Scroll(cfg, func(data *search.SourceData) error {
 		//		log.Infof("%0.5d - %v", counter, data.Signature)
 		if counter%size == 0 {
 			if counter > 0 {
 				filename := fmt.Sprintf("%s/%s-%05d.xml", config.StaticDir, config.SitemapPrefix, sitemapNo)
-				file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0644)
+				file, err := os.OpenFile(filename, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0644)
 				if err != nil {
 					return emperror.Wrapf(err, "cannot create file %s", filename)
 				}
-				sm.WriteTo(file)
+				if _, err := sm.WriteTo(file); err != nil {
+					log.Errorf("cannot write xml to %s: %v", filename, err)
+				}
 				file.Close()
 				log.Infof("%v written", filename)
 
@@ -69,8 +72,8 @@ func buildSitemap(mte *search.MTElasticSearch, config *Config, log *logging.Logg
 				}
 				sitemapindex.Add(u)
 				sitemapNo++
+				sm = sitemap.New()
 			}
-			sm = sitemap.New()
 		}
 		us := fmt.Sprintf("%s/%s/%s", config.AddrExt, config.Prefixes["detail"], data.Signature)
 		u := &sitemap.URL{
@@ -89,7 +92,9 @@ func buildSitemap(mte *search.MTElasticSearch, config *Config, log *logging.Logg
 		if err != nil {
 			return emperror.Wrapf(err, "cannot create file %s", filename)
 		}
-		sm.WriteTo(file)
+		if _, err := sm.WriteTo(file); err != nil {
+			log.Errorf("cannot write xml to %s: %v", filename, err)
+		}
 		file.Close()
 		log.Infof("%v written", filename)
 		lastMod := time.Now()
@@ -294,7 +299,7 @@ func main() {
 				},
 			)
 		}
-		if counter > 0 {
+		if counter > 0 || !*loop {
 			if err := buildSitemap(mte, &config, log); err != nil {
 				log.Panic(err)
 			}

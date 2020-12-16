@@ -521,18 +521,26 @@ func (s *Server) InitTemplates() (err error) {
 	return nil
 }
 
-var regexpMediaUri = regexp.MustCompile(`^mediaserver:(.+)$`)
+var regexpMediaUri = regexp.MustCompile(`^mediaserver:([^/]+)/([^/]+)$`)
 
 func (s *Server) mediaserverUri2Url(uri string, params ...string) (string, error) {
 	matches := regexpMediaUri.FindStringSubmatch(uri)
 	if matches == nil {
 		return "", fmt.Errorf("cannot parse uri %s", uri)
 	}
-	u := fmt.Sprintf("%s/%s", s.mediaserver, matches[1])
+	u := fmt.Sprintf("%s/%s/%s", s.mediaserver, matches[1], matches[2])
 	if len(params) > 0 {
 		u += "/" + strings.Join(params, "/")
 	}
 	return u, nil
+}
+
+func mediaserverUri2ColSig(uri string) (string, string, error) {
+	matches := regexpMediaUri.FindStringSubmatch(uri)
+	if matches == nil {
+		return "", "", fmt.Errorf("cannot parse uri %s", uri)
+	}
+	return matches[1], matches[2], nil
 }
 
 func (s *Server) DoPanicf(user *User, req *http.Request, writer http.ResponseWriter, status int, message string, json bool, a ...interface{}) (err error) {
@@ -710,6 +718,9 @@ func (s *Server) ListenAndServe(cert, key string) error {
 		}
 		return true
 	}
+	router.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, fmt.Sprintf("%s/%s", s.addrExt, s.prefixes["search"]), http.StatusMovedPermanently)
+	}))
 	router.
 		MatcherFunc(searchMatcher).
 		Handler(handlers.CompressHandler(func() http.Handler { return http.HandlerFunc(s.searchHandler) }())).

@@ -389,6 +389,10 @@ func (sd *SourceData) GetJsonLD(self string, mediaserver func(uri string, params
 			vData.set("width", fmt.Sprintf("%v", video.Width))
 			vData.set("height", fmt.Sprintf("%v", video.Height))
 			vData.set("uploadDate", sd.Timestamp.Format("2006-01-02T15:04:05Z"))
+			if coll, sig, err := mediaserverUri2ColSig(video.Uri); err == nil {
+				vData.set("embedurl", fmt.Sprintf("%s/embed/%s/%s", self, coll, sig))
+			}
+
 			return vData
 		}
 	}

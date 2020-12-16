@@ -100,8 +100,8 @@ func (s *Server) getDetailStatus(signature, path, tokenstring, remoteHost string
 		}
 	}
 	status.Doc = doc
-	status.BaseStatus.OGPNamespace, status.BaseStatus.OGPMeta = doc.GetOpenGraph("1102189490244305", s.addrExt+path, s.mediaserverUri2Url)
-	ldo := doc.GetJsonLD(path, s.mediaserverUri2Url)
+	//	status.BaseStatus.OGPNamespace, status.BaseStatus.OGPMeta = doc.GetOpenGraph("1102189490244305", s.addrExt+path, s.mediaserverUri2Url)
+	ldo := doc.GetJsonLD(fmt.Sprintf("%s/%s/%s", s.addrExt, s.prefixes["detail"], doc.Signature), s.mediaserverUri2Url)
 	if jsonstr, err := json.Marshal([]interface{}{ldo}); err == nil {
 		status.BaseStatus.JsonLD = fmt.Sprintf(`<script type="application/ld+json">%s</script>`, string(jsonstr)) + "\n"
 	}

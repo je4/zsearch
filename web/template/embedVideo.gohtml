@@ -5,8 +5,8 @@
 {{$plink := medialink $poster "resize" (printf "size%vx%v/formatJPEG" .Media.Width .Media.Height) false}}
 
 <head>
-    <link href="/static/videojs/video-js.min.css" rel="stylesheet" />
-    <link href="/static/css/videojs-overlay-hyperlink.css" rel="stylesheet">
+    <link href="{{.BaseUrl}}/static/videojs/video-js.min.css" rel="stylesheet" />
+    <link href="{{.BaseUrl}}/static/css/videojs-overlay-hyperlink.css" rel="stylesheet">
 
     <!-- preload standart font -->
     <link rel="preload" as="font"
@@ -81,8 +81,8 @@
     </p>
 </video>
 
-<script src="/static/videojs/video.min.js"></script>
-<script src="/static/videojs/videojs-overlay-hyperlink.js"></script>
+<script src="{{.BaseUrl}}/static/videojs/video.min.js"></script>
+<script src="{{.BaseUrl}}/static/videojs/videojs-overlay-hyperlink.js"></script>
 
 <script>
     (function(window, videojs) {
