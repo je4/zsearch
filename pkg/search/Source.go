@@ -313,44 +313,15 @@ func (og OGData) set(key, val string) {
 	og[key] = []string{val}
 }
 func (sd *SourceData) GetJsonLD(self string, mediaserver func(uri string, params ...string) (string, error)) (result interface{}) {
-	if videos, ok := sd.Media["video"]; ok {
+	videos, videook := sd.Media["video"]
+	audios, audiook := sd.Media["audio"]
+	vData := make(JSONData)
+	if videook {
 		if len(videos) > 0 {
 			video := videos[0]
-			vData := make(JSONData)
 			vData.set("@type", "VideoObject")
 			vData.set("@context", "https://schema.org")
-			vData.set("url", self)
-			vData.set("contenturl", self)
-			vData.set("name", sd.Title)
 
-			description := sd.Abstract
-			pd := ""
-			if sd.Place != "" {
-				pd = sd.Place
-			}
-			if sd.Date != "" {
-				if pd != "" {
-					pd += ", "
-				}
-				pd += sd.Date
-			}
-			if pd != "" {
-				if description != "" {
-					description += "\n\n"
-				}
-				description += pd
-			}
-			vData.set("description", description)
-
-			// director / actor / ...
-			for _, p := range sd.Persons {
-				switch p.Role {
-				case "director":
-					vData.add("director", p.Name)
-				default:
-					vData.add("actor", p.Name)
-				}
-			}
 			if sd.Poster != nil {
 				if imgUrl, err := mediaserver(sd.Poster.Uri, "resize", fmt.Sprintf("size%vx%v", sd.Poster.Width, sd.Poster.Height), "formatJPEG"); err == nil {
 					vData.add("thumbnailUrl", imgUrl)
@@ -392,9 +363,99 @@ func (sd *SourceData) GetJsonLD(self string, mediaserver func(uri string, params
 			if coll, sig, err := mediaserverUri2ColSig(video.Uri); err == nil {
 				vData.set("embedurl", fmt.Sprintf("%s/embed/%s/%s", self, coll, sig))
 			}
-
-			return vData
 		}
+		// director / actor / ...
+		for _, p := range sd.Persons {
+			switch p.Role {
+			case "director":
+				vData.add("director", p.Name)
+			default:
+				vData.add("actor", p.Name)
+			}
+		}
+	} else {
+		if audiook {
+			if len(audios) > 0 {
+				audio := audios[0]
+				vData.set("@type", "AudioObject")
+				vData.set("@context", "https://schema.org")
+
+				// duration / width / height
+				var isoDuration = isoduration.Duration{}
+				isoDuration.Hours = int(audio.Duration / 3600)
+				isoDuration.Minutes = (int(audio.Duration) % 3600) / 60
+				isoDuration.Seconds = int(audio.Duration) % 60
+				vData.set("duration", fmt.Sprintf("%v", isoDuration.String()))
+				vData.set("uploadDate", sd.Timestamp.Format("2006-01-02T15:04:05Z"))
+				/*
+					if coll, sig, err := mediaserverUri2ColSig(audio.Uri); err == nil {
+						vData.set("embedurl", fmt.Sprintf("%s/embed/%s/%s", self, coll, sig))
+					}
+				*/
+			}
+		}
+		// director / actor / ...
+		for _, p := range sd.Persons {
+			switch p.Role {
+			default:
+				vData.add("author", p.Name)
+			}
+		}
+	}
+	if videook || audiook {
+		vData.set("url", self)
+		vData.set("contenturl", self)
+		vData.set("name", sd.Title)
+
+		description := sd.Abstract
+		pd := ""
+		if sd.Place != "" {
+			pd = sd.Place
+		}
+		if sd.Date != "" {
+			if pd != "" {
+				pd += ", "
+			}
+			pd += sd.Date
+		}
+		if pd != "" {
+			if description != "" {
+				description += "\n\n"
+			}
+			description += pd
+		}
+		vData.set("description", description)
+
+		if sd.Poster != nil {
+			if imgUrl, err := mediaserver(sd.Poster.Uri, "resize", fmt.Sprintf("size%vx%v", sd.Poster.Width, sd.Poster.Height), "formatJPEG"); err == nil {
+				vData.add("thumbnailUrl", imgUrl)
+				thumb := make(JSONData)
+				thumb.set("@type", "ImageObject")
+				thumb.set("url", imgUrl)
+				thumb.set("width", fmt.Sprintf("%v", sd.Poster.Width))
+				thumb.set("height", fmt.Sprintf("%v", sd.Poster.Height))
+				vData.add("thumbnail", thumb)
+			}
+			if imgUrl, err := mediaserver(sd.Poster.Uri, "resize", fmt.Sprintf("size%vx%v", 640, 480), "crop", "formatJPEG"); err == nil {
+				vData.add("thumbnailUrl", imgUrl)
+				thumb := make(JSONData)
+				thumb.set("@type", "ImageObject")
+				thumb.set("url", imgUrl)
+				thumb.set("width", "640")
+				thumb.set("height", "480")
+				vData.add("thumbnail", thumb)
+			}
+			if imgUrl, err := mediaserver(sd.Poster.Uri, "resize", fmt.Sprintf("size%vx%v", 480, 480), "crop", "formatJPEG"); err == nil {
+				vData.add("thumbnailUrl", imgUrl)
+				thumb := make(JSONData)
+				thumb.set("@type", "ImageObject")
+				thumb.set("url", imgUrl)
+				thumb.set("width", "480")
+				thumb.set("height", "480")
+				vData.add("thumbnail", thumb)
+			}
+		}
+		return vData
 	}
 	return nil
 }

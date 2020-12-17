@@ -118,12 +118,12 @@
                 {{$audio := index .Doc.Media.audio 0}}
                 {{$src := printf "%s$$web$$1" $audio.Uri}}
                 {{$poster := printf "%s$$poster" $audio.Uri}}
-                <amp-img async
+                <amp-img
                          src="{{medialink $poster "resize" "size1280x150/stretch/formatWEBP" (not $contentPublic)}}"
                          [src]="audio.postersJPEG[audio.selectedAudio]"
                          width="1280px"
                          height="150px">
-                    <amp-img async
+                    <amp-img
                              src="{{medialink $poster "resize" "size1280x150/stretch/formatJPEG" (not $contentPublic)}}"
                              [src]="audio.postersWEBP[audio.selectedAudio]"
                              fallback
@@ -134,9 +134,8 @@
                 <amp-audio
                         src="{{medialink $src "master" "" (not $contentPublic)}}"
                         [src]="audio.audios[audio.selectedAudio]"
-                        width="1280"
-                        height="100"
-                        layout="responsive">
+                        width="auto"
+                        height="100">
                 </amp-audio>
                 {{if gt $len 1}}
                     <amp-selector class="center" [selected]="audio.selectedAudio" on="select:AMP.setState({audio: {selectedAudio: event.targetOption}})">

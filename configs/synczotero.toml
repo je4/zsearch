@@ -61,6 +61,10 @@ groups = [
     static = "/static"
     images = "/images"
 
+[hypothesis]
+    apikey = "6879-31NYxNzRNVeudq5mmbCEwx3MuXVLa8vUkvqo0bW0Lt8"
+    endpoint = "https://hypothes.is/api"
+
 
 [elasticsearch]
     endpoint = ["http://localhost:9201"]

@@ -64,10 +64,16 @@ type Cfg_S3 struct {
 	UseSSL          bool   `toml:"useSSL"`
 }
 
+type Hypothesis struct {
+	Apikey   string `toml:"apikey"`
+	Endpoint string `toml:"endpoint"`
+}
+
 type Config struct {
 	Logfile             string            `toml:"logfile"`
 	Loglevel            string            `toml:"loglevel"`
 	ElasticSearch       Cfg_ElasticSearch `toml:"elasticsearch"`
+	Hypothesis          Hypothesis        `toml:"hypothesis"`
 	CacheDir            string            `toml:"cachedir"`
 	StaticDir           string            `toml:"staticdir"`
 	AddrExt             string            `toml:"addrext"`

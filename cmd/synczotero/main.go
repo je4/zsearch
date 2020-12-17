@@ -24,6 +24,7 @@ import (
 	"github.com/dgraph-io/badger/v2"
 	"github.com/goph/emperror"
 	"github.com/je4/sitemap"
+	"github.com/je4/zsearch/pkg/hypothesis"
 	"github.com/je4/zsearch/pkg/mediaserver"
 	"github.com/je4/zsearch/pkg/search"
 	"github.com/je4/zsync/pkg/filesystem"
@@ -38,10 +39,10 @@ import (
 func buildSitemap(mte *search.MTElasticSearch, config *Config, log *logging.Logger) error {
 	var size int64 = 3000
 	cfg := &search.ScrollConfig{
-		FiltersFields:  make(map[string][]string),
+		FiltersFields:  map[string][]string{},
 		QStr:           "",
 		Groups:         []string{"global/guest"},
-		ContentVisible: false,
+		ContentVisible: true,
 		IsAdmin:        false,
 	}
 
@@ -246,6 +247,45 @@ func main() {
 		log.Panicf("cannot create zotero instance: %v", err)
 		return
 	}
+
+	hy, err := hypothesis.NewHypothesis(config.Hypothesis.Endpoint, config.Hypothesis.Apikey, log)
+	if err != nil {
+		log.Panicf("cannot create hypothesis instance: %v", err)
+		return
+	}
+
+	if err := hy.GetGroups(func(grp hypothesis.Group) error {
+		log.Infof("Group: #%s - %s", grp.Id, grp.Name)
+		return nil
+	}); err != nil {
+		log.Error("error loading groups")
+	}
+
+	if grp, err := hy.GetGroup("RzR53ZGq"); err != nil {
+		log.Errorf("cannot get group: %v", err)
+	} else {
+		log.Infof("Group: #%s - %s", grp.Id, grp.Name)
+		if err := grp.GetAnnotations(func(ann hypothesis.Annotation) error {
+			log.Infof("Annotation: %v", ann.Uri)
+			return nil
+		}); err != nil {
+			log.Errorf("error getting annotations: %v", err)
+		}
+	}
+
+	if user, err := hy.GetUser("jenge@hypothes.is"); err != nil {
+		log.Errorf("cannot get user: %v", err)
+	} else {
+		log.Infof("User: %s - %s", user.UserId, user.Username)
+		if err := user.GetAnnotations(func(ann hypothesis.Annotation) error {
+			log.Infof("Annotation: %v", ann.Uri)
+			return nil
+		}); err != nil {
+			log.Errorf("error getting annotations: %v", err)
+		}
+	}
+
+	return
 
 	first := true
 
