@@ -60,6 +60,7 @@ func (s *Server) clusterAllHandler(w http.ResponseWriter, req *http.Request) {
 				"cluster":     s.prefixes["cluster"],
 				"google":      s.prefixes["cse"],
 			},
+			InstanceName: s.instanceName,
 		},
 		QueryApi: template.URL(fmt.Sprintf("%s/search", s.prefixes["api"])),
 		Result:   []*SourceData{},

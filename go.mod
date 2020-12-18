@@ -32,4 +32,5 @@ require (
 	go.mongodb.org/mongo-driver v1.4.3
 	golang.org/x/net v0.0.0-20201031054903-ff519b6c9102
 	google.golang.org/api v0.35.0
+	google.golang.org/appengine v1.6.6
 )

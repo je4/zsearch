@@ -215,6 +215,7 @@ type Source interface {
 	GetSolrDoc() *solr.Document
 	GetContentString() string
 	GetContentMime() string
+	GetDateAdded() time.Time
 }
 
 type SourceData struct {
@@ -245,6 +246,7 @@ type SourceData struct {
 	ContentMime     string               `json:"-"`
 	HasMedia        bool                 `json:"hasmedia"`
 	Mediatype       []string             `json:"mediatype"`
+	DateAdded       time.Time            `json:"dateadded"`
 	Timestamp       time.Time            `json:"timestamp"`
 }
 
@@ -275,6 +277,7 @@ func InitSourceData(source Source, ms mediaserver.Mediaserver) *SourceData {
 		Queries:         source.GetQueries(),
 		ContentStr:      source.GetContentString(),
 		ContentMime:     source.GetContentMime(),
+		DateAdded:       source.GetDateAdded(),
 		Mediatype:       []string{},
 		Timestamp:       time.Now(),
 	}
@@ -316,6 +319,11 @@ func (sd *SourceData) GetJsonLD(self string, mediaserver func(uri string, params
 	videos, videook := sd.Media["video"]
 	audios, audiook := sd.Media["audio"]
 	vData := make(JSONData)
+
+	var description string
+	if videook || audiook {
+	}
+
 	if videook {
 		if len(videos) > 0 {
 			video := videos[0]
@@ -359,18 +367,8 @@ func (sd *SourceData) GetJsonLD(self string, mediaserver func(uri string, params
 			vData.set("duration", fmt.Sprintf("%v", isoDuration.String()))
 			vData.set("width", fmt.Sprintf("%v", video.Width))
 			vData.set("height", fmt.Sprintf("%v", video.Height))
-			vData.set("uploadDate", sd.Timestamp.Format("2006-01-02T15:04:05Z"))
 			if coll, sig, err := mediaserverUri2ColSig(video.Uri); err == nil {
 				vData.set("embedurl", fmt.Sprintf("%s/embed/%s/%s", self, coll, sig))
-			}
-		}
-		// director / actor / ...
-		for _, p := range sd.Persons {
-			switch p.Role {
-			case "director":
-				vData.add("director", p.Name)
-			default:
-				vData.add("actor", p.Name)
 			}
 		}
 	} else {
@@ -386,7 +384,6 @@ func (sd *SourceData) GetJsonLD(self string, mediaserver func(uri string, params
 				isoDuration.Minutes = (int(audio.Duration) % 3600) / 60
 				isoDuration.Seconds = int(audio.Duration) % 60
 				vData.set("duration", fmt.Sprintf("%v", isoDuration.String()))
-				vData.set("uploadDate", sd.Timestamp.Format("2006-01-02T15:04:05Z"))
 				/*
 					if coll, sig, err := mediaserverUri2ColSig(audio.Uri); err == nil {
 						vData.set("embedurl", fmt.Sprintf("%s/embed/%s/%s", self, coll, sig))
@@ -394,20 +391,19 @@ func (sd *SourceData) GetJsonLD(self string, mediaserver func(uri string, params
 				*/
 			}
 		}
-		// director / actor / ...
-		for _, p := range sd.Persons {
-			switch p.Role {
-			default:
-				vData.add("author", p.Name)
-			}
-		}
 	}
 	if videook || audiook {
 		vData.set("url", self)
 		vData.set("contenturl", self)
 		vData.set("name", sd.Title)
+		vData.set("uploadDate", sd.DateAdded.Format("2006-01-02T15:04:05Z"))
 
-		description := sd.Abstract
+		description = sd.Abstract
+		// director / actor / ...
+		for _, p := range sd.Persons {
+			vData.add("author", p.Name)
+			description += fmt.Sprintf("  %s: %s", strings.Title(p.Role), p.Name)
+		}
 		pd := ""
 		if sd.Place != "" {
 			pd = sd.Place
@@ -424,7 +420,7 @@ func (sd *SourceData) GetJsonLD(self string, mediaserver func(uri string, params
 			}
 			description += pd
 		}
-		vData.set("description", description)
+		vData.set("description", strings.Trim(description, " \n"))
 
 		if sd.Poster != nil {
 			if imgUrl, err := mediaserver(sd.Poster.Uri, "resize", fmt.Sprintf("size%vx%v", sd.Poster.Width, sd.Poster.Height), "formatJPEG"); err == nil {

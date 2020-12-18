@@ -71,6 +71,7 @@ type BaseStatus struct {
 	AmpBase       string
 	LoginUrl      string
 	Title         string
+	InstanceName  string
 }
 
 type DetailStatus struct {
@@ -260,31 +261,10 @@ type Server struct {
 	queryCache         gcache.Cache
 	google             *customsearch.Service
 	googleCSEKey       map[string]KV
+	instanceName       string
 }
 
-func NewServer(
-	mts *Search,
-	uc *UserCache,
-	google *customsearch.Service,
-	templateFiles map[string][]string,
-	templateDev bool,
-	addr, addrExt, mediaserver, mediaserverkey string,
-	mediatokenexp time.Duration,
-	log *logging.Logger,
-	accesslog io.Writer,
-	prefixes map[string]string,
-	staticDir, staticCacheControl, jwtKey string,
-	jwtAlg []string,
-	linkTokenExp time.Duration,
-	loginUrl, loginIssuer, guestGroup, adminGroup, AmpCache, ampApiKeyFile string,
-	searchFields map[string]string,
-	facets SolrFacetList,
-	locations NetGroups,
-	icons map[string]string,
-	baseCatalog string,
-	subFilter []SubFilter,
-	collectionsCatalog, clusterCatalog string,
-	googleCSEKey map[string]KV) (*Server, error) {
+func NewServer(mts *Search, uc *UserCache, google *customsearch.Service, templateFiles map[string][]string, templateDev bool, InstanceName, addr, addrExt, mediaserver, mediaserverkey string, mediatokenexp time.Duration, log *logging.Logger, accesslog io.Writer, prefixes map[string]string, staticDir, staticCacheControl, jwtKey string, jwtAlg []string, linkTokenExp time.Duration, loginUrl, loginIssuer, guestGroup, adminGroup, AmpCache, ampApiKeyFile string, searchFields map[string]string, facets SolrFacetList, locations NetGroups, icons map[string]string, baseCatalog string, subFilter []SubFilter, collectionsCatalog, clusterCatalog string, googleCSEKey map[string]KV) (*Server, error) {
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		//log.Panicf("cannot split address %s: %v", addr, err)
@@ -351,6 +331,7 @@ func NewServer(
 		queryCache:         gcache.New(100).ARC().Expiration(time.Hour * 3).Build(),
 		googleCSEKey:       googleCSEKey,
 		templatesFiles:     templateFiles,
+		instanceName:       InstanceName,
 	}
 	if err := srv.InitTemplates(); err != nil {
 		return nil, emperror.Wrapf(err, "cannot initialize server")
@@ -572,8 +553,9 @@ func (s *Server) DoPanicf(user *User, req *http.Request, writer http.ResponseWri
 					"cluster":     s.prefixes["cluster"],
 					"google":      s.prefixes["cse"],
 				},
-				AmpBase: "",
-				Title:   "",
+				AmpBase:      "",
+				Title:        "",
+				InstanceName: s.instanceName,
 			},
 			Error:   fmt.Sprintf("%v - %s", status, http.StatusText(status)),
 			Message: msg,

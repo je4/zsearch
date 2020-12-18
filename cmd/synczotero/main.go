@@ -24,7 +24,6 @@ import (
 	"github.com/dgraph-io/badger/v2"
 	"github.com/goph/emperror"
 	"github.com/je4/sitemap"
-	"github.com/je4/zsearch/pkg/hypothesis"
 	"github.com/je4/zsearch/pkg/mediaserver"
 	"github.com/je4/zsearch/pkg/search"
 	"github.com/je4/zsync/pkg/filesystem"
@@ -248,45 +247,6 @@ func main() {
 		return
 	}
 
-	hy, err := hypothesis.NewHypothesis(config.Hypothesis.Endpoint, config.Hypothesis.Apikey, log)
-	if err != nil {
-		log.Panicf("cannot create hypothesis instance: %v", err)
-		return
-	}
-
-	if err := hy.GetGroups(func(grp hypothesis.Group) error {
-		log.Infof("Group: #%s - %s", grp.Id, grp.Name)
-		return nil
-	}); err != nil {
-		log.Error("error loading groups")
-	}
-
-	if grp, err := hy.GetGroup("RzR53ZGq"); err != nil {
-		log.Errorf("cannot get group: %v", err)
-	} else {
-		log.Infof("Group: #%s - %s", grp.Id, grp.Name)
-		if err := grp.GetAnnotations(func(ann hypothesis.Annotation) error {
-			log.Infof("Annotation: %v", ann.Uri)
-			return nil
-		}); err != nil {
-			log.Errorf("error getting annotations: %v", err)
-		}
-	}
-
-	if user, err := hy.GetUser("jenge@hypothes.is"); err != nil {
-		log.Errorf("cannot get user: %v", err)
-	} else {
-		log.Infof("User: %s - %s", user.UserId, user.Username)
-		if err := user.GetAnnotations(func(ann hypothesis.Annotation) error {
-			log.Infof("Annotation: %v", ann.Uri)
-			return nil
-		}); err != nil {
-			log.Errorf("error getting annotations: %v", err)
-		}
-	}
-
-	return
-
 	first := true
 
 	for {
@@ -311,10 +271,27 @@ func main() {
 					IsAdmin:        true,
 				}
 
-				since, err = mte.LastUpdate(cfg)
-				if err != nil {
-					log.Errorf("cannot get last update of group #%v: %v", groupid, err)
-					break
+				var doClear = false
+				for _, cleargroupid := range config.ClearBeforSync {
+					if cleargroupid == groupid {
+						doClear = true
+						break
+					}
+				}
+				if doClear {
+					since = time.Date(1970, 01, 01, 0, 0, 0, 0, time.Local)
+					num, err := mte.Delete(cfg)
+					if err != nil {
+						log.Errorf("cannot delete items with signature prefix zotero2-%v: %v", groupid, err)
+						break
+					}
+					log.Infof("%v items with signature prefix zotero2-%v deleted", num, groupid)
+				} else {
+					since, err = mte.LastUpdate(cfg)
+					if err != nil {
+						log.Errorf("cannot get last update of group #%v: %v", groupid, err)
+						break
+					}
 				}
 			}
 			group.IterateItemsAllLocal(

@@ -231,6 +231,7 @@ func main() {
 		googleSvc,
 		config.Template,
 		config.TemplateDev,
+		config.InstanceName,
 		config.Addr,
 		config.AddrExt,
 		config.Mediaserver,

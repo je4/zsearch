@@ -8,6 +8,7 @@ import (
 	"github.com/vanng822/go-solr/solr"
 	"sort"
 	"strings"
+	"time"
 )
 
 type SourceDiplomHGK struct {
@@ -16,6 +17,10 @@ type SourceDiplomHGK struct {
 	doc        *solr.Document      `json:"-"`
 	contentStr string
 	medias     map[string]MediaList `json:"-"`
+}
+
+func (dhgk *SourceDiplomHGK) GetDateAdded() time.Time {
+	return time.Now()
 }
 
 func (dhgk *SourceDiplomHGK) GetACL() map[string][]string {

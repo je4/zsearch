@@ -1,5 +1,4 @@
 /*
-Copyright 2020 Center for Digital Matter HGK FHNW, Basel.
 Copyright 2020 info-age GmbH, Basel.
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,34 +33,9 @@ func (d *duration) UnmarshalText(text []byte) error {
 	return err
 }
 
-type Cfg_database struct {
-	ServerType string
-	DSN        string
-	ConnMax    int `toml:"connection_max"`
-	Schema     string
-}
-
-type Cfg_Zotero struct {
-	Endpoint string       `toml:"endpoint"`
-	Apikey   string       `toml:"apikey"`
-	DB       Cfg_database `toml:"database"`
-}
-
-type MediaserverMySQL struct {
-	DB  Cfg_database `toml:"database"`
-	Url string       `toml:"url"`
-}
-
 type Cfg_ElasticSearch struct {
 	Endpoint []string `toml:"endpoint"`
 	Index    string   `toml:"index"`
-}
-
-type Cfg_S3 struct {
-	Endpoint        string `toml:"endpoint"`
-	AccessKeyId     string `toml:"accessKeyId"`
-	SecretAccessKey string `toml:"secretAccessKey"`
-	UseSSL          bool   `toml:"useSSL"`
 }
 
 type Hypothesis struct {
@@ -72,18 +46,13 @@ type Hypothesis struct {
 type Config struct {
 	Logfile             string            `toml:"logfile"`
 	Loglevel            string            `toml:"loglevel"`
+	CacheDir            string            `toml:"cachedir"`
 	ElasticSearch       Cfg_ElasticSearch `toml:"elasticsearch"`
 	Hypothesis          Hypothesis        `toml:"hypothesis"`
-	CacheDir            string            `toml:"cachedir"`
-	StaticDir           string            `toml:"staticdir"`
 	AddrExt             string            `toml:"addrext"`
 	Prefixes            map[string]string `toml:"prefix"`
-	SitemapPrefix       string            `toml:"sitemapprefix"`
 	ClearCacheOnStartup bool              `toml:"clearcacheonstartup"`
 	Sleep               duration          `toml:"sleep"`
-	Mediaserver         MediaserverMySQL  `toml:"mediaserver"`
-	Zotero              Cfg_Zotero        `toml:"zotero"`
-	S3                  Cfg_S3            `toml:"s3"`
 	Groups              []int64           `toml:"groups"`
 	ClearBeforSync      []int64           `toml:"clearbeforesync"`
 }
@@ -108,7 +77,6 @@ func LoadConfig(filepath string) Config {
 	}
 	fmt.Sprintf("%v", m)
 	// make sure, that medaiserver url ends with an /
-	conf.Mediaserver.Url = strings.TrimRight(conf.Mediaserver.Url, "/")
 
 	conf.AddrExt = strings.TrimRight(conf.AddrExt, "/")
 

@@ -72,6 +72,7 @@ func (s *Server) googleHandler(w http.ResponseWriter, req *http.Request) {
 			SelfPath:      req.URL.Path,
 			LoginUrl:      s.loginUrl,
 			Title:         "Wissenscluster",
+			InstanceName:  s.instanceName,
 		},
 		SearchName: csekey,
 		CX:         cx.Key,

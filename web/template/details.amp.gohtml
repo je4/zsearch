@@ -225,7 +225,9 @@ limitations under the License.
 
 {{template "footer.inc.gohtml" . }}
 
-{{html .JsonLD}}
+<script type="application/ld+json">
+{{js .JsonLD}}
+</script>
 
 </body>
 </html>

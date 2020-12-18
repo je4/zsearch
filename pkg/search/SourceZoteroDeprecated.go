@@ -28,6 +28,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 )
 
 type SourceZoteroDeprecated struct {
@@ -37,6 +38,10 @@ type SourceZoteroDeprecated struct {
 	doc        *solr.Document       `json:"-"`
 	contentStr string               `json:"-"`
 	medias     map[string]MediaList `jsnon:"-"`
+}
+
+func (zot *SourceZoteroDeprecated) GetDateAdded() time.Time {
+	return time.Now()
 }
 
 func (zot *SourceZoteroDeprecated) GetACL() map[string][]string {

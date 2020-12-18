@@ -6,6 +6,7 @@ import (
 	"github.com/goph/emperror"
 	"github.com/je4/zsearch/pkg/mediaserver"
 	"github.com/vanng822/go-solr/solr"
+	"time"
 )
 
 type SourceCDK struct {
@@ -14,6 +15,10 @@ type SourceCDK struct {
 	doc        *solr.Document `json:"-"`
 	contentStr string
 	medias     map[string]MediaList `json:"-"`
+}
+
+func (cdk *SourceCDK) GetDateAdded() time.Time {
+	return time.Now()
 }
 
 func (cdk *SourceCDK) GetACL() map[string][]string {

@@ -148,6 +148,7 @@ type Config struct {
 	Icons               map[string]string   `toml:"icons"`
 	ElasticSearch       Cfg_ElasticSearch   `toml:"elasticsearch"`
 	Google              Cfg_Google          `toml:"google"`
+	InstanceName        string              `toml:"instancename"`
 }
 
 var prefixNames = []string{

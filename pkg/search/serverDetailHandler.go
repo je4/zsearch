@@ -55,8 +55,9 @@ func (s *Server) getDetailStatus(signature, path, tokenstring, remoteHost string
 				"cluster":     s.prefixes["cluster"],
 				"google":      s.prefixes["cse"],
 			},
-			AmpBase: "",
-			Title:   "",
+			AmpBase:      "",
+			Title:        "",
+			InstanceName: s.instanceName,
 		},
 		ContentOK: false,
 		MetaOK:    false,
@@ -103,7 +104,7 @@ func (s *Server) getDetailStatus(signature, path, tokenstring, remoteHost string
 	//	status.BaseStatus.OGPNamespace, status.BaseStatus.OGPMeta = doc.GetOpenGraph("1102189490244305", s.addrExt+path, s.mediaserverUri2Url)
 	ldo := doc.GetJsonLD(fmt.Sprintf("%s/%s/%s", s.addrExt, s.prefixes["detail"], doc.Signature), s.mediaserverUri2Url)
 	if jsonstr, err := json.Marshal([]interface{}{ldo}); err == nil {
-		status.BaseStatus.JsonLD = fmt.Sprintf(`<script type="application/ld+json">%s</script>`, string(jsonstr)) + "\n"
+		status.BaseStatus.JsonLD = string(jsonstr) + "\n"
 	}
 
 	for acl, groups := range status.Doc.ACL {

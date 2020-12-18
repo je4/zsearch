@@ -67,6 +67,7 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 				"cluster":     s.prefixes["cluster"],
 				"google":      s.prefixes["cse"],
 			},
+			InstanceName: s.instanceName,
 		},
 		QueryApi: "api/search",
 		Result:   map[string][]*SourceData{},

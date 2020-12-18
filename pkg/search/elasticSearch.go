@@ -71,7 +71,7 @@ type tElasticResultAggregation struct {
 }
 type tElasticResultAggregations map[string]tElasticResultAggregation
 
-type tElasticResult struct {
+type tElasticSearchResult struct {
 	Error        tElasticResultError        `json:"error,omitempty"`
 	Took         int64                      `json:"took,omitempty"`
 	TimedOut     bool                       `json:"timed_out,omitempty"`
@@ -80,6 +80,21 @@ type tElasticResult struct {
 	Aggregations tElasticResultAggregations `json:"aggregations,omitempty"`
 	Status       float64                    `json:"status"`
 	ScrollId     string                     `json:"_scroll_id,omitempty"`
+}
+
+type tElasticDeleteResult struct {
+	Error                tElasticResultError `json:"error,omitempty"`
+	Took                 int64               `json:"took,omitempty"`
+	TimedOut             bool                `json:"timed_out,omitempty"`
+	Total                int64               `json:"total,omitempty"`
+	Deleted              int64               `json:"deleted,omitempty"`
+	Batches              int64               `json:"batches,omitempty"`
+	VersionConflicts     int64               `json:"version_conflicts,omitempty"`
+	Noops                int64               `json:"noops,omitempty"`
+	ThrottledMillis      int64               `json:"throttled_millis,omitempty"`
+	RequestsPerSecond    float64             `json:"requests_per_second,omitempty"`
+	ThrottledUntilMillis int64               `json:"throttled_until_millis,omitempty"`
+	Failures             []interface{}       `json:"failures,omitempty"`
 }
 
 type tElasticMGetResultDoc struct {
@@ -98,8 +113,8 @@ type tElasticMGetResult struct {
 }
 
 type tElasticSearch struct {
-	From           int64                       `json:"from"`
-	Size           int64                       `json:"size"`
+	From           int64                       `json:"from,omitempty"`
+	Size           int64                       `json:"size,omitempty"`
 	Query          *tElasticQuery              `json:"query"`
 	Aggregations   *tElasticSearchAggregations `json:"aggs,omitempty"`
 	PostFilter     *tElasticQuery              `json:"post_filter,omitempty"`
@@ -255,7 +270,7 @@ func (mte *MTElasticSearch) StatsByACL(catalog string) (int64, FacetCountResult,
 	}
 	defer res.Body.Close()
 
-	var result tElasticResult
+	var result tElasticSearchResult
 	if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
 		return 0, nil, emperror.Wrap(err, "cannot unmarshal result")
 	}
@@ -363,7 +378,7 @@ func (mte *MTElasticSearch) Scroll(cfg *ScrollConfig, callback func(data *Source
 
 	for {
 
-		var result tElasticResult
+		var result tElasticSearchResult
 		if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
 			res.Body.Close()
 			return emperror.Wrap(err, "cannot unmarshal result")
@@ -516,7 +531,7 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]map[string][]string, []
 	}
 	defer res.Body.Close()
 
-	var result tElasticResult
+	var result tElasticSearchResult
 	if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
 		return nil, nil, 0, nil, emperror.Wrap(err, "cannot unmarshal result")
 	}
@@ -632,7 +647,7 @@ func (mte *MTElasticSearch) LastUpdate(cfg *ScrollConfig) (time.Time, error) {
 		return lastUpdate, emperror.Wrapf(err, "cannot query %v", string(jsonstr))
 	}
 	defer res.Body.Close()
-	var result tElasticResult
+	var result tElasticSearchResult
 	if err := json.NewDecoder(res.Body).Decode(&result); err != nil {
 		return lastUpdate, emperror.Wrap(err, "cannot unmarshal result")
 	}
@@ -652,4 +667,100 @@ func (mte *MTElasticSearch) LastUpdate(cfg *ScrollConfig) (time.Time, error) {
 	}
 	sd := result.Hits.Hits[0]
 	return sd.Source.Timestamp, nil
+}
+
+func (mte *MTElasticSearch) Delete(cfg *ScrollConfig) (int64, error) {
+	query := elasticQuery()
+
+	filters := []*tElasticFieldValue{}
+	if cfg.IsAdmin == false {
+		if len(cfg.Groups) > 0 {
+			filters = append(filters, elasticTermsQuery("acl.meta", 0, cfg.Groups...).FieldValue())
+		}
+	}
+	if cfg.ContentVisible {
+		if len(cfg.Groups) > 0 && !cfg.IsAdmin {
+			filters = append(filters, elasticTermsQuery("acl.content", 0, cfg.Groups...).FieldValue())
+		}
+		filters = append(filters, elasticExistsQuery("mediatype").FieldValue())
+	}
+
+	matchqueries := []*tElasticFieldValue{}
+	if len(cfg.FiltersFields) > 0 {
+		for fld, vals := range cfg.FiltersFields {
+			for _, val := range vals {
+				switch fld {
+				case "category":
+					filters = append(filters, elasticPrefixQuery(fld, val).FieldValue())
+				case "persons.name":
+					filters = append(filters, elasticNestedQuery("persons",
+						elasticQuery().withTermQuery(elasticTermQuery("persons.name.keyword", val, 0))).FieldValue())
+				default:
+					if strings.HasSuffix(val, "*") {
+						filters = append(filters, elasticPrefixQuery(fld, strings.TrimRight(val, "*")).FieldValue())
+					} else {
+						filters = append(filters, elasticTermQuery(fld, val, 0).FieldValue())
+					}
+				}
+			}
+		}
+	}
+
+	qstr := strings.TrimSpace(cfg.QStr)
+	if len(qstr) > 0 {
+		matchqueries = append(matchqueries,
+			elasticNestedQuery("media.pdf", elasticQuery().withBooleanQuery(elasticBooleanQuery(0).withMust(
+				elasticSimpleQueryString(qstr).
+					withFields([]string{"media.pdf.fulltext^1"}).
+					withOperatorOR().
+					FieldValue()))).FieldValue())
+		matchqueries = append(matchqueries,
+			elasticNestedQuery("persons", elasticQuery().withBooleanQuery(elasticBooleanQuery(0).withMust(
+				elasticSimpleQueryString(qstr).
+					withFields([]string{"persons.name^5"}).
+					withOperatorOR().
+					FieldValue()))).FieldValue())
+		matchqueries = append(matchqueries,
+			elasticSimpleQueryString(qstr).
+				withFields([]string{"title^4", "abstract^3", "notes^3"}).
+				withOperatorOR().
+				FieldValue())
+	}
+	bq := elasticBooleanQuery(0)
+	if len(matchqueries) > 0 {
+		bq.withShould(1, matchqueries...)
+	}
+	if len(filters) > 0 {
+		bq.withFilter(filters...)
+	}
+	query.withBooleanQuery(bq)
+
+	fq := elasticSearch(query, nil, nil, nil, 0, 0)
+
+	jsonstr, err := json.Marshal(fq)
+	if err != nil {
+		return 0, emperror.Wrapf(err, "cannot marshal %v", fq)
+	}
+	mte.log.Debugf("%v", string(jsonstr))
+	buf := bytes.NewBuffer(jsonstr)
+	dbq, err := mte.es.DeleteByQuery([]string{mte.index}, buf)
+	if err != nil {
+		return 0, emperror.Wrapf(err, "cannot query %v", string(jsonstr))
+	}
+	defer dbq.Body.Close()
+	var result tElasticDeleteResult
+	if err := json.NewDecoder(dbq.Body).Decode(&result); err != nil {
+		return 0, emperror.Wrap(err, "cannot unmarshal result")
+	}
+	if dbq.IsError() {
+		errstr := fmt.Sprintf(
+			"Elastic error: %v - %v at %v:%v",
+			result.Error.Type,
+			result.Error.Reason,
+			result.Error.CausedBy.Line,
+			result.Error.CausedBy.Col,
+		)
+		return 0, fmt.Errorf("%s\n%s", errstr, jsonstr)
+	}
+	return result.Deleted, nil
 }

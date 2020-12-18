@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+	"time"
 )
 
 /* *******************************
@@ -79,6 +80,14 @@ func (item *Item) GetPlace() string {
 func (item *Item) GetDate() string {
 	return item.Data.Date
 
+}
+
+func (item *Item) GetDateAdded() time.Time {
+	d, err := time.Parse("2006-01-02T15:04:05Z", item.Data.ItemDataBase.DateAdded)
+	if err != nil {
+		return time.Now()
+	}
+	return d
 }
 
 func (item *Item) GetCollectionTitle() string {
