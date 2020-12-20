@@ -56,8 +56,9 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 			Type:          "Collections",
 			Notifications: []Notification{},
 			Self:          fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(req.URL.Path, "/")),
-			BaseUrl:       s.addrExt,
+			BaseUrl:       s.addrExt.String(),
 			SelfPath:      req.URL.Path,
+			RelPath:       s.relPath(req.URL.Path),
 			LoginUrl:      s.loginUrl,
 			Title:         "Collections",
 			Prefixes: map[string]string{
@@ -68,6 +69,7 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 				"google":      s.prefixes["cse"],
 			},
 			InstanceName: s.instanceName,
+			server:       s,
 		},
 		QueryApi: "api/search",
 		Result:   map[string][]*SourceData{},

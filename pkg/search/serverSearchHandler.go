@@ -62,7 +62,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		BaseStatus: BaseStatus{
 			Notifications: []Notification{},
 			Self:          fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(req.URL.Path, "/")),
-			BaseUrl:       s.addrExt,
+			BaseUrl:       s.addrExt.String(),
 			Prefixes: map[string]string{
 				"detail":      s.prefixes["detail"],
 				"search":      s.prefixes["search"],
@@ -78,6 +78,8 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 			Token:        "",
 			AmpBase:      "",
 			Type:         "search",
+			server:       s,
+			RelPath:      s.relPath(req.URL.Path),
 		},
 		QueryApi:        "api/search",
 		Facet:           make(map[string]map[string]FacetCountField),
@@ -127,7 +129,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "create token: %v", false, err)
 			return
 		}
-		status.QueryApi = template.URL(fmt.Sprintf("%s/%s?token=%s", s.addrExt, "api/search", jwt))
+		status.QueryApi = template.URL(fmt.Sprintf("%s/%s?token=%s", status.RelPath, "api/search", jwt))
 	}
 	ip, _, _ := net.SplitHostPort(req.RemoteAddr)
 	for _, grp := range s.locations.Contains(ip) {
@@ -323,6 +325,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 				return
 			}
 		} else {
+			s.log.Infof("search.amp.gohtml - empty")
 			w.Header().Set("Cache-Control", "max-age=14400, s-maxage=12200, stale-while-revalidate=9000, public")
 			if tpl, ok := s.templates["search.amp.gohtml"]; ok {
 				var cacheBuffer bytes.Buffer
@@ -385,7 +388,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot execute solr query: %v", false, err)
 		return
 	}
-	status.Result, err = s.doc2result("", "", docs, total, facetFieldCount, facets, 0, status.User, "", highlights)
+	status.Result, err = s.doc2result("", "", docs, total, facetFieldCount, facets, 0, &status.BaseStatus, "", highlights)
 	if err != nil {
 		s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot marshal result: %v", false, err)
 		return
@@ -474,6 +477,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	} else {
 		w.Header().Set("Cache-Control", "max-age=14400, s-maxage=12200, stale-while-revalidate=9000, public")
+		s.log.Infof("search.amp.gohtml")
 		if tpl, ok := s.templates["search.amp.gohtml"]; ok {
 			var cacheBuffer bytes.Buffer
 			writer := io.MultiWriter(&cacheBuffer, w)

@@ -49,8 +49,9 @@ func (s *Server) clusterAllHandler(w http.ResponseWriter, req *http.Request) {
 			Type:          "Collections",
 			Notifications: []Notification{},
 			Self:          fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(req.URL.Path, "/")),
-			BaseUrl:       s.addrExt,
+			BaseUrl:       s.addrExt.String(),
 			SelfPath:      req.URL.Path,
+			RelPath:       s.relPath(req.URL.Path),
 			LoginUrl:      s.loginUrl,
 			Title:         "Wissenscluster",
 			Prefixes: map[string]string{
@@ -61,6 +62,7 @@ func (s *Server) clusterAllHandler(w http.ResponseWriter, req *http.Request) {
 				"google":      s.prefixes["cse"],
 			},
 			InstanceName: s.instanceName,
+			server:       s,
 		},
 		QueryApi: template.URL(fmt.Sprintf("%s/search", s.prefixes["api"])),
 		Result:   []*SourceData{},

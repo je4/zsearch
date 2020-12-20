@@ -38,7 +38,6 @@ type ClusterResultStatus struct {
 }
 
 func (s *Server) clusterHandler(w http.ResponseWriter, req *http.Request) {
-
 	vars := mux.Vars(req)
 
 	clusterkey, ok := vars["csekey"]
@@ -155,8 +154,9 @@ func (s *Server) clusterHandler(w http.ResponseWriter, req *http.Request) {
 				Type:          "search",
 				Notifications: []Notification{},
 				Self:          fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(req.URL.Path, "/")),
-				BaseUrl:       s.addrExt,
+				BaseUrl:       s.addrExt.String(),
 				SelfPath:      req.URL.Path,
+				RelPath:       s.relPath(req.URL.Path),
 				LoginUrl:      s.loginUrl,
 				Title:         "Wissenscluster",
 				InstanceName:  s.instanceName,
@@ -199,11 +199,13 @@ func (s *Server) clusterHandler(w http.ResponseWriter, req *http.Request) {
 				Type:          "search",
 				Notifications: []Notification{},
 				Self:          fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(req.URL.Path, "/")),
-				BaseUrl:       s.addrExt,
+				BaseUrl:       s.addrExt.String(),
 				SelfPath:      req.URL.Path,
+				RelPath:       s.relPath(req.URL.Path),
 				LoginUrl:      s.loginUrl,
 				Title:         "Wissenscluster",
 				InstanceName:  s.instanceName,
+				server:        s,
 			},
 			SearchString:      search,
 			SearchResultTotal: 0,

@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <!doctype html>
-{{$user := .User}}
+{{$user := .BaseStatus}}
 <!-- only open pages and not logged in user can become an AMP page -->
 <html {{if .IsAmp}}⚡="" {{end}}lang="en"{{if ne .OGPNamespace ""}} prefix="og: {{.OGPNamespace}}"{{end}}>
 
@@ -33,11 +33,11 @@ limitations under the License.
 
     <!-- preload standart font -->
     <link rel="preload" as="font"
-          href="{{.BaseUrl}}/static/font/inter/Inter-roman.var.woff2?v=3.15"
+          href="{{.RelPath}}/static/font/inter/Inter-roman.var.woff2?v=3.15"
           type="font/woff2"
           crossorigin="anonymous">
     <link rel="preload" as="font"
-          href="{{.BaseUrl}}/static/font/inter/Inter-Bold.woff2?v=3.15"
+          href="{{.RelPath}}/static/font/inter/Inter-Bold.woff2?v=3.15"
           type="font/woff2"
           crossorigin="anonymous">
 
@@ -181,7 +181,7 @@ limitations under the License.
                     <section class="pt3 pb3 md-pb4 md-pt4">
                     <h2 class="h5 md-h4">References</h2>
                     <ul>
-                    {{$user := .User}}
+                    {{$user := .BaseStatus}}
                     {{range $type, $ref := .Doc.References}}
                         <li><a href="{{$user.LinkSignature $ref.Signature}}">{{$ref.Title}}</a></li>
                     {{end}}

@@ -15,7 +15,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-{{$user := .User}}
+{{$user := .BaseStatus}}
 <!doctype html>
 <html ⚡="" lang="en">
 
@@ -28,17 +28,17 @@ limitations under the License.
     <!-- preload the hero image -->
     <!--
     <link rel="preload" as="image"
-          href="{{.BaseUrl}}/static/img/wide-mediathek-hero_1280w.webp"
+          href="{{.RelPath}}/static/img/wide-mediathek-hero_1280w.webp"
           media="(min-width:40.06rem)">
     -->
 
     <!-- preload standart font -->
     <link rel="preload" as="font"
-          href="{{.BaseUrl}}/static/font/inter/Inter-roman.var.woff2?v=3.15"
+          href="{{.RelPath}}/static/font/inter/Inter-roman.var.woff2?v=3.15"
           type="font/woff2"
           crossorigin="anonymous">
     <link rel="preload" as="font"
-          href="{{.BaseUrl}}/static/font/inter/Inter-Bold.woff2?v=3.15"
+          href="{{.RelPath}}/static/font/inter/Inter-Bold.woff2?v=3.15"
           type="font/woff2"
           crossorigin="anonymous">
 
@@ -138,7 +138,7 @@ limitations under the License.
     {{end}}
     <amp-img
             class="commerce-listing-banner xs-hide sm-hide"
-            src="{{.BaseUrl}}/static/img/wide-mediathek-hero_1280w.webp"
+            src="{{.RelPath}}/static/img/wide-mediathek-hero_1280w.webp"
             width="2560"
             height="400"
             layout="responsive"
@@ -147,8 +147,8 @@ limitations under the License.
         <div placeholder="" class="commerce-loader"></div>
         <amp-img
                 class="commerce-listing-banner xs-hide sm-hide"
-                src="{{.BaseUrl}}/static/img/wide-mediathek-hero.jpg"
-                srcset="{{.BaseUrl}}/static/img/wide-mediathek-hero_1280w.jpg 1280w, {{.BaseUrl}}/static/img/wide-mediathek-hero_640w.jpg 640w"
+                src="{{.RelPath}}/static/img/wide-mediathek-hero.jpg"
+                srcset="{{.RelPath}}/static/img/wide-mediathek-hero_1280w.jpg 1280w, {{.RelPath}}/static/img/wide-mediathek-hero_640w.jpg 640w"
                 width="2560"
                 height="400"
                 alt="Mediathek Search"
@@ -170,7 +170,7 @@ limitations under the License.
         </script>
     </amp-state>
     {{$currentSrch := .SearchName}}
-    {{$cseBase := (print .BaseUrl "/" (.Prefixes.cluster))}}
+    {{$cseBase := (print .RelPath "/" (.Prefixes.cluster))}}
     {{$searchString := .SearchString}}
 
     <!-- END - virtual states for search interaction -->

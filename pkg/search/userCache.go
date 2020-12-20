@@ -61,7 +61,6 @@ func (u User) LinkSignatureCache(signature string) string {
 	}
 	return urlstr
 }
-
 func (u User) LinkSearch(query string, facets ...string) template.URL {
 	urlstr := fmt.Sprintf("%s/%s?searchtext=%s", u.Server.addrExt, u.Server.prefixes["search"], url.QueryEscape(query))
 	for _, f := range facets {

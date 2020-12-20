@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"net/http"
-	"net/url"
 	"strings"
 )
 
@@ -87,12 +86,7 @@ func (s *Server) updateHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	extUrl, err := url.Parse(s.addrExt)
-	if err != nil {
-		s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot parse addrExt %s: %v", false, s.addrExt, err)
-		return
-	}
-	theUrl := fmt.Sprintf("%s/%s/%s", extUrl, s.prefixes["detail"], signature)
+	theUrl := fmt.Sprintf("%s/%s/%s", s.addrExt.String(), s.prefixes["detail"], signature)
 	updateUrl, err := s.ampCache.BuildUpdateUrl(theUrl, s.ampApiKey)
 	if err != nil {
 		s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot build update url: %v", false, err)
@@ -101,7 +95,7 @@ func (s *Server) updateHandler(w http.ResponseWriter, req *http.Request) {
 	s.log.Infof("update url: %v", updateUrl)
 	w.Write([]byte(updateUrl))
 
-	refresRSA, err := s.ampCache.BuildRefreshRSA(extUrl.Host)
+	refresRSA, err := s.ampCache.BuildRefreshRSA(s.addrExt.Host)
 	if err != nil {
 		s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot build rsa refresh url: %v", false, err)
 		return

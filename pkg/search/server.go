@@ -68,10 +68,12 @@ type BaseStatus struct {
 	BaseUrl       string
 	Prefixes      map[string]string
 	SelfPath      string
+	RelPath       string
 	AmpBase       string
 	LoginUrl      string
 	Title         string
 	InstanceName  string
+	server        *Server
 }
 
 type DetailStatus struct {
@@ -206,6 +208,147 @@ type SearchResultItem struct {
 
 type KV struct{ Key, Name string }
 
+func (bs BaseStatus) LinkSignatureCache(signature string) string {
+	urlstr := fmt.Sprintf("%s/%s/%s", bs.RelPath, bs.server.prefixes["detail"], signature)
+	urlstr = strings.TrimLeft(urlstr, "/")
+	var err error
+	if bs.server.ampCache != nil {
+		urlstr, err = bs.server.ampCache.BuildUrl(urlstr, amp.PAGE)
+		if err != nil {
+			return fmt.Sprintf("ERROR: %v", err)
+		}
+	}
+	return urlstr
+}
+func (bs BaseStatus) LinkSearch(query string, facets ...string) template.URL {
+	urlstr := fmt.Sprintf("%s/%s?searchtext=%s", bs.RelPath, bs.server.prefixes["search"], url.QueryEscape(query))
+	urlstr = strings.TrimLeft(urlstr, "/")
+	for _, f := range facets {
+		urlstr += fmt.Sprintf("&%s=true", url.QueryEscape(f))
+	}
+	if bs.User.LoggedIn {
+		jwt, err := NewJWT(
+			bs.server.jwtKey,
+			"search",
+			"HS256",
+			int64(bs.server.linkTokenExp.Seconds()),
+			"catalogue",
+			"mediathek",
+			bs.User.Id)
+		if err != nil {
+			return template.URL(fmt.Sprintf("ERROR: %v", err))
+		}
+		urlstr += fmt.Sprintf("&token=%s", jwt)
+	} else {
+		if bs.server.ampCache != nil {
+			var err error
+			urlstr, err = bs.server.ampCache.BuildUrl(urlstr, amp.PAGE)
+			if err != nil {
+				return template.URL(fmt.Sprintf("ERROR: %v", err))
+			}
+		}
+	}
+	return template.URL(urlstr)
+
+}
+func (bs BaseStatus) LinkSignature(signature string) string {
+	urlstr := fmt.Sprintf("%s/%s/%s", bs.RelPath, bs.server.prefixes["detail"], signature)
+	urlstr = strings.TrimLeft(urlstr, "/")
+	if bs.User.LoggedIn {
+		jwt, err := NewJWT(
+			bs.server.jwtKey,
+			fmt.Sprintf("detail:%s", signature),
+			"HS256",
+			int64(bs.server.linkTokenExp.Seconds()),
+			"catalogue",
+			"mediathek",
+			bs.User.Id)
+		if err != nil {
+			return fmt.Sprintf("ERROR: %v", err)
+		}
+		urlstr = fmt.Sprintf("%s?token=%s", urlstr, jwt)
+	} else {
+		if bs.server.ampCache != nil {
+			var err error
+			urlstr, err = bs.server.ampCache.BuildUrl(urlstr, amp.PAGE)
+			if err != nil {
+				return fmt.Sprintf("ERROR: %v", err)
+			}
+		}
+	}
+	return urlstr
+}
+func (bs BaseStatus) LinkCollections() string {
+	urlstr := fmt.Sprintf("%s/%s/%s", bs.RelPath, bs.server.prefixes["collections"])
+	urlstr = strings.TrimLeft(urlstr, "/")
+	if bs.User.LoggedIn {
+		jwt, err := NewJWT(
+			bs.User.Server.jwtKey,
+			"collections",
+			"HS256",
+			int64(bs.server.linkTokenExp.Seconds()),
+			"catalogue",
+			"mediathek",
+			bs.User.Id)
+		if err != nil {
+			return fmt.Sprintf("ERROR: %v", err)
+		}
+		urlstr = fmt.Sprintf("%s?token=%s", urlstr, jwt)
+	} else {
+		if bs.server.ampCache != nil {
+			var err error
+			urlstr, err = bs.server.ampCache.BuildUrl(urlstr, amp.PAGE)
+			if err != nil {
+				return fmt.Sprintf("ERROR: %v", err)
+			}
+		}
+	}
+	return urlstr
+}
+func (bs BaseStatus) LinkSubject(area, sub, subject string, params ...string) string {
+	prefix, ok := bs.server.prefixes[area]
+	if !ok {
+		bs.server.log.Errorf("invalid area %s in link", area)
+		return fmt.Sprintf("#invalid area %s in link", area)
+	}
+	var urlstr string
+	if sub != "" {
+		urlstr = fmt.Sprintf("%s/%s/%s", bs.RelPath, prefix, sub)
+	} else {
+		urlstr = fmt.Sprintf("%s/%s", bs.RelPath, prefix)
+	}
+	urlstr = strings.TrimLeft(urlstr, "/")
+	if bs.User.LoggedIn {
+		jwt, err := NewJWT(
+			bs.server.jwtKey,
+			subject,
+			"HS256",
+			int64(bs.server.linkTokenExp.Seconds()),
+			"catalogue",
+			"mediathek",
+			bs.User.Id)
+		if err != nil {
+			return fmt.Sprintf("ERROR: %v", err)
+		}
+		urlstr = fmt.Sprintf("%s?token=%s", urlstr, jwt)
+		if len(params) > 0 {
+			urlstr += "&" + strings.Join(params, "&")
+		}
+	} else {
+		if bs.server.ampCache != nil {
+			var err error
+			urlstr, err = bs.server.ampCache.BuildUrl(urlstr, amp.PAGE)
+			if err != nil {
+				return fmt.Sprintf("ERROR: %v", err)
+			}
+		}
+		if len(params) > 0 {
+			urlstr += "?" + strings.Join(params, "&")
+		}
+	}
+	return urlstr
+}
+
 func (ng NetGroups) Contains(str string) []string {
 	var groups []string
 
@@ -228,7 +371,7 @@ type Server struct {
 	userCache          *UserCache
 	host               string
 	port               string
-	addrExt            string
+	addrExt            *url.URL
 	prefixes           map[string]string
 	staticDir          string
 	staticCacheControl string
@@ -293,13 +436,18 @@ func NewServer(mts *Search, uc *UserCache, google *customsearch.Service, templat
 	}
 	ampCache, _ := aCaches[AmpCache]
 
+	extUrl, err := url.Parse(addrExt)
+	if err != nil {
+		return nil, emperror.Wrapf(err, "cannot parse external address %s", addrExt)
+	}
+
 	srv := &Server{
 		mts:                mts,
 		userCache:          uc,
 		google:             google,
 		host:               host,
 		port:               port,
-		addrExt:            addrExt,
+		addrExt:            extUrl,
 		prefixes:           prefixes,
 		mediaserver:        mediaserver,
 		mediaserverKey:     mediaserverkey,
@@ -541,7 +689,7 @@ func (s *Server) DoPanicf(user *User, req *http.Request, writer http.ResponseWri
 				Type:          "error",
 				User:          user,
 				Self:          fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(req.URL.Path, "/")),
-				BaseUrl:       s.addrExt,
+				BaseUrl:       s.addrExt.String(),
 				SelfPath:      req.URL.Path,
 				LoginUrl:      s.loginUrl,
 				Notifications: []Notification{},
@@ -951,7 +1099,7 @@ func (s *Server) doc2result(
 	facetFieldCount FacetCountResult,
 	facets map[string]TermFacet,
 	start int64,
-	user *User,
+	bs *BaseStatus,
 	next string,
 	highlight []map[string][]string) (*SearchResult, error) {
 	result := &SearchResult{
@@ -989,10 +1137,10 @@ func (s *Server) doc2result(
 		if doc == nil {
 			return nil, fmt.Errorf("empty document %v", key)
 		}
-		link := user.LinkSignature(doc.Signature)
-		if !strings.HasPrefix(strings.ToLower(link), "http") {
-			link = "detail/" + link
-		}
+		link := bs.LinkSignature(doc.Signature)
+		//		if !strings.HasPrefix(strings.ToLower(link), "http") {
+		//			link = "detail/" + link
+		//		}
 		icon, ok := s.icons[strings.ToLower(doc.Type)]
 		if !ok {
 			icon = "#ion-open-outline"
@@ -1039,7 +1187,7 @@ func (s *Server) doc2result(
 		}
 		for acl, groups := range doc.ACL {
 			for _, group := range groups {
-				for _, ugroup := range user.Groups {
+				for _, ugroup := range bs.User.Groups {
 					if group == ugroup {
 						switch acl {
 						case "meta":
@@ -1059,7 +1207,7 @@ func (s *Server) doc2result(
 				}
 			}
 		}
-		if user.inGroup(s.adminGroup) {
+		if bs.User.inGroup(s.adminGroup) {
 			item.MetaOK = true
 			item.ContentOK = true
 		}
@@ -1080,9 +1228,9 @@ func (s *Server) doc2json(search string,
 	facetFieldCount FacetCountResult,
 	facets map[string]TermFacet,
 	start int64,
-	user *User,
+	bs *BaseStatus,
 	next string) ([]byte, error) {
-	result, err := s.doc2result(search, query, docs, total, facetFieldCount, facets, start, user, next, nil)
+	result, err := s.doc2result(search, query, docs, total, facetFieldCount, facets, start, bs, next, nil)
 	if err != nil {
 		return nil, emperror.Wrap(err, "cannot format result")
 	}
@@ -1091,4 +1239,17 @@ func (s *Server) doc2json(search string,
 		return nil, emperror.Wrapf(err, "cannot marshal result")
 	}
 	return r, nil
+}
+
+func (s *Server) relPath(path string) string {
+	parts := len(strings.Split(strings.TrimLeft(path, "/"), "/")) - 1
+	relpath := ""
+	for i := 0; i < parts; i++ {
+		relpath += "../"
+	}
+	relpath = strings.TrimRight(relpath, "/")
+	if relpath == "" {
+		relpath = "."
+	}
+	return relpath
 }
