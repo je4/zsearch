@@ -41,7 +41,7 @@ type tElasticTermQuery map[string]interface{}
 func (q *tElasticTermQuery) FieldValue() *tElasticFieldValue {
 	return &tElasticFieldValue{"term": q}
 }
-func elasticTermQuery(field string, value string, boost float64) *tElasticTermQuery {
+func elasticTermQuery(field string, value interface{}, boost float64) *tElasticTermQuery {
 	fldval := tElasticFieldValue{"value": value}
 	if boost > 0.0 {
 		fldval["boost"] = boost

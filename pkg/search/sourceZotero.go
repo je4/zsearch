@@ -537,14 +537,14 @@ func (item *Item) GetQueries() []Query {
 				break
 			}
 			queries = append(queries, Query{
-				Label:  fmt.Sprintf("%s - %s - %s", title, parentColl.Data.Name, subParentColl.Data.Name),
-				Search: fmt.Sprintf(`cat:"%v!!%v!!%v!!%v"`, item.Name(), item.Group.Data.Name, parentColl.Data.Name, subParentColl.Data.Name),
+				Label:  fmt.Sprintf("%s - %s - %s", title, subParentColl.Data.Name, parentColl.Data.Name),
+				Search: fmt.Sprintf(`cat:"%v!!%v!!%v!!%v"`, item.Name(), item.Group.Data.Name, subParentColl.Data.Name, parentColl.Data.Name),
 			})
 		}
 
 		queries = append(queries, Query{
 			Label:  fmt.Sprintf("%s - %s", title, parentColl.Data.Name),
-			Search: fmt.Sprintf(`cat:"%v!!%v!!%v"`, item.Name(), item.Group.Data.Name, parentColl.Data.Name),
+			Search: fmt.Sprintf(`cat:"%v!!%v!!%v"`, item.Name(), parentColl.Data.Name, item.Group.Data.Name),
 		})
 
 	}

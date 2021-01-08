@@ -476,7 +476,14 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]map[string][]string, []
 	if len(filters) > 0 {
 		bq.withFilter(filters...)
 	}
-	query.withBooleanQuery(bq)
+
+	// query.withBooleanQuery(bq)
+	boost := elasticBoostingQuery(
+		elasticQuery().withBooleanQuery(bq).FieldValue(),
+		elasticTermQuery("hasMedia", false, 0.0).FieldValue(),
+		0.5,
+	)
+	query.withBoostingQuery(boost)
 
 	pfterms := []*tElasticFieldValue{}
 	var aggregations *tElasticSearchAggregations
