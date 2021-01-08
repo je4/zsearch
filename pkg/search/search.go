@@ -161,17 +161,15 @@ func (s *Search) LoadEntity(id string) (*SourceData, error) {
 	return e, nil
 }
 
-func (s *Search) StatsByACL(catalog string) (int64, FacetCountResult, error) {
+func (s *Search) StatsByACL(catalog []string) (int64, FacetCountResult, error) {
 	total, result, err := s.se.StatsByACL(catalog)
 	return total, result, err
 }
 
 func (s *Search) Search(cfg *SearchConfig) ([]map[string][]string, []*SourceData, int64, FacetCountResult, error) {
-
 	highlights, result, num, fts, err := s.se.Search(cfg)
 	if err != nil {
 		return nil, nil, 0, nil, emperror.Wrap(err, "cannot search")
 	}
-
 	return highlights, result, num, fts, nil
 }

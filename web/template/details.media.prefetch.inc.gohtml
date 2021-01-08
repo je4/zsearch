@@ -20,6 +20,13 @@
         <link rel="preload" as="image"
               href="{{medialink $image.Uri "resize" "size1280x720/formatWEBP" (not .ContentPublic)}}">
     {{end}}
+{{else if .Doc.Media.pdf}}
+    {{if gt (len .Doc.Media.pdf) 0}}
+        {{$pdf := index .Doc.Media.pdf 0}}
+        {{$poster := printf "%s$$poster" $pdf.Uri}}
+        <link rel="preload" as="image"
+              href="{{medialink $poster "resize" "size640x500/crop/formatJPEG" (not .ContentPublic)}}">
+    {{end}}
 {{end}}
 <!-- END Media Prefetch Area -->
 

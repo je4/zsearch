@@ -92,7 +92,7 @@ type SubFilter struct {
 }
 
 type Query struct {
-	BaseCatalog string      `toml:"basecatalog"`
+	BaseCatalog []string    `toml:"basecatalog"`
 	SubFilter   []SubFilter `toml:"subfilter"`
 }
 

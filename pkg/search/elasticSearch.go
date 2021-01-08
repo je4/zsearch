@@ -235,11 +235,13 @@ func (mte *MTElasticSearch) LoadDocs(ids []string, ctx context.Context) (map[str
 	return result, nil
 }
 
-func (mte *MTElasticSearch) StatsByACL(catalog string) (int64, FacetCountResult, error) {
+func (mte *MTElasticSearch) StatsByACL(catalog []string) (int64, FacetCountResult, error) {
 	query := elasticQuery()
 	filters := []*tElasticFieldValue{}
-	if catalog != "" {
-		filters = append(filters, elasticTermsQuery("catalog", 0, catalog).FieldValue())
+	if len(catalog) > 0 {
+		for _, c := range catalog {
+			filters = append(filters, elasticTermsQuery("catalog", 0, c).FieldValue())
+		}
 	}
 	bq := elasticBooleanQuery(0)
 	if len(filters) > 0 {

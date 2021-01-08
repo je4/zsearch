@@ -399,7 +399,7 @@ type Server struct {
 	facets             SolrFacetList
 	locations          NetGroups
 	icons              map[string]string
-	baseCatalog        string
+	baseCatalog        []string
 	subFilters         []SubFilter
 	funcMap            template.FuncMap
 	collectionsCatalog string
@@ -410,7 +410,7 @@ type Server struct {
 	instanceName       string
 }
 
-func NewServer(mts *Search, uc *UserCache, google *customsearch.Service, templateFiles map[string][]string, templateDev bool, InstanceName, addr, addrExt, mediaserver, mediaserverkey string, mediatokenexp time.Duration, log *logging.Logger, accesslog io.Writer, prefixes map[string]string, staticDir, staticCacheControl, jwtKey string, jwtAlg []string, linkTokenExp time.Duration, loginUrl, loginIssuer, guestGroup, adminGroup, AmpCache, ampApiKeyFile string, searchFields map[string]string, facets SolrFacetList, locations NetGroups, icons map[string]string, baseCatalog string, subFilter []SubFilter, collectionsCatalog, clusterCatalog string, googleCSEKey map[string]KV) (*Server, error) {
+func NewServer(mts *Search, uc *UserCache, google *customsearch.Service, templateFiles map[string][]string, templateDev bool, InstanceName, addr, addrExt, mediaserver, mediaserverkey string, mediatokenexp time.Duration, log *logging.Logger, accesslog io.Writer, prefixes map[string]string, staticDir, staticCacheControl, jwtKey string, jwtAlg []string, linkTokenExp time.Duration, loginUrl, loginIssuer, guestGroup, adminGroup, AmpCache, ampApiKeyFile string, searchFields map[string]string, facets SolrFacetList, locations NetGroups, icons map[string]string, baseCatalog []string, subFilter []SubFilter, collectionsCatalog, clusterCatalog string, googleCSEKey map[string]KV) (*Server, error) {
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		//log.Panicf("cannot split address %s: %v", addr, err)

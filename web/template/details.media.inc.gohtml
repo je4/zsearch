@@ -231,6 +231,7 @@
                 <div>
                     <amp-iframe
                             {{$pdf := index .Doc.Media.pdf 0}}
+                            {{$poster := printf "%s$$poster" $pdf.Uri}}
                             src="{{medialink $pdf.Uri "iframe" "" (not $contentPublic)}}"
                             [src]="pdf.pdfs[pdf.selectedPdf]"
                             sandbox="allow-scripts allow-same-origin"
@@ -239,7 +240,7 @@
                             height="1000"
                             rel="noreferrer"
                             layout="responsive">
-                        <amp-img layout="fill" src="{{.RelPath}}/static/img/adobe-pdf-icon.svg" placeholder></amp-img>
+                        <amp-img layout="fill" src="{{medialink $poster "resize" "size640x500/crop/formatJPEG" (not $contentPublic)}}" placeholder></amp-img>
                     </amp-iframe>
                 </div>
                 {{if gt $len 1}}

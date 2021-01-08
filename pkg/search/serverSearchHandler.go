@@ -342,11 +342,11 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	if s.baseCatalog != "" {
+	if len(s.baseCatalog) > 0 {
 		if _, ok := filterField["catalog"]; !ok {
 			filterField["catalog"] = []string{}
 		}
-		filterField["catalog"] = append(filterField["catalog"], s.baseCatalog)
+		filterField["catalog"] = append(filterField["catalog"], s.baseCatalog...)
 	}
 	cfg := &SearchConfig{
 		Fields:         make(map[string][]string),
