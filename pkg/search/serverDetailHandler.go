@@ -190,6 +190,33 @@ func (s *Server) getDetailStatus(signature, path, tokenstring, remoteHost string
 		status.MetaDescription = status.MetaDescription[0:155] + "..."
 	}
 
+	if len(status.Doc.Queries) > 0 {
+		_, filterField, qstr := s.string2QList(status.Doc.Queries[0].Search, map[string][]string{})
+
+		//filterField := map[string][]string{}
+		cfg := &SearchConfig{
+			Fields:         make(map[string][]string),
+			QStr:           qstr,
+			FiltersFields:  filterField,
+			Facets:         map[string]TermFacet{},
+			Groups:         status.User.Groups,
+			ContentVisible: false,
+			Start:          0,
+			Rows:           10,
+			IsAdmin:        status.User.inGroup(s.adminGroup),
+		}
+
+		highlights, docs, total, facetFieldCount, err := s.mts.Search(cfg)
+		if err != nil {
+			return nil, emperror.Wrap(err, "cannot execute solr query")
+		}
+		status.Result, err = s.doc2result("", "", docs, total, facetFieldCount, map[string]TermFacet{}, 0, &status.BaseStatus, "", highlights)
+		if err != nil {
+			return nil, emperror.Wrap(err, "cannot marshal result")
+		}
+		status.SearchResultRows = len(docs)
+		status.SearchResultTotal = int(total)
+	}
 	return &status, nil
 }
 

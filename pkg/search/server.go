@@ -78,13 +78,16 @@ type BaseStatus struct {
 
 type DetailStatus struct {
 	BaseStatus
-	Doc             *SourceData
-	MetaPublic      bool
-	ContentPublic   bool
-	MetaOK          bool
-	ContentOK       bool
-	IsAmp           bool
-	MetaDescription string
+	Doc               *SourceData
+	MetaPublic        bool
+	ContentPublic     bool
+	MetaOK            bool
+	ContentOK         bool
+	IsAmp             bool
+	MetaDescription   string
+	Result            *SearchResult
+	SearchResultRows  int
+	SearchResultTotal int
 }
 
 type FacetCountField struct {

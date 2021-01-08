@@ -1,0 +1,154 @@
+@media (prefers-color-scheme: light) {
+    html {
+        font-family: Inter,sans-serif;
+        font-weight: 400;
+    }
+
+    body {
+        background: white;
+        color: #222;
+
+    }
+
+    .amp-mode-mouse  {
+        background-color: white;
+        color: #222
+    }
+
+    .amp-mode-mouse .gsearch-nav-link:after {
+        background-color: #222;
+    }
+
+    .highlight {
+        color: #ffffff;
+        background-color: #888888;
+    }
+
+    .highlightbox {
+        padding-left: 10px;
+        padding-right: 10px;
+        margin-top: 5px;
+        margin-left: 20px;
+        margin-right: 20px;
+        border-left: 1px solid #222222;
+        border-right: 1px solid #222222;
+        font-style: italic;
+    }
+
+    .commerce-listing-banner {
+        width: 100%
+    }
+
+
+    .gsearch-btn-selectlist {
+        /* background-color: white; */
+        color: #222;
+    }
+
+    .h1,.h2,.h3,.h4,.h5,.h6,.h7,h1,h2,h3,h4,h5,h6,h7 {
+        color: black;
+        font-family: Inter,sans-serif;
+        font-weight: 700;
+    }
+
+    button,input,optgroup,select,textarea {
+        font-weight: 400;
+    }
+
+    input {
+        background-color: white;
+        color: black;
+    }
+
+    .gsearch-headerbar {
+        color: #f88;
+        background-color: white;
+        box-shadow: none;
+        border-bottom: 1px solid #f3f3f3;
+        height: 5em;
+    }
+
+    .gsearch-btn {
+        border-color: #222;
+        font-weight: 700;
+        background-color: white;
+    }
+
+    .gsearch-btn:visited {
+        color: white;
+    }
+
+    .gsearch-facet {
+        background-color: white;
+        color: #222;
+        border-color: #222;
+    }
+
+    .gsearch-facet-inv {
+        background-color: #222;
+        color: white;
+        border-color: white;
+    }
+
+    .gsearch-facet:hover {
+        background-color: #222;
+        color: white;
+    }
+
+    .gsearch-facet-inv:hover {
+        background-color: white;
+        color: #222;
+    }
+
+    .md-commerce-header {
+    }
+
+    .md-result-list {
+        border-bottom-color: lightgrey;
+        border-bottom-color: rgba(0,0,0,0.4)
+    }
+
+    /* ******** Elevation ****** */
+
+    .elevation00dp {
+        background-color: rgba(0,0,0,0);
+    }
+
+    .elevation01dp {
+        background-color: rgba(0,0,0,0.05);
+    }
+
+    .elevation02dp {
+        background-color: rgba(0,0,0,0.07);
+    }
+
+    .elevation03dp {
+        background-color: rgba(0,0,0,0.08);
+    }
+
+    .elevation04dp {
+        background-color: rgba(0,0,0,0.09);
+    }
+
+    .elevation06dp {
+        background-color: rgba(0,0,0,0.11);
+    }
+
+    .elevation08dp {
+        background-color: rgba(0,0,0,0.12);
+    }
+
+    .elevation12dp {
+        background-color: rgba(0,0,0,0.14);
+    }
+
+    .elevation16dp {
+        background-color: rgba(0,0,0,0.15);
+    }
+
+    .elevation24dp {
+        background-color: rgba(0,0,0,0.16);
+    }
+}
+
+
