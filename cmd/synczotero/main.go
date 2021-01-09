@@ -38,7 +38,7 @@ import (
 func buildSitemap(mte *search.MTElasticSearch, config *Config, log *logging.Logger) error {
 	var size int64 = 3000
 	cfg := &search.ScrollConfig{
-		FiltersFields:  map[string][]string{},
+		FiltersFields:  map[string][]string{"catalog": config.Query.BaseCatalog},
 		QStr:           "",
 		Groups:         []string{"global/guest"},
 		ContentVisible: true,

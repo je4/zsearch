@@ -69,6 +69,11 @@ type Hypothesis struct {
 	Endpoint string `toml:"endpoint"`
 }
 
+type Query struct {
+	BaseCatalog []string `toml:"basecatalog"`
+	//SubFilter   []SubFilter `toml:"subfilter"`
+}
+
 type Config struct {
 	Logfile             string            `toml:"logfile"`
 	Loglevel            string            `toml:"loglevel"`
@@ -86,6 +91,7 @@ type Config struct {
 	S3                  Cfg_S3            `toml:"s3"`
 	Groups              []int64           `toml:"groups"`
 	ClearBeforSync      []int64           `toml:"clearbeforesync"`
+	Query               Query             `toml:"query"`
 }
 
 var prefixNames = []string{
