@@ -15,32 +15,32 @@ clearbeforesync = [
     # 2612786, # lernen
 
     # 2206003, # ACT Basel  // indexer - not yet implemented
-    2486551, # ACT 2020
-    2483850, # Albena
-    2317722, # archive_des_ephemeren
-    2474728, # armin
-    2561875, # company_cultures__leitbilder
+    # 2486551, # ACT 2020
+    # 2483850, # Albena
+    # 2317722, # archive_des_ephemeren
+    # 2474728, # armin
+    # 2561875, # company_cultures__leitbilder
     # 2327162, # digitalbrainstorming
-    2260611, # digitale see
-    2605562, # erinnerungsraum
-    29831, # HGK Fotoarchiv
-    2250437, # Grenzgang
-    704562,  # Handapparate
-    2545256, # HGK Collections
-    2570300, # hphuser_import
-    1510019, # Hyperwerk
-    2571475, # IKUVID
-    2315925, # Masterstudio / Thesen
-    2608921, # Institut Kunst
-    1510009, # Institut Kunst intern
-    1510034, # institut_mode_design
-    2571213, # SIK interviews archiv performativ
-    2009066, # invar
-    2476895, # irf
+    # 2260611, # digitale see
+    # 2605562, # erinnerungsraum
+    # 29831, # HGK Fotoarchiv
+    # 2250437, # Grenzgang
+    # 704562,  # Handapparate
+    # 2545256, # HGK Collections
+    # 2570300, # hphuser_import
+    # 1510019, # Hyperwerk
+    # 2571475, # IKUVID
+    # 2315925, # Masterstudio / Thesen
+    # 2608921, # Institut Kunst
+    # 1510009, # Institut Kunst intern
+    # 1510034, # institut_mode_design
+    # 2571213, # SIK interviews archiv performativ
+    # 2009066, # invar
+    # 2476895, # irf
     # 2358931, # julia
-    2582183, # julia_2020
+    # 2582183, # julia_2020
     # 2634291, # knstlerinnen
-    # 2608904, # panch
+    2608904, # panch
     # 2497586, # pascale_grau
     # 1624911, # pcb_basel
     # 2604593, # Peter von Arx
@@ -58,32 +58,32 @@ groups = [
     # 2612786, # lernen
 
     # 2206003, # ACT Basel  // indexer - not yet implemented
-    2486551, # ACT 2020
-    2483850, # Albena
-    2317722, # archive_des_ephemeren
-    2474728, # armin
-    2561875, # company_cultures__leitbilder
-    # 2327162, # digitalbrainstorming
-    2260611, # digitale see
-    2605562, # erinnerungsraum
+    # 2486551, # ACT 2020
+    # 2483850, # Albena
+    # 2317722, # archive_des_ephemeren
+    # 2474728, # armin
+    # 2561875, # company_cultures__leitbilder
+    # # 2327162, # digitalbrainstorming
+    # 2260611, # digitale see
+    # 2605562, # erinnerungsraum
     # 2329831, # HGK Fotoarchiv
-    2250437, # Grenzgang
-    704562,  # Handapparate
-    2545256, # HGK Collections
-    2570300, # hphuser_import
-    1510019, # Hyperwerk
-    2571475, # IKUVID
-    2315925, # Masterstudio / Thesen
-    2608921, # Institut Kunst
-    1510009, # Institut Kunst intern
-    1510034, # institut_mode_design
-    2571213, # SIK interviews archiv performativ
-    2009066, # invar
-    2476895, # irf
+    # 2250437, # Grenzgang
+    # 704562,  # Handapparate
+    # 2545256, # HGK Collections
+    # 2570300, # hphuser_import
+    # 1510019, # Hyperwerk
+    # 2571475, # IKUVID
+    # 2315925, # Masterstudio / Thesen
+    # 2608921, # Institut Kunst
+    # 1510009, # Institut Kunst intern
+    # 1510034, # institut_mode_design
+    # 2571213, # SIK interviews archiv performativ
+    # 2009066, # invar
+    # 2476895, # irf
     # 2358931, # julia
-    2582183, # julia_2020
+    # 2582183, # julia_2020
     # 2634291, # knstlerinnen
-    # 2608904, # panch
+    2608904, # panch
     # 2497586, # pascale_grau
     # 1624911, # pcb_basel
     # 2604593, # Peter von Arx
