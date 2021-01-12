@@ -163,10 +163,26 @@ func (s *Server) getDetailStatus(signature, path, tokenstring, remoteHost string
 			}
 		}
 	}
-	// remove references, which failed on load
-	for _, key := range removeRefs {
-		status.Doc.References = append(status.Doc.References[:key], status.Doc.References[key+1:]...)
+	/*
+		// remove references, which failed on load
+		for _, key := range removeRefs {
+			status.Doc.References = append(status.Doc.References[:key], status.Doc.References[key+1:]...)
+		}
+	*/
+	validRef := []Reference{}
+	for key, ref := range status.Doc.References {
+		valid := true
+		for _, invalid := range removeRefs {
+			if key == invalid {
+				valid = false
+				break
+			}
+		}
+		if valid {
+			validRef = append(validRef, ref)
+		}
 	}
+	status.Doc.References = validRef
 
 	status.Title = status.Doc.CollectionTitle
 	status.IsAmp = !status.User.LoggedIn && !status.User.LoggedOut && status.MetaOK

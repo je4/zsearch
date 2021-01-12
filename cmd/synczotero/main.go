@@ -297,6 +297,9 @@ func main() {
 			group.IterateItemsAllLocal(
 				&since,
 				func(item *zotero.Item) error {
+					if item.Deleted || item.Trashed {
+						return nil
+					}
 					if item.Data.ParentItem != "" {
 						return nil
 					}

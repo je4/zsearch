@@ -439,14 +439,14 @@ func (item *Item) GetAbstract() string {
 	return zotero.TextNoMeta(item.Data.AbstractNote + "\n" + item.Data.Extra)
 }
 
-var zoterolinkregexp = regexp.MustCompile("^https?://org/Groups/([^/]+)/items/([^/]+)$")
+var zoterolinkregexp = regexp.MustCompile("^https?://zotero.org/groups/([^/]+)/items/([^/]+)$")
 
 func (item *Item) GetReferences() []Reference {
 	var references []Reference
 	for key, values := range item.Data.ItemDataBase.Relations {
 		for _, value := range values {
 			if matches := zoterolinkregexp.FindStringSubmatch(value); matches != nil {
-				signature := fmt.Sprintf("zotero-%s.%s", matches[1], matches[2])
+				signature := fmt.Sprintf("%s-%s.%s", item.Name(), matches[1], matches[2])
 				references = append(references, Reference{
 					Type:      key,
 					Signature: signature,
@@ -527,16 +527,17 @@ func (item *Item) GetQueries() []Query {
 	queries := []Query{}
 
 	appendQuery := func(qs []Query, newqueries ...Query) []Query {
-		var toAppend []Query
 		for _, newquery := range newqueries {
-			toAppend = []Query{}
+			found := false
 			for _, q := range qs {
 				if q.Search == newquery.Search {
+					found = true
 					break
 				}
-				toAppend = append(toAppend, newquery)
 			}
-			qs = append(qs, toAppend...)
+			if !found {
+				qs = append(qs, newquery)
+			}
 		}
 		return qs
 	}
@@ -575,7 +576,7 @@ func (item *Item) GetQueries() []Query {
 		Search: fmt.Sprintf(`cat:"%v!!%v"`, item.Name(), item.Group.Data.Name),
 	})
 	if item.Data.ArchiveLocation != "" {
-		queries = append(queries, Query{
+		queries = appendQuery(queries, Query{
 			Label:  "Group",
 			Search: item.Data.ArchiveLocation,
 		})

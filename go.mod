@@ -23,7 +23,7 @@ require (
 	github.com/htfy96/reformism v0.0.0-20160819020323-e5bfca398e73
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/je4/sitemap v1.0.1-0.20201109172531-8a7e0eb5b921
-	github.com/je4/zsync v0.0.0-20201210102053-3cccc5c0f3ee
+	github.com/je4/zsync v0.0.0-20210112120625-a1894ce600a0
 	github.com/juliangruber/go-intersect v1.0.0
 	github.com/mitchellh/copystructure v1.0.0 // indirect
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7

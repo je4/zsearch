@@ -237,6 +237,8 @@ github.com/je4/sitemap v1.0.1-0.20201109172531-8a7e0eb5b921 h1:YBBfnbPVf87tQzEpL
 github.com/je4/sitemap v1.0.1-0.20201109172531-8a7e0eb5b921/go.mod h1:wPwiCw+mNfXMHsKhHvXCZOXvn87SG9IjGEBY33pmoj0=
 github.com/je4/zsync v0.0.0-20201210102053-3cccc5c0f3ee h1:62MHsPm+tTds6xBj9oFDFUpdq/VxJ1ro3q5NJgfg4CQ=
 github.com/je4/zsync v0.0.0-20201210102053-3cccc5c0f3ee/go.mod h1:DYxU/VKCfo54AneuWkqIk8liU46GUophZ4Q7Cg4qJiM=
+github.com/je4/zsync v0.0.0-20210112120625-a1894ce600a0 h1:MGXcwlxUk2oEBeWqnsI9IatmVGx8fq5csuXZb/dHIrQ=
+github.com/je4/zsync v0.0.0-20210112120625-a1894ce600a0/go.mod h1:DYxU/VKCfo54AneuWkqIk8liU46GUophZ4Q7Cg4qJiM=
 github.com/jessevdk/go-flags v1.4.0/go.mod h1:4FA24M0QyGHXBuZZK/XkWh8h0e1EYbRYJSGM75WSRxI=
 github.com/jmespath/go-jmespath v0.4.0/go.mod h1:T8mJZnbsbmF+m6zOOFylbeCJqk5+pHWvzYPziyZiYoo=
 github.com/jmespath/go-jmespath/internal/testify v1.5.1/go.mod h1:L3OGu8Wl2/fWfCI6z80xFu9LTZmf1ZRjMHUOPmWr69U=
