@@ -525,6 +525,22 @@ func (item *Item) GetContentType() string {
 
 func (item *Item) GetQueries() []Query {
 	queries := []Query{}
+
+	appendQuery := func(qs []Query, newqueries ...Query) []Query {
+		var toAppend []Query
+		for _, newquery := range newqueries {
+			toAppend = []Query{}
+			for _, q := range qs {
+				if q.Search == newquery.Search {
+					break
+				}
+				toAppend = append(toAppend, newquery)
+			}
+			qs = append(qs, toAppend...)
+		}
+		return qs
+	}
+
 	title := item.GetCollectionTitle()
 	for _, collection := range item.Data.Collections {
 		parentColl, err := item.Group.GetCollectionByKeyLocal(collection)
@@ -536,7 +552,7 @@ func (item *Item) GetQueries() []Query {
 			if err != nil {
 				break
 			}
-			queries = append(queries, Query{
+			queries = appendQuery(queries, Query{
 				Label:  fmt.Sprintf("%s - %s - %s", title, subParentColl.Data.Name, parentColl.Data.Name),
 				Search: fmt.Sprintf(`cat:"%v!!%v!!%v!!%v"`, item.Name(), item.Group.Data.Name, subParentColl.Data.Name, parentColl.Data.Name),
 			}, Query{
@@ -544,7 +560,7 @@ func (item *Item) GetQueries() []Query {
 				Search: fmt.Sprintf(`cat:"%v!!%v!!%v"`, item.Name(), item.Group.Data.Name, subParentColl.Data.Name),
 			})
 		} else {
-			queries = append(queries, Query{
+			queries = appendQuery(queries, Query{
 				Label:  fmt.Sprintf("%s - %s", title, parentColl.Data.Name),
 				Search: fmt.Sprintf(`cat:"%v!!%v!!%v"`, item.Name(), item.Group.Data.Name, parentColl.Data.Name),
 			}, Query{
@@ -554,7 +570,7 @@ func (item *Item) GetQueries() []Query {
 		}
 
 	}
-	queries = append(queries, Query{
+	queries = appendQuery(queries, Query{
 		Label:  fmt.Sprintf("%s", item.Group.Data.Name),
 		Search: fmt.Sprintf(`cat:"%v!!%v"`, item.Name(), item.Group.Data.Name),
 	})
@@ -565,7 +581,7 @@ func (item *Item) GetQueries() []Query {
 		})
 	}
 	for _, catalog := range item.GetCatalogs() {
-		queries = append(queries, Query{
+		queries = appendQuery(queries, Query{
 			Label:  fmt.Sprintf("catalog - %s", catalog),
 			Search: fmt.Sprintf(`catalog:"%v"`, catalog),
 		})
