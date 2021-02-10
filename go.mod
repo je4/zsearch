@@ -20,6 +20,8 @@ require (
 	github.com/goph/emperror v0.17.2
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
+	github.com/gorilla/securecookie v1.1.1
+	github.com/gorilla/sessions v1.2.1
 	github.com/htfy96/reformism v0.0.0-20160819020323-e5bfca398e73
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/je4/sitemap v1.0.1-0.20201109172531-8a7e0eb5b921
@@ -30,7 +32,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/vanng822/go-solr v0.10.0
 	go.mongodb.org/mongo-driver v1.4.3
+	golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897
 	golang.org/x/net v0.0.0-20201031054903-ff519b6c9102
 	google.golang.org/api v0.35.0
-	google.golang.org/appengine v1.6.6
 )

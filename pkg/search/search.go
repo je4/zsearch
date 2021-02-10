@@ -46,7 +46,7 @@ func (s *Search) clearCache() error {
 }
 
 /*
-store SourceData in cache
+cookieStore SourceData in cache
 */
 func (s *Search) storeCache(src *SourceData) error {
 	s.Wait()
@@ -141,7 +141,7 @@ func (s *Search) LoadEntities(ids []string) (map[string]*SourceData, error) {
 	if err != nil {
 		return nil, emperror.Wrapf(err, "cannot load entities %v", ids)
 	}
-	// store results in cache
+	// cookieStore results in cache
 	for _, sdata := range entries {
 		result[sdata.Signature] = sdata
 		_ = s.storeCache(sdata)

@@ -26,6 +26,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -90,7 +91,30 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		MetaDescription: "Integrated Catalogue of Mediathek HGK FHNW",
 	}
 
-	jwt, ok := req.URL.Query()["token"]
+	params := []string{}
+	for key, vals := range req.URL.Query() {
+		if key == "token" || key == "logout" {
+			continue
+		}
+		for _, val := range vals {
+			params = append(params, fmt.Sprintf("%s=%s", key, url.QueryEscape(val)))
+		}
+	}
+	status.RawQuery = strings.Join(params, "&")
+
+	_, logout := req.URL.Query()["logout"]
+	sess, _ := s.cookieStore.Get(req, "logged-in")
+	var jwt []string = []string{""}
+	var ok bool
+	jwt, ok = req.URL.Query()["token"]
+	if !ok {
+		jwt = []string{""}
+		var sessJWT interface{}
+		sessJWT, ok = sess.Values["user"]
+		if ok {
+			jwt[0], ok = sessJWT.(string)
+		}
+	}
 	if ok {
 		// jwt in parameter?
 		if len(jwt) == 0 {
@@ -100,7 +124,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		tokenstring := jwt[0]
 		if tokenstring != "" {
 			status.Token = tokenstring
-			user, err := s.userFromToken(tokenstring, "search")
+			user, err := s.userFromToken(tokenstring, "")
 			if err != nil {
 				status.Notifications = append(status.Notifications, Notification{
 					Id:      "notificationInvalidAccessToken",
@@ -113,7 +137,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 			}
 		}
 	}
-	if status.User == nil {
+	if status.User == nil || logout {
 		status.User = NewGuestUser(s)
 	}
 	if status.User.LoggedIn {
@@ -129,8 +153,35 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "create token: %v", false, err)
 			return
 		}
-		status.QueryApi = template.URL(fmt.Sprintf("%s/%s?token=%s", status.RelPath, "api/search", jwt))
+		status.QueryApi = template.URL(fmt.Sprintf("%s/%s", status.RelPath, "api/search"))
+		//status.QueryApi = template.URL(fmt.Sprintf("%s/%s?token=%s", status.RelPath, "api/search", jwt))
+
+		/*
+			jwt2, err := NewJWT(
+				status.User.Server.jwtKey,
+				"",
+				"HS256",
+				int64(status.User.Server.linkTokenExp.Seconds()),
+				"catalogue",
+				"mediathek",
+				status.User.Id)
+			if err != nil {
+				s.DoPanicf(nil, req, w, http.StatusInternalServerError, "create token: %v", false, err)
+				return
+			}
+		*/
+		sess.Values["user"] = jwt
+		sess.Options.MaxAge = 0 // int(s.sessionTimeout/time.Second)
+	} else {
+		sess.Values["user"] = ""
+		sess.Options.MaxAge = -1
 	}
+	sess.Options.Path = "/"
+	if err := sess.Save(req, w); err != nil {
+		s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot store cookie logged-in: %v", false, err)
+		return
+	}
+
 	ip, _, _ := net.SplitHostPort(req.RemoteAddr)
 	for _, grp := range s.locations.Contains(ip) {
 		status.User.Groups = append(status.User.Groups, grp)

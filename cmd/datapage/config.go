@@ -109,6 +109,19 @@ type Cfg_Google struct {
 	} `toml:"searchkeys"`
 }
 
+type Endpoint struct {
+	Host string `toml:"host"`
+	Port int    `toml:"port"`
+}
+
+type SSHTunnel struct {
+	User           string   `toml:"user"`
+	PrivateKey     string   `toml:"privatekey"`
+	LocalEndpoint  Endpoint `toml:"localendpoint"`
+	ServerEndpoint Endpoint `toml:"serverendpoint"`
+	RemoteEndpoint Endpoint `toml:"remoteendpoint"`
+}
+
 type Config struct {
 	Logfile             string              `toml:"logfile"`
 	Loglevel            string              `toml:"loglevel"`
@@ -128,6 +141,7 @@ type Config struct {
 	LoginUrl            string              `toml:"loginurl"`
 	LoginIssuer         string              `toml:"loginissuer"`
 	IdleTimeout         duration            `toml:"idletimeout"`
+	SessionTimeout      duration            `toml:"sessiontimeout"`
 	UserCacheSize       int                 `toml:"usercachesize"`
 	Template            map[string][]string `toml:"template"`
 	TemplateDev         bool                `toml:"templatedev"`
@@ -149,6 +163,7 @@ type Config struct {
 	ElasticSearch       Cfg_ElasticSearch   `toml:"elasticsearch"`
 	Google              Cfg_Google          `toml:"google"`
 	InstanceName        string              `toml:"instancename"`
+	SSHTunnel           SSHTunnel           `toml:"sshtunnel"`
 }
 
 var prefixNames = []string{

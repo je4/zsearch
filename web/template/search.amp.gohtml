@@ -250,7 +250,7 @@ limitations under the License.
                           id="search"
                           action="#"
                           target="_top">
-                        {{if not (eq .Token "")}}<input type="hidden" name="token" value="{{.Token}}"/>{{end}}
+                        {{if not (eq .Token "")}}<!-- <input type="hidden" name="token" value="{{.Token}}"/> -->{{end}}
                         <input type="hidden" name="start" value="0" [value]="SearchResultStart"/>
                         <input type="hidden" name="lastsearch" value="" [value]="SearchResultSearch"/>
                         <input type="hidden" name="visible" value="" [value]="SearchResultVisible"/>

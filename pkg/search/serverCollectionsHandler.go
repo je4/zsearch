@@ -25,6 +25,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 )
 
 var tagFieldRegexp = regexp.MustCompile("^(area|field):(.+)$")
@@ -56,6 +57,7 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 			Type:          "Collections",
 			Notifications: []Notification{},
 			Self:          fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(req.URL.Path, "/")),
+			RawQuery:      req.URL.RawQuery,
 			BaseUrl:       s.addrExt.String(),
 			SelfPath:      req.URL.Path,
 			RelPath:       s.relPath(req.URL.Path),
@@ -75,7 +77,16 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 		Result:   map[string][]*SourceData{},
 	}
 
-	jwt, ok := req.URL.Query()["token"]
+	_, logout := req.URL.Query()["logout"]
+	session, _ := s.cookieStore.Get(req, "logged-in")
+	var jwt []string = []string{""}
+	sessJWT, ok := session.Values["user"]
+	if ok {
+		jwt[0], ok = sessJWT.(string)
+	}
+	if !ok {
+		jwt, ok = req.URL.Query()["token"]
+	}
 	if ok {
 		// jwt in parameter?
 		if len(jwt) == 0 {
@@ -85,7 +96,7 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 		tokenstring := jwt[0]
 		if tokenstring != "" {
 			status.Token = tokenstring
-			user, err := s.userFromToken(tokenstring, "collections")
+			user, err := s.userFromToken(tokenstring, "" /* "collections" */)
 			if err != nil {
 				status.Notifications = append(status.Notifications, Notification{
 					Id:      "notificationInvalidAccessToken",
@@ -98,7 +109,7 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 			}
 		}
 	}
-	if status.User == nil {
+	if status.User == nil || logout {
 		status.User = NewGuestUser(s)
 	}
 	if status.User.LoggedIn {
@@ -114,7 +125,17 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "create token: %v", false, err)
 			return
 		}
-		status.QueryApi = template.URL(fmt.Sprintf("%s/%s?token=%s", s.addrExt, "api/search", jwt))
+		//status.QueryApi = template.URL(fmt.Sprintf("%s/%s?token=%s", s.addrExt, "api/search", jwt))
+		status.QueryApi = template.URL(fmt.Sprintf("%s/%s", s.addrExt, "api/search"))
+
+		session.Values["user"] = jwt
+		session.Options.MaxAge = int(s.sessionTimeout / time.Second)
+	} else {
+		session.Options.MaxAge = -1
+	}
+	if err := session.Save(req, w); err != nil {
+		s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot store cookie logged-in: %v", false, err)
+		return
 	}
 	ip, _, _ := net.SplitHostPort(req.RemoteAddr)
 	for _, grp := range s.locations.Contains(ip) {

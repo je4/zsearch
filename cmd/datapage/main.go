@@ -21,6 +21,7 @@ import (
 	"flag"
 	"github.com/dgraph-io/badger/v2"
 	"github.com/je4/zsearch/pkg/search"
+	sshtunnel "github.com/je4/zsearch/pkg/sshTunnel"
 	"google.golang.org/api/customsearch/v1"
 	"google.golang.org/api/option"
 	"io"
@@ -99,6 +100,40 @@ func main() {
 		}
 		defer f.Close()
 		accesslog = f
+	}
+
+	if config.SSHTunnel.User != "" && config.SSHTunnel.PrivateKey != "" {
+		tunnels := map[string]*sshtunnel.SourceDestination{}
+		tunnels["postgres"] = &sshtunnel.SourceDestination{
+			Local: &sshtunnel.Endpoint{
+				Host: config.SSHTunnel.LocalEndpoint.Host,
+				Port: config.SSHTunnel.LocalEndpoint.Port,
+			},
+			Remote: &sshtunnel.Endpoint{
+				Host: config.SSHTunnel.RemoteEndpoint.Host,
+				Port: config.SSHTunnel.RemoteEndpoint.Port,
+			},
+		}
+		tunnel, err := sshtunnel.NewSSHTunnel(
+			config.SSHTunnel.User,
+			config.SSHTunnel.PrivateKey,
+			&sshtunnel.Endpoint{
+				Host: config.SSHTunnel.ServerEndpoint.Host,
+				Port: config.SSHTunnel.ServerEndpoint.Port,
+			},
+			tunnels,
+			log,
+		)
+		if err != nil {
+			log.Errorf("cannot create sshtunnel %v@%v:%v - %v", config.SSHTunnel.User, config.SSHTunnel.ServerEndpoint.Host, &config.SSHTunnel.ServerEndpoint.Port, err)
+			return
+		}
+		if err := tunnel.Start(); err != nil {
+			log.Errorf("cannot create sshtunnel %v - %v", tunnel.String(), err)
+			return
+		}
+		defer tunnel.Close()
+		time.Sleep(2 * time.Second)
 	}
 
 	stat, err := os.Stat(config.CacheDir)
@@ -245,6 +280,7 @@ func main() {
 		config.JWTKey,
 		config.JWTAlg,
 		config.LinkTokenExp.Duration,
+		config.SessionTimeout.Duration,
 		config.LoginUrl,
 		config.LoginIssuer,
 		config.AccessGroup.Guest,

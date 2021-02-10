@@ -67,7 +67,7 @@ func (u User) LinkSearch(query string, facets ...string) template.URL {
 		urlstr += fmt.Sprintf("&%s=true", url.QueryEscape(f))
 	}
 	if u.LoggedIn {
-		jwt, err := NewJWT(
+		_, err := NewJWT(
 			u.Server.jwtKey,
 			"search",
 			"HS256",
@@ -78,7 +78,7 @@ func (u User) LinkSearch(query string, facets ...string) template.URL {
 		if err != nil {
 			return template.URL(fmt.Sprintf("ERROR: %v", err))
 		}
-		urlstr += fmt.Sprintf("&token=%s", jwt)
+		//urlstr += fmt.Sprintf("&token=%s", jwt)
 	} else {
 		if u.Server.ampCache != nil {
 			var err error
@@ -94,7 +94,7 @@ func (u User) LinkSearch(query string, facets ...string) template.URL {
 func (u User) LinkSignature(signature string) string {
 	urlstr := fmt.Sprintf("%s/%s/%s", u.Server.addrExt, u.Server.prefixes["detail"], signature)
 	if u.LoggedIn {
-		jwt, err := NewJWT(
+		_, err := NewJWT(
 			u.Server.jwtKey,
 			fmt.Sprintf("detail:%s", signature),
 			"HS256",
@@ -105,7 +105,7 @@ func (u User) LinkSignature(signature string) string {
 		if err != nil {
 			return fmt.Sprintf("ERROR: %v", err)
 		}
-		urlstr = fmt.Sprintf("%s?token=%s", urlstr, jwt)
+		//urlstr = fmt.Sprintf("%s?token=%s", urlstr, jwt)
 	} else {
 		if u.Server.ampCache != nil {
 			var err error
@@ -120,7 +120,7 @@ func (u User) LinkSignature(signature string) string {
 func (u User) LinkCollections() string {
 	urlstr := fmt.Sprintf("%s/%s/%s", u.Server.addrExt, u.Server.prefixes["collections"])
 	if u.LoggedIn {
-		jwt, err := NewJWT(
+		_, err := NewJWT(
 			u.Server.jwtKey,
 			"collections",
 			"HS256",
@@ -131,7 +131,7 @@ func (u User) LinkCollections() string {
 		if err != nil {
 			return fmt.Sprintf("ERROR: %v", err)
 		}
-		urlstr = fmt.Sprintf("%s?token=%s", urlstr, jwt)
+		//urlstr = fmt.Sprintf("%s?token=%s", urlstr, jwt)
 	} else {
 		if u.Server.ampCache != nil {
 			var err error
@@ -156,7 +156,7 @@ func (u User) LinkSubject(area, sub, subject string, params ...string) string {
 		urlstr = fmt.Sprintf("%s/%s", u.Server.addrExt, prefix)
 	}
 	if u.LoggedIn {
-		jwt, err := NewJWT(
+		_, err := NewJWT(
 			u.Server.jwtKey,
 			subject,
 			"HS256",
@@ -167,9 +167,10 @@ func (u User) LinkSubject(area, sub, subject string, params ...string) string {
 		if err != nil {
 			return fmt.Sprintf("ERROR: %v", err)
 		}
-		urlstr = fmt.Sprintf("%s?token=%s", urlstr, jwt)
+		//urlstr = fmt.Sprintf("%s?token=%s", urlstr, jwt)
 		if len(params) > 0 {
-			urlstr += "&" + strings.Join(params, "&")
+			// urlstr += "&" + strings.Join(params, "&")
+			urlstr += "?" + strings.Join(params, "&")
 		}
 	} else {
 		if u.Server.ampCache != nil {

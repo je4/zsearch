@@ -95,7 +95,7 @@ func (s *Server) clusterAllHandler(w http.ResponseWriter, req *http.Request) {
 		status.User = NewGuestUser(s)
 	}
 	if status.User.LoggedIn {
-		jwt, err := NewJWT(
+		_, err := NewJWT(
 			status.User.Server.jwtKey,
 			"search",
 			"HS256",
@@ -107,7 +107,8 @@ func (s *Server) clusterAllHandler(w http.ResponseWriter, req *http.Request) {
 			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "create token: %v", false, err)
 			return
 		}
-		status.QueryApi = template.URL(fmt.Sprintf("%s/%s?token=%s", s.addrExt, "api/search", jwt))
+		//status.QueryApi = template.URL(fmt.Sprintf("%s/%s?token=%s", s.addrExt, "api/search", jwt))
+		status.QueryApi = template.URL(fmt.Sprintf("%s/%s", s.addrExt, "api/search"))
 	}
 	ip, _, _ := net.SplitHostPort(req.RemoteAddr)
 	for _, grp := range s.locations.Contains(ip) {

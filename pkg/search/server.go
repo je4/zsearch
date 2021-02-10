@@ -31,6 +31,8 @@ import (
 	"github.com/goph/emperror"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/securecookie"
+	"github.com/gorilla/sessions"
 	"github.com/htfy96/reformism"
 	"github.com/je4/zsearch/pkg/amp"
 	"github.com/op/go-logging"
@@ -63,6 +65,7 @@ type BaseStatus struct {
 	Notifications []Notification
 	User          *User
 	Self          string
+	RawQuery      string
 	Canonical     string
 	Token         string
 	BaseUrl       string
@@ -230,7 +233,7 @@ func (bs BaseStatus) LinkSearch(query string, facets ...string) template.URL {
 		urlstr += fmt.Sprintf("&%s=true", url.QueryEscape(f))
 	}
 	if bs.User.LoggedIn {
-		jwt, err := NewJWT(
+		_, err := NewJWT(
 			bs.server.jwtKey,
 			"search",
 			"HS256",
@@ -241,7 +244,7 @@ func (bs BaseStatus) LinkSearch(query string, facets ...string) template.URL {
 		if err != nil {
 			return template.URL(fmt.Sprintf("ERROR: %v", err))
 		}
-		urlstr += fmt.Sprintf("&token=%s", jwt)
+		//urlstr += fmt.Sprintf("&token=%s", jwt)
 	} else {
 		if bs.server.ampCache != nil {
 			var err error
@@ -258,7 +261,7 @@ func (bs BaseStatus) LinkSignature(signature string) string {
 	urlstr := fmt.Sprintf("%s/%s/%s", bs.RelPath, bs.server.prefixes["detail"], signature)
 	urlstr = strings.TrimLeft(urlstr, "/")
 	if bs.User.LoggedIn {
-		jwt, err := NewJWT(
+		_, err := NewJWT(
 			bs.server.jwtKey,
 			fmt.Sprintf("detail:%s", signature),
 			"HS256",
@@ -269,7 +272,7 @@ func (bs BaseStatus) LinkSignature(signature string) string {
 		if err != nil {
 			return fmt.Sprintf("ERROR: %v", err)
 		}
-		urlstr = fmt.Sprintf("%s?token=%s", urlstr, jwt)
+		//urlstr = fmt.Sprintf("%s?token=%s", urlstr, jwt)
 	} else {
 		if bs.server.ampCache != nil {
 			var err error
@@ -285,7 +288,7 @@ func (bs BaseStatus) LinkCollections() string {
 	urlstr := fmt.Sprintf("%s/%s/%s", bs.RelPath, bs.server.prefixes["collections"])
 	urlstr = strings.TrimLeft(urlstr, "/")
 	if bs.User.LoggedIn {
-		jwt, err := NewJWT(
+		_, err := NewJWT(
 			bs.User.Server.jwtKey,
 			"collections",
 			"HS256",
@@ -296,7 +299,7 @@ func (bs BaseStatus) LinkCollections() string {
 		if err != nil {
 			return fmt.Sprintf("ERROR: %v", err)
 		}
-		urlstr = fmt.Sprintf("%s?token=%s", urlstr, jwt)
+		//urlstr = fmt.Sprintf("%s?token=%s", urlstr, jwt)
 	} else {
 		if bs.server.ampCache != nil {
 			var err error
@@ -322,7 +325,7 @@ func (bs BaseStatus) LinkSubject(area, sub, subject string, params ...string) st
 	}
 	urlstr = strings.TrimLeft(urlstr, "/")
 	if bs.User.LoggedIn {
-		jwt, err := NewJWT(
+		_, err := NewJWT(
 			bs.server.jwtKey,
 			subject,
 			"HS256",
@@ -333,9 +336,9 @@ func (bs BaseStatus) LinkSubject(area, sub, subject string, params ...string) st
 		if err != nil {
 			return fmt.Sprintf("ERROR: %v", err)
 		}
-		urlstr = fmt.Sprintf("%s?token=%s", urlstr, jwt)
+		//urlstr = fmt.Sprintf("%s?token=%s", urlstr, jwt)
 		if len(params) > 0 {
-			urlstr += "&" + strings.Join(params, "&")
+			urlstr += "?" + strings.Join(params, "&")
 		}
 	} else {
 		if bs.server.ampCache != nil {
@@ -369,48 +372,52 @@ func (ng NetGroups) Contains(str string) []string {
 }
 
 type Server struct {
-	mts                *Search
-	srv                *http.Server
-	userCache          *UserCache
-	host               string
-	port               string
-	addrExt            *url.URL
-	prefixes           map[string]string
-	staticDir          string
-	staticCacheControl string
-	jwtKey             string
-	jwtAlg             []string
-	linkTokenExp       time.Duration
-	loginUrl           string
-	loginIssuer        string
-	guestGroup         string
-	adminGroup         string
-	templates          map[string]*template.Template
-	templatesFiles     map[string][]string
-	templateDev        bool
-	mediaserver        string
-	mediaserverKey     string
-	mediaTokenExp      time.Duration
-	log                *logging.Logger
-	accesslog          io.Writer
-	ampApiKey          *rsa.PrivateKey
-	ampCache           *amp.Cache
-	searchFields       map[string]string
-	facets             SolrFacetList
-	locations          NetGroups
-	icons              map[string]string
-	baseCatalog        []string
-	subFilters         []SubFilter
-	funcMap            template.FuncMap
-	collectionsCatalog string
-	clusterCatalog     string
-	queryCache         gcache.Cache
-	google             *customsearch.Service
-	googleCSEKey       map[string]KV
-	instanceName       string
+	mts                 *Search
+	srv                 *http.Server
+	userCache           *UserCache
+	host                string
+	port                string
+	addrExt             *url.URL
+	prefixes            map[string]string
+	staticDir           string
+	staticCacheControl  string
+	jwtKey              string
+	jwtAlg              []string
+	linkTokenExp        time.Duration
+	loginUrl            string
+	loginIssuer         string
+	guestGroup          string
+	adminGroup          string
+	templates           map[string]*template.Template
+	templatesFiles      map[string][]string
+	templateDev         bool
+	mediaserver         string
+	mediaserverKey      string
+	mediaTokenExp       time.Duration
+	log                 *logging.Logger
+	accesslog           io.Writer
+	ampApiKey           *rsa.PrivateKey
+	ampCache            *amp.Cache
+	searchFields        map[string]string
+	facets              SolrFacetList
+	locations           NetGroups
+	icons               map[string]string
+	baseCatalog         []string
+	subFilters          []SubFilter
+	funcMap             template.FuncMap
+	collectionsCatalog  string
+	clusterCatalog      string
+	queryCache          gcache.Cache
+	google              *customsearch.Service
+	googleCSEKey        map[string]KV
+	instanceName        string
+	cookieStore         *sessions.CookieStore
+	cookieAuthKey       []byte
+	cookieEncryptionKey []byte
+	sessionTimeout      time.Duration
 }
 
-func NewServer(mts *Search, uc *UserCache, google *customsearch.Service, templateFiles map[string][]string, templateDev bool, InstanceName, addr, addrExt, mediaserver, mediaserverkey string, mediatokenexp time.Duration, log *logging.Logger, accesslog io.Writer, prefixes map[string]string, staticDir, staticCacheControl, jwtKey string, jwtAlg []string, linkTokenExp time.Duration, loginUrl, loginIssuer, guestGroup, adminGroup, AmpCache, ampApiKeyFile string, searchFields map[string]string, facets SolrFacetList, locations NetGroups, icons map[string]string, baseCatalog []string, subFilter []SubFilter, collectionsCatalog, clusterCatalog string, googleCSEKey map[string]KV) (*Server, error) {
+func NewServer(mts *Search, uc *UserCache, google *customsearch.Service, templateFiles map[string][]string, templateDev bool, InstanceName, addr, addrExt, mediaserver, mediaserverkey string, mediatokenexp time.Duration, log *logging.Logger, accesslog io.Writer, prefixes map[string]string, staticDir, staticCacheControl, jwtKey string, jwtAlg []string, linkTokenExp, sessionTimeout time.Duration, loginUrl, loginIssuer, guestGroup, adminGroup, AmpCache, ampApiKeyFile string, searchFields map[string]string, facets SolrFacetList, locations NetGroups, icons map[string]string, baseCatalog []string, subFilter []SubFilter, collectionsCatalog, clusterCatalog string, googleCSEKey map[string]KV) (*Server, error) {
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		//log.Panicf("cannot split address %s: %v", addr, err)
@@ -443,7 +450,8 @@ func NewServer(mts *Search, uc *UserCache, google *customsearch.Service, templat
 	if err != nil {
 		return nil, emperror.Wrapf(err, "cannot parse external address %s", addrExt)
 	}
-
+	authKey := securecookie.GenerateRandomKey(64)
+	encryptionKey := securecookie.GenerateRandomKey(32)
 	srv := &Server{
 		mts:                mts,
 		userCache:          uc,
@@ -463,6 +471,7 @@ func NewServer(mts *Search, uc *UserCache, google *customsearch.Service, templat
 		jwtKey:             jwtKey,
 		jwtAlg:             jwtAlg,
 		linkTokenExp:       linkTokenExp,
+		sessionTimeout:     sessionTimeout,
 		loginUrl:           loginUrl,
 		loginIssuer:        loginIssuer,
 		guestGroup:         guestGroup,
@@ -483,6 +492,19 @@ func NewServer(mts *Search, uc *UserCache, google *customsearch.Service, templat
 		googleCSEKey:       googleCSEKey,
 		templatesFiles:     templateFiles,
 		instanceName:       InstanceName,
+		cookieStore: sessions.NewCookieStore(
+			authKey,
+			nil,
+		//encryptionKey,
+		),
+		cookieAuthKey:       authKey,
+		cookieEncryptionKey: encryptionKey,
+	}
+	srv.cookieStore.Options = &sessions.Options{
+		MaxAge:   int(sessionTimeout / time.Second),
+		HttpOnly: true,
+		SameSite: http.SameSiteLaxMode, // http.SameSiteStrictMode,
+		Path:     "/",
 	}
 	if err := srv.InitTemplates(); err != nil {
 		return nil, emperror.Wrapf(err, "cannot initialize server")
@@ -594,7 +616,7 @@ func (s *Server) InitTemplates() (err error) {
 		if !user.LoggedIn {
 			return ""
 		}
-		jwt, err := NewJWT(
+		_, err := NewJWT(
 			s.mediaserverKey,
 			"search",
 			"HS256",
@@ -605,7 +627,7 @@ func (s *Server) InitTemplates() (err error) {
 		if err != nil {
 			return fmt.Sprintf("&error=%s", url.QueryEscape(fmt.Sprintf("ERROR-%v", err)))
 		}
-		return fmt.Sprintf("&token=%s", jwt)
+		return "" // fmt.Sprintf("&token=%s", jwt)
 	}
 
 	s.funcMap["medialink"] = func(uri, action, param string, token bool) string {
@@ -620,7 +642,7 @@ func (s *Server) InitTemplates() (err error) {
 		signature := matches[2]
 		url := fmt.Sprintf("%s/%s/%s/%s/%s", s.mediaserver, collection, signature, action, param)
 		if token {
-			jwt, err := NewJWT(
+			_, err := NewJWT(
 				s.mediaserverKey,
 				strings.TrimRight(fmt.Sprintf("mediaserver:%s/%s/%s/%s", collection, signature, action, strings.Join(params, "/")), "/"),
 				"HS256",
@@ -631,7 +653,7 @@ func (s *Server) InitTemplates() (err error) {
 			if err != nil {
 				return fmt.Sprintf("ERROR: %v", err)
 			}
-			url = fmt.Sprintf("%s?token=%s", url, jwt)
+			//url = fmt.Sprintf("%s?token=%s", url, jwt)
 		} else {
 			if s.ampCache != nil {
 				url, err = s.ampCache.BuildUrl(url, amp.IMAGE)
@@ -693,6 +715,7 @@ func (s *Server) DoPanicf(user *User, req *http.Request, writer http.ResponseWri
 				User:          user,
 				Self:          fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(req.URL.Path, "/")),
 				BaseUrl:       s.addrExt.String(),
+				RawQuery:      req.URL.RawQuery,
 				SelfPath:      req.URL.Path,
 				LoginUrl:      s.loginUrl,
 				Notifications: []Notification{},
@@ -802,7 +825,7 @@ func (s *Server) userFromToken(tokenstring, signature string) (*User, error) {
 			return nil, emperror.Wrapf(err, "no sub in token")
 		}
 		// sub correct?
-		if strings.ToLower(sub) != strings.ToLower(signature) {
+		if signature != "" && strings.ToLower(sub) != strings.ToLower(signature) {
 			return nil, emperror.Wrapf(err, "invalid sub %s (should be %s) in token", sub, signature)
 		}
 		// user given?

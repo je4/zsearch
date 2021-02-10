@@ -25,6 +25,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"time"
 )
 
 type ErrorHTTPStatus struct {
@@ -36,12 +37,13 @@ func (err *ErrorHTTPStatus) Error() string {
 	return fmt.Sprintf("%s - %s", http.StatusText(err.status), err.err.Error())
 }
 
-func (s *Server) getDetailStatus(signature, path, tokenstring, remoteHost string) (*DetailStatus, error) {
+func (s *Server) getDetailStatus(signature, path, rawQuery, tokenstring, remoteHost string) (*DetailStatus, error) {
 	status := DetailStatus{
 		BaseStatus: BaseStatus{
 			Type:          "detail",
 			User:          nil,
 			Self:          fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(path, "/")),
+			RawQuery:      rawQuery,
 			Canonical:     fmt.Sprintf("%s/%s/%s", s.addrExt, s.prefixes["detail"], signature),
 			BaseUrl:       s.addrExt.String(),
 			SelfPath:      path,
@@ -66,7 +68,7 @@ func (s *Server) getDetailStatus(signature, path, tokenstring, remoteHost string
 	}
 	if tokenstring != "" {
 		status.Token = tokenstring
-		user, err := s.userFromToken(tokenstring, "detail:"+signature)
+		user, err := s.userFromToken(tokenstring, "" /* "detail:"+signature */)
 		if err != nil {
 			status.Notifications = append(status.Notifications, Notification{
 				Id:      "notificationInvalidAccessToken",
@@ -245,7 +247,15 @@ func (s *Server) detailEmbedHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	var tokenstring string
-	jwt, ok := req.URL.Query()["token"]
+	session, _ := s.cookieStore.Get(req, "logged-in")
+	var jwt []string = []string{""}
+	sessJWT, ok := session.Values["user"]
+	if ok {
+		jwt[0], ok = sessJWT.(string)
+	}
+	if !ok {
+		jwt, ok = req.URL.Query()["token"]
+	}
 	if ok {
 		if len(jwt) > 0 {
 			tokenstring = jwt[0]
@@ -253,13 +263,23 @@ func (s *Server) detailEmbedHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	remoteHost, _, _ := net.SplitHostPort(req.Host)
-	status, err := s.getDetailStatus(signature, req.URL.Path, tokenstring, remoteHost)
+	status, err := s.getDetailStatus(signature, req.URL.Path, req.URL.RawQuery, tokenstring, remoteHost)
 	if err != nil {
 		if ehs, ok := err.(*ErrorHTTPStatus); ok {
 			s.DoPanicf(nil, req, w, ehs.status, ehs.err.Error(), false)
 		} else {
 			s.DoPanicf(nil, req, w, http.StatusInternalServerError, err.Error(), false)
 		}
+		return
+	}
+	if status.User.LoggedIn {
+		session.Values["user"] = jwt
+		session.Options.MaxAge = int(s.sessionTimeout / time.Second)
+	} else {
+		session.Options.MaxAge = -1
+	}
+	if err := session.Save(req, w); err != nil {
+		s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot store cookie logged-in: %v", false, err)
 		return
 	}
 
@@ -324,8 +344,19 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 		s.DoPanicf(nil, req, w, http.StatusBadRequest, "no signature in url: %s", false, req.URL.Path)
 		return
 	}
+	_, logout := req.URL.Query()["logout"]
 	var tokenstring string
-	jwt, ok := req.URL.Query()["token"]
+	sess, _ := s.cookieStore.Get(req, "logged-in")
+	var jwt []string
+	jwt, ok = req.URL.Query()["token"]
+	if !ok {
+		var sessJWT interface{}
+		sessJWT, ok = sess.Values["user"]
+		if ok {
+			jwt = []string{""}
+			jwt[0], ok = sessJWT.(string)
+		}
+	}
 	if ok {
 		if len(jwt) > 0 {
 			tokenstring = jwt[0]
@@ -333,13 +364,30 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	remoteHost, _, _ := net.SplitHostPort(req.Host)
-	status, err := s.getDetailStatus(signature, req.URL.Path, tokenstring, remoteHost)
+	status, err := s.getDetailStatus(signature, req.URL.Path, req.URL.RawQuery, tokenstring, remoteHost)
 	if err != nil {
 		if ehs, ok := err.(*ErrorHTTPStatus); ok {
 			s.DoPanicf(nil, req, w, ehs.status, ehs.err.Error(), false)
 		} else {
 			s.DoPanicf(nil, req, w, http.StatusInternalServerError, err.Error(), false)
 		}
+		return
+	}
+
+	if logout {
+		status.User = NewGuestUser(s)
+	}
+
+	if status.User.LoggedIn {
+		sess.Options.MaxAge = 0 // int(s.sessionTimeout / time.Second)
+		sess.Values["user"] = status.Token
+	} else {
+		sess.Values["user"] = ""
+		sess.Options.MaxAge = -1
+	}
+	sess.Options.Path = "/"
+	if err := sess.Save(req, w); err != nil {
+		s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot store cookie logged-in: %v", false, err)
 		return
 	}
 

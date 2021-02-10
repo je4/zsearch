@@ -199,6 +199,7 @@ func (s *Server) clusterHandler(w http.ResponseWriter, req *http.Request) {
 				Type:          "search",
 				Notifications: []Notification{},
 				Self:          fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(req.URL.Path, "/")),
+				RawQuery:      req.URL.RawQuery,
 				BaseUrl:       s.addrExt.String(),
 				SelfPath:      req.URL.Path,
 				RelPath:       s.relPath(req.URL.Path),

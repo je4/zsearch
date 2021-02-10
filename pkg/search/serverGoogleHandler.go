@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"time"
 )
 
 type GoogleResultStatus struct {
@@ -68,6 +69,7 @@ func (s *Server) googleHandler(w http.ResponseWriter, req *http.Request) {
 			Type:          "search",
 			Notifications: []Notification{},
 			Self:          fmt.Sprintf("%s/%s", s.addrExt, strings.TrimLeft(req.URL.Path, "/")),
+			RawQuery:      req.URL.RawQuery,
 			BaseUrl:       s.addrExt.String(),
 			SelfPath:      req.URL.Path,
 			RelPath:       s.relPath(req.URL.Path),
@@ -81,17 +83,28 @@ func (s *Server) googleHandler(w http.ResponseWriter, req *http.Request) {
 		Searches:   searches,
 	}
 
-	jwt, ok := req.URL.Query()["token"]
+	_, logout := req.URL.Query()["logout"]
+
+	var tokenstring string
+	session, _ := s.cookieStore.Get(req, "logged-in")
+	var jwt []string = []string{""}
+	sessJWT, ok := session.Values["user"]
+	if ok {
+		jwt[0], ok = sessJWT.(string)
+	}
+	if !ok {
+		jwt, ok = req.URL.Query()["token"]
+	}
 	if ok {
 		// jwt in parameter?
 		if len(jwt) == 0 {
 			s.DoPanicf(nil, req, w, http.StatusForbidden, "invalid token %v", false, jwt)
 			return
 		}
-		tokenstring := jwt[0]
+		tokenstring = jwt[0]
 		if tokenstring != "" {
 			status.Token = tokenstring
-			user, err := s.userFromToken(tokenstring, "search")
+			user, err := s.userFromToken(tokenstring, "" /* "search" */)
 			if err != nil {
 				status.Notifications = append(status.Notifications, Notification{
 					Id:      "notificationInvalidAccessToken",
@@ -104,8 +117,18 @@ func (s *Server) googleHandler(w http.ResponseWriter, req *http.Request) {
 			}
 		}
 	}
-	if status.User == nil {
+	if status.User == nil || logout {
 		status.User = NewGuestUser(s)
+	}
+	if status.User.LoggedIn {
+		session.Options.MaxAge = int(s.sessionTimeout / time.Second)
+		session.Values["user"] = tokenstring
+	} else {
+		session.Options.MaxAge = -1
+	}
+	if err := session.Save(req, w); err != nil {
+		s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot store cookie logged-in: %v", false, err)
+		return
 	}
 	ip, _, _ := net.SplitHostPort(req.RemoteAddr)
 	for _, grp := range s.locations.Contains(ip) {

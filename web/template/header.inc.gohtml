@@ -38,7 +38,7 @@
             </div>
             <div style="width:48px;" class="td align-middle pr0">
                 {{if not .User.LoggedIn}}
-                    <a aria-label="Login" href="{{.LoginUrl}}?callback={{.Self}}?token=_JWT_" class="text-decoration-none mr2 gsearch-headerbar-fixed-link ">
+                    <a aria-label="Login" href="{{.LoginUrl}}?callback={{printf "%s?token=_JWT_&%s" .Self .RawQuery }}" class="text-decoration-none mr2 gsearch-headerbar-fixed-link ">
                         <svg
                                 viewBox="0 0 24 24"
                                 fill="black"
@@ -79,9 +79,9 @@
                 {{else}}
                     {{$url := ""}}
                     {{if eq .Type "detail"}}
-                        {{$url = .User.LinkSignatureCache .Doc.Signature}}
+                        {{$url = printf "%s?logout" (.User.LinkSignatureCache .Doc.Signature) }}
                     {{else}}
-                        {{$url = .Self}}
+                        {{$url = printf "%s?logout&%s" .Self .RawQuery }}
                     {{end}}
                     <a aria-label="Logout" href="{{$url}}" class="text-decoration-none mr2 gsearch-headerbar-fixed-link ">
 
