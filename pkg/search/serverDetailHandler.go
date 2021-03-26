@@ -107,8 +107,10 @@ func (s *Server) getDetailStatus(signature, path, rawQuery, tokenstring, remoteH
 	status.Doc = doc
 	//	status.BaseStatus.OGPNamespace, status.BaseStatus.OGPMeta = doc.GetOpenGraph("1102189490244305", s.addrExt+path, s.mediaserverUri2Url)
 	ldo := doc.GetJsonLD(fmt.Sprintf("%s/%s/%s", s.addrExt, s.prefixes["detail"], doc.Signature), s.mediaserverUri2Url)
-	if jsonstr, err := json.Marshal([]interface{}{ldo}); err == nil {
-		status.BaseStatus.JsonLD = string(jsonstr) + "\n"
+	if ldo != nil {
+		if jsonstr, err := json.Marshal([]interface{}{ldo}); err == nil {
+			status.BaseStatus.JsonLD = string(jsonstr) + "\n"
+		}
 	}
 
 	for acl, groups := range status.Doc.ACL {
