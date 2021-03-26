@@ -189,24 +189,6 @@ func main() {
 	}
 	defer db.Close()
 
-	/*
-		mts, err := search.NewMTSolr(
-			config.Solr.Link,
-			config.Solr.Core,
-			db,
-			log)
-		if err != nil {
-			log.Panic(err)
-		}
-	*/
-
-	/*
-		mtSolrWrapper, err := search.NewMTSOLRSearch([]string{config.Solr.Link}, config.Solr.Core, db, log)
-		if err != nil {
-			log.Panicf("cannot initialize solr search wrapper: %v", err)
-			return
-		}
-	*/
 	mtElasticWrapper, err := search.NewMTElasticSearch(config.ElasticSearch.Endpoint, config.ElasticSearch.Index, log)
 	if err != nil {
 		log.Panicf("cannot initialize solr search wrapper: %v", err)

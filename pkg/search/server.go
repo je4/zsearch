@@ -944,7 +944,7 @@ func (s *Server) ListenAndServe(cert, key string) error {
 		writer.Write([]byte("google-site-verification: google54f060b89e33248e.html\n"))
 	})
 
-	loggedRouter := handlers.CombinedLoggingHandler(s.accesslog, router)
+	loggedRouter := handlers.CombinedLoggingHandler(s.accesslog, handlers.ProxyHeaders(router))
 	addr := net.JoinHostPort(s.host, s.port)
 	s.srv = &http.Server{
 		Handler: loggedRouter,
@@ -1277,5 +1277,6 @@ func (s *Server) relPath(path string) string {
 	if relpath == "" {
 		relpath = "."
 	}
+	//	s.log.Debugf("relativ path to %s - %s", path, relpath)
 	return relpath
 }
