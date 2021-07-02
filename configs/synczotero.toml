@@ -134,6 +134,9 @@ groups = [
         connection_max = 5000
         schema = "mediaserver"
 
+[fairservice]
+    address = "https://localhost:8443/item"
+    certskipverify = true
 
 [s3]
     endpoint = "minio.campusderkuenste.ch"

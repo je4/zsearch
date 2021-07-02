@@ -24,7 +24,7 @@ import (
 	"fmt"
 	isoduration "github.com/channelmeter/iso8601duration"
 	"github.com/goph/emperror"
-	"github.com/je4/zsearch/pkg/mediaserver"
+	"github.com/je4/zsearch/v2/pkg/mediaserver"
 	"github.com/vanng822/go-solr/solr"
 	"html/template"
 	"io"

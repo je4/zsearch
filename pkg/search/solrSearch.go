@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/dgraph-io/badger/v2"
 	"github.com/goph/emperror"
-	"github.com/je4/zsearch/pkg/mediaserver"
+	"github.com/je4/zsearch/v2/pkg/mediaserver"
 	"github.com/op/go-logging"
 )
 

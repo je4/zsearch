@@ -2,7 +2,7 @@ package search
 
 import (
 	"fmt"
-	"github.com/je4/zsearch/pkg/mediaserver"
+	"github.com/je4/zsearch/v2/pkg/mediaserver"
 	"github.com/je4/zsync/pkg/zotero"
 	"github.com/vanng822/go-solr/solr"
 	"html/template"
@@ -58,6 +58,10 @@ func (item *Item) Name() string {
 
 func (item *Item) GetSignature() string {
 	return fmt.Sprintf("%s-%v.%v", item.Name(), item.Group.Id, item.Key)
+}
+
+func (item *Item) GetSignatureOriginal() string {
+	return fmt.Sprintf("%v.%v", item.Group.Id, item.Key)
 }
 
 func (item *Item) GetTitle() string {

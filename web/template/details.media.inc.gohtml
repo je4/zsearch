@@ -184,8 +184,8 @@
                         <amp-img
                                 aria-label="{{$image.Name}}"
                                 src="{{medialink $image.Uri "resize" "size1280x720/formatWEBP" (not $contentPublic)}}"
-                                width="1280"
-                                height="720"
+                                width="{{ $image.Width }}"
+                                height="{{ $image.Height }}"
                                 layout="responsive"
                                 tabindex="{{$key}}"
                                 lightbox-thumbnail-id="img-{{$key}}"
@@ -193,8 +193,8 @@
                             <amp-img
                                     aria-label="{{$image.Name}}"
                                     src="{{medialink $image.Uri "resize" "size1280x720/formatJPEG" (not $contentPublic)}}"
-                                    width="1280"
-                                    height="720"
+                                    width="{{ $image.Width }}"
+                                    height="{{ $image.Height }}"
                                     layout="responsive"
                                     tabindex="{{$key}}"
                                     lightbox-thumbnail-id="img-{{$key}}"

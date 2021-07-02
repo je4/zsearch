@@ -19,9 +19,9 @@ package main
 import (
 	"context"
 	"flag"
-	"github.com/dgraph-io/badger/v2"
-	"github.com/je4/zsearch/pkg/search"
-	sshtunnel "github.com/je4/zsearch/pkg/sshTunnel"
+	badger "github.com/dgraph-io/badger/v3"
+	"github.com/je4/zsearch/v2/pkg/search"
+	sshtunnel "github.com/je4/zsearch/v2/pkg/sshTunnel"
 	"google.golang.org/api/customsearch/v1"
 	"google.golang.org/api/option"
 	"io"
@@ -86,7 +86,7 @@ func main() {
 	config := LoadConfig(*cfgfile)
 
 	// create logger instance
-	log, lf := search.CreateLogger("memostream", config.Logfile, config.Loglevel)
+	log, lf := search.CreateLogger("zsearch", config.Logfile, config.Loglevel)
 	defer lf.Close()
 
 	var accesslog io.Writer
@@ -179,7 +179,7 @@ func main() {
 	*/
 	bconfig := badger.DefaultOptions(config.CacheDir)
 	if runtime.GOOS == "windows" {
-		bconfig.Truncate = true
+		// bconfig.Truncate = true
 	}
 	bconfig.Logger = log
 	db, err := badger.Open(bconfig)

@@ -74,6 +74,11 @@ type Query struct {
 	//SubFilter   []SubFilter `toml:"subfilter"`
 }
 
+type FairService struct {
+	Address        string `toml:"address"`
+	CertSkipVerify bool   `toml:"certskipverify"`
+}
+
 type Config struct {
 	Logfile             string            `toml:"logfile"`
 	Loglevel            string            `toml:"loglevel"`
@@ -92,6 +97,7 @@ type Config struct {
 	Groups              []int64           `toml:"groups"`
 	ClearBeforSync      []int64           `toml:"clearbeforesync"`
 	Query               Query             `toml:"query"`
+	FairService         FairService       `toml:"fairservice"`
 }
 
 var prefixNames = []string{

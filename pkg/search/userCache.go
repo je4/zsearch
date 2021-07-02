@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"github.com/bluele/gcache"
 	"github.com/goph/emperror"
-	"github.com/je4/zsearch/pkg/amp"
+	"github.com/je4/zsearch/v2/pkg/amp"
 	"github.com/pkg/errors"
 	"html/template"
 	"net/url"

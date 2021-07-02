@@ -2,7 +2,7 @@ package search
 
 import (
 	"context"
-	"github.com/je4/zsearch/pkg/mediaserver"
+	"github.com/je4/zsearch/v2/pkg/mediaserver"
 )
 
 type TermFacet struct {

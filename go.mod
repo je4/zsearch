@@ -1,4 +1,4 @@
-module github.com/je4/zsearch
+module github.com/je4/zsearch/v2
 
 go 1.15
 
@@ -11,6 +11,7 @@ require (
 	github.com/bluele/gcache v0.0.0-20190518031135-bc40bd653833
 	github.com/channelmeter/iso8601duration v0.0.0-20150204201828-8da3af7a2a61
 	github.com/dgraph-io/badger/v2 v2.2007.2
+	github.com/dgraph-io/badger/v3 v3.2011.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/drgrib/maps v0.0.0-20190206181841-390503673595
 	github.com/elastic/go-elasticsearch/v8 v8.0.0-20201104130540-2e1f801663c6
@@ -24,6 +25,7 @@ require (
 	github.com/gorilla/sessions v1.2.1
 	github.com/htfy96/reformism v0.0.0-20160819020323-e5bfca398e73
 	github.com/huandu/xstrings v1.3.2 // indirect
+	github.com/je4/FairService/v2 v2.0.0-20210702161401-40cd6d965a91
 	github.com/je4/sitemap v1.0.1-0.20201109172531-8a7e0eb5b921
 	github.com/je4/zsync v0.0.0-20210112120625-a1894ce600a0
 	github.com/juliangruber/go-intersect v1.0.0
@@ -32,7 +34,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/vanng822/go-solr v0.10.0
 	go.mongodb.org/mongo-driver v1.4.3
-	golang.org/x/crypto v0.0.0-20201016220609-9e8e0b390897
-	golang.org/x/net v0.0.0-20201031054903-ff519b6c9102
+	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e
+	golang.org/x/net v0.0.0-20210226172049-e18ecbb05110
 	google.golang.org/api v0.35.0
 )

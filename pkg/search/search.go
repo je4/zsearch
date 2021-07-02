@@ -3,7 +3,7 @@ package search
 import (
 	"context"
 	"fmt"
-	"github.com/dgraph-io/badger/v2"
+	badger "github.com/dgraph-io/badger/v3"
 	"github.com/goph/emperror"
 	"github.com/op/go-logging"
 	"go.mongodb.org/mongo-driver/bson"

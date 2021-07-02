@@ -34,7 +34,7 @@ import (
 	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
 	"github.com/htfy96/reformism"
-	"github.com/je4/zsearch/pkg/amp"
+	"github.com/je4/zsearch/v2/pkg/amp"
 	"github.com/op/go-logging"
 	"google.golang.org/api/customsearch/v1"
 	"html/template"
@@ -642,7 +642,7 @@ func (s *Server) InitTemplates() (err error) {
 		signature := matches[2]
 		url := fmt.Sprintf("%s/%s/%s/%s/%s", s.mediaserver, collection, signature, action, param)
 		if token {
-			_, err := NewJWT(
+			jwt, err := NewJWT(
 				s.mediaserverKey,
 				strings.TrimRight(fmt.Sprintf("mediaserver:%s/%s/%s/%s", collection, signature, action, strings.Join(params, "/")), "/"),
 				"HS256",
@@ -653,7 +653,7 @@ func (s *Server) InitTemplates() (err error) {
 			if err != nil {
 				return fmt.Sprintf("ERROR: %v", err)
 			}
-			//url = fmt.Sprintf("%s?token=%s", url, jwt)
+			url = fmt.Sprintf("%s?token=%s", url, jwt)
 		} else {
 			if s.ampCache != nil {
 				url, err = s.ampCache.BuildUrl(url, amp.IMAGE)
@@ -869,6 +869,7 @@ func (s *Server) ListenAndServe(cert, key string) error {
 			if matches[2] != nil {
 				filter := string(matches[2])
 				rm.Vars = map[string]string{}
+
 				rm.Vars["subfilter"] = filter
 			}
 		}

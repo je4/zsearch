@@ -8,7 +8,7 @@ import (
 	elasticsearch "github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
 	"github.com/goph/emperror"
-	"github.com/je4/zsearch/pkg/mediaserver"
+	"github.com/je4/zsearch/v2/pkg/mediaserver"
 	"github.com/op/go-logging"
 	"log"
 	"strings"

@@ -24,8 +24,8 @@ import (
 	"github.com/dgraph-io/badger/v2"
 	"github.com/goph/emperror"
 	"github.com/je4/sitemap"
-	"github.com/je4/zsearch/pkg/mediaserver"
-	"github.com/je4/zsearch/pkg/search"
+	"github.com/je4/zsearch/v2/pkg/mediaserver"
+	"github.com/je4/zsearch/v2/pkg/search"
 	"github.com/je4/zsync/pkg/filesystem"
 	"github.com/je4/zsync/pkg/zotero"
 	"github.com/op/go-logging"
@@ -118,7 +118,6 @@ func buildSitemap(mte *search.MTElasticSearch, config *Config, log *logging.Logg
 }
 
 func main() {
-
 	cfgfile := flag.String("cfg", "./synczotero.toml", "locations of config file")
 	sinceFlag := flag.String("since", "1970-01-01T00:00:00", "time of last sync")
 	loop := flag.Bool("loop", false, "true for endless looping")
@@ -314,6 +313,7 @@ func main() {
 					if err := mte.UpdateTimestamp(i, ms, now); err != nil {
 						return emperror.Wrapf(err, "cannot update item")
 					}
+
 					counter++
 					return nil
 				},
