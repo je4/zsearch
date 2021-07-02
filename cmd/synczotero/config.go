@@ -77,6 +77,7 @@ type Query struct {
 type FairService struct {
 	Address        string `toml:"address"`
 	CertSkipVerify bool   `toml:"certskipverify"`
+	jwtKey         string `toml:"jwtkey"`
 }
 
 type Config struct {

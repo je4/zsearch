@@ -16,12 +16,14 @@ import (
 type FairService struct {
 	Address        string
 	CertSkipVerify bool
+	JwtKey         string
 }
 
-func NewFairService(address string, certSkipVerify bool) (*FairService, error) {
+func NewFairService(address string, certSkipVerify bool, jwtKey string) (*FairService, error) {
 	fs := &FairService{
 		Address:        address,
 		CertSkipVerify: certSkipVerify,
+		JwtKey:         jwtKey,
 	}
 	return fs, nil
 }
