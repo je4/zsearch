@@ -29,25 +29,32 @@ func NewFairService(address string, certSkipVerify bool, jwtKey string) (*FairSe
 }
 
 func (fs *FairService) Create(item *search.Item) (string, error) {
-	var createData myfairService.CreateData
-
-	createData.Source = item.Name()
-	createData.SourceIdentifier = item.GetSignature()
-	createData.Core = myfair.Core{}
-	createData.Core.PublicationYear = item.GetDate()
-	createData.Core.Identifier = []myfair.Identifier{myfair.Identifier{
-		Value:          item.GetSignatureOriginal(),
-		IdentifierType: "zotero",
-	}}
-	createData.Core.Title = []myfair.Title{
-		myfair.Title{
-			Data: item.GetTitle(),
-			Type: "",
+	createData := myfairService.CreateData{
+		Source:    item.Name(),
+		Signature: item.GetSignature(),
+		Metadata: myfair.Core{
+			Identifier: []myfair.Identifier{{
+				Value:          item.GetSignatureOriginal(),
+				IdentifierType: "zotero",
+			}},
+			Person: []myfair.Person{},
+			Title: []myfair.Title{
+				{
+					Data: item.GetTitle(),
+					Type: "",
+				},
+			},
+			Publisher:       item.GetPublisher(),
+			PublicationYear: item.GetDate(),
+			ResourceType:    mapZsearch2Myfair(item.GetContentType()),
 		},
+		Set:     item.GetCatalogs(),
+		Catalog: item.GetCatalogs(),
+		Public:  false,
 	}
-	createData.Core.Person = []myfair.Person{}
+
 	for _, p := range item.GetPersons() {
-		createData.Core.Person = append(createData.Core.Person, myfair.Person{
+		createData.Metadata.Person = append(createData.Metadata.Person, myfair.Person{
 			PersonType:     myfair.PersonTypeAuthor,
 			PersonName:     myfair.Name{Value: p.Name},
 			GivenName:      "",

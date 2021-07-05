@@ -17,6 +17,10 @@ type SourceCDK struct {
 	medias     map[string]MediaList `json:"-"`
 }
 
+func (cdk *SourceCDK) GetPublisher() string {
+	return "FHNW HGK"
+}
+
 func (cdk *SourceCDK) GetDateAdded() time.Time {
 	return time.Now()
 }

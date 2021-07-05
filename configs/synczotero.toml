@@ -29,7 +29,7 @@ clearbeforesync = [
     2545256, # HGK Collections
     2570300, # hphuser_import
     1510019, # Hyperwerk
-    2571475, # IKUVID
+    # 2571475, # IKUVID
     2315925, # Masterstudio / Thesen
     2608921, # Institut Kunst
     1510009, # Institut Kunst intern
@@ -72,7 +72,7 @@ groups = [
     # 2545256, # HGK Collections
     # 2570300, # hphuser_import
     # 1510019, # Hyperwerk
-    # 2571475, # IKUVID
+    2571475, # IKUVID
     # 2315925, # Masterstudio / Thesen
     # 2608921, # Institut Kunst
     # 1510009, # Institut Kunst intern
@@ -83,7 +83,7 @@ groups = [
     # 2358931, # julia
     # 2582183, # julia_2020
     # 2634291, # knstlerinnen
-    2608904, # panch
+    # 2608904, # panch
     # 2497586, # pascale_grau
     # 1624911, # pcb_basel
     # 2604593, # Peter von Arx
@@ -143,3 +143,19 @@ groups = [
     accessKeyId = "zotero"
     secretAccessKey = "zXbJKxnYZP708Ni84Lep"
     useSSL = true
+
+
+[xsshtunnel]
+user = "root"
+privatekey = "C:/daten/keys/putty_ed25519.priv.openssh"
+    [sshtunnel.serverendpoint]
+    port = 22
+    host = "ba14ns21403.fhnw.ch"
+
+    [sshtunnel.localendpoint]
+    port = 5435
+    host = "localhost"
+
+    [sshtunnel.remoteendpoint]
+    port = 5432
+    host = "v000306.adm.ds.fhnw.ch"

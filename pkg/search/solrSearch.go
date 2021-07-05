@@ -3,7 +3,7 @@ package search
 import (
 	"context"
 	"fmt"
-	"github.com/dgraph-io/badger/v2"
+	"github.com/dgraph-io/badger/v3"
 	"github.com/goph/emperror"
 	"github.com/je4/zsearch/v2/pkg/mediaserver"
 	"github.com/op/go-logging"

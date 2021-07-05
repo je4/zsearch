@@ -80,6 +80,19 @@ type FairService struct {
 	jwtKey         string `toml:"jwtkey"`
 }
 
+type Endpoint struct {
+	Host string `toml:"host"`
+	Port int    `toml:"port"`
+}
+
+type SSHTunnel struct {
+	User           string   `toml:"user"`
+	PrivateKey     string   `toml:"privatekey"`
+	LocalEndpoint  Endpoint `toml:"localendpoint"`
+	ServerEndpoint Endpoint `toml:"serverendpoint"`
+	RemoteEndpoint Endpoint `toml:"remoteendpoint"`
+}
+
 type Config struct {
 	Logfile             string            `toml:"logfile"`
 	Loglevel            string            `toml:"loglevel"`
@@ -99,6 +112,7 @@ type Config struct {
 	ClearBeforSync      []int64           `toml:"clearbeforesync"`
 	Query               Query             `toml:"query"`
 	FairService         FairService       `toml:"fairservice"`
+	SSHTunnel           SSHTunnel         `toml:"sshtunnel"`
 }
 
 var prefixNames = []string{

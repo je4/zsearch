@@ -216,6 +216,7 @@ type Source interface {
 	GetContentString() string
 	GetContentMime() string
 	GetDateAdded() time.Time
+	GetPublisher() string
 }
 
 type SourceData struct {
@@ -248,6 +249,7 @@ type SourceData struct {
 	Mediatype       []string             `json:"mediatype"`
 	DateAdded       time.Time            `json:"dateadded"`
 	Timestamp       time.Time            `json:"timestamp"`
+	Publlisher      string               `json:"publisher"`
 }
 
 func InitSourceData(source Source, ms mediaserver.Mediaserver) *SourceData {

@@ -19,6 +19,10 @@ type SourceDiplomHGK struct {
 	medias     map[string]MediaList `json:"-"`
 }
 
+func (dhgk *SourceDiplomHGK) GetPublisher() string {
+	return "FHNW HGK"
+}
+
 func (dhgk *SourceDiplomHGK) GetDateAdded() time.Time {
 	return time.Now()
 }

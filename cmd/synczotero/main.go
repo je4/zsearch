@@ -21,11 +21,13 @@ import (
 	"flag"
 	"fmt"
 	"github.com/araddon/dateparse"
-	"github.com/dgraph-io/badger/v2"
+	"github.com/dgraph-io/badger/v3"
 	"github.com/goph/emperror"
 	"github.com/je4/sitemap"
+	"github.com/je4/zsearch/v2/pkg/fairservice"
 	"github.com/je4/zsearch/v2/pkg/mediaserver"
 	"github.com/je4/zsearch/v2/pkg/search"
+	sshtunnel "github.com/je4/zsearch/v2/pkg/sshTunnel"
 	"github.com/je4/zsync/pkg/filesystem"
 	"github.com/je4/zsync/pkg/zotero"
 	"github.com/op/go-logging"
@@ -173,7 +175,7 @@ func main() {
 
 	bconfig := badger.DefaultOptions(config.CacheDir)
 	if runtime.GOOS == "windows" {
-		bconfig.Truncate = true
+		// bconfig.Truncate = true
 	}
 	bconfig.Logger = log
 	db, err := badger.Open(bconfig)
@@ -182,6 +184,40 @@ func main() {
 		return
 	}
 	defer db.Close()
+
+	if config.SSHTunnel.User != "" && config.SSHTunnel.PrivateKey != "" {
+		tunnels := map[string]*sshtunnel.SourceDestination{}
+		tunnels["postgres"] = &sshtunnel.SourceDestination{
+			Local: &sshtunnel.Endpoint{
+				Host: config.SSHTunnel.LocalEndpoint.Host,
+				Port: config.SSHTunnel.LocalEndpoint.Port,
+			},
+			Remote: &sshtunnel.Endpoint{
+				Host: config.SSHTunnel.RemoteEndpoint.Host,
+				Port: config.SSHTunnel.RemoteEndpoint.Port,
+			},
+		}
+		tunnel, err := sshtunnel.NewSSHTunnel(
+			config.SSHTunnel.User,
+			config.SSHTunnel.PrivateKey,
+			&sshtunnel.Endpoint{
+				Host: config.SSHTunnel.ServerEndpoint.Host,
+				Port: config.SSHTunnel.ServerEndpoint.Port,
+			},
+			tunnels,
+			log,
+		)
+		if err != nil {
+			log.Errorf("cannot create sshtunnel %v@%v:%v - %v", config.SSHTunnel.User, config.SSHTunnel.ServerEndpoint.Host, &config.SSHTunnel.ServerEndpoint.Port, err)
+			return
+		}
+		if err := tunnel.Start(); err != nil {
+			log.Errorf("cannot create sshtunnel %v - %v", tunnel.String(), err)
+			return
+		}
+		defer tunnel.Close()
+		time.Sleep(2 * time.Second)
+	}
 
 	mte, err := search.NewMTElasticSearch(config.ElasticSearch.Endpoint, config.ElasticSearch.Index, log)
 	if err != nil {
@@ -230,6 +266,11 @@ func main() {
 	if err != nil {
 		log.Panicf("cannot connect to s3 instance: %v", err)
 		return
+	}
+
+	fair, err := fairservice.NewFairService(config.FairService.Address, config.FairService.CertSkipVerify, config.FairService.jwtKey)
+	if err != nil {
+		log.Panicf("cannot instantiate fair service: %v", err)
 	}
 
 	zot, err := zotero.NewZotero(
@@ -286,7 +327,8 @@ func main() {
 					}
 					log.Infof("%v items with signature prefix zotero2-%v deleted", num, groupid)
 				} else {
-					since, err = mte.LastUpdate(cfg)
+					//since, err = mte.LastUpdate(cfg)
+					since = time.Date(1970, 01, 01, 0, 0, 0, 0, time.Local)
 					if err != nil {
 						log.Errorf("cannot get last update of group #%v: %v", groupid, err)
 						break
@@ -313,7 +355,11 @@ func main() {
 					if err := mte.UpdateTimestamp(i, ms, now); err != nil {
 						return emperror.Wrapf(err, "cannot update item")
 					}
-
+					uuid, err := fair.Create(i)
+					if err != nil {
+						return emperror.Wrap(err, "cannot create fair entity")
+					}
+					log.Infof("uuid #%s inserted", uuid)
 					counter++
 					return nil
 				},

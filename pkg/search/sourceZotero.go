@@ -105,6 +105,10 @@ func (item *Item) GetCollectionTitle() string {
 
 }
 
+func (item *Item) GetPublisher() string {
+	return item.Data.Publisher
+}
+
 func (item *Item) GetPersons() []Person {
 	var persons []Person
 	for _, c := range item.Data.Creators {
@@ -515,13 +519,17 @@ func (item *Item) GetVars() *Varlist {
 }
 
 func (item *Item) GetContentType() string {
-	am := strings.TrimSpace(item.Data.ArtworkMedium)
-	if am != "" {
-		return strings.ToLower(am)
+	if t := strings.TrimSpace(item.Data.VideoRecordingFormat); t != "" {
+		return strings.ToLower(t)
 	}
-	pt := strings.TrimSpace(item.Data.PresentationType)
-	if pt != "" {
-		return strings.ToLower(pt)
+	if t := strings.TrimSpace(item.Data.Genre); t != "" {
+		return strings.ToLower(t)
+	}
+	if t := strings.TrimSpace(item.Data.ArtworkMedium); t != "" {
+		return strings.ToLower(t)
+	}
+	if t := strings.TrimSpace(item.Data.PresentationType); t != "" {
+		return strings.ToLower(t)
 	}
 
 	return strings.ToLower(item.Data.ItemDataBase.ItemType)

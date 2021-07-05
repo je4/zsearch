@@ -40,6 +40,10 @@ type SourceZoteroDeprecated struct {
 	medias     map[string]MediaList `jsnon:"-"`
 }
 
+func (zot *SourceZoteroDeprecated) GetPublisher() string {
+	panic("implement me")
+}
+
 func (zot *SourceZoteroDeprecated) GetDateAdded() time.Time {
 	return time.Now()
 }

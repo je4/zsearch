@@ -17,8 +17,7 @@ package main
 
 import (
 	"flag"
-	"github.com/araddon/dateparse"
-	"github.com/dgraph-io/badger/v2"
+	"github.com/dgraph-io/badger/v3"
 	"github.com/je4/zsearch/v2/pkg/hypothesis"
 	"github.com/je4/zsearch/v2/pkg/search"
 	"os"
@@ -28,20 +27,12 @@ import (
 
 func main() {
 	cfgfile := flag.String("cfg", "./synczotero.toml", "locations of config file")
-	sinceFlag := flag.String("since", "1970-01-01T00:00:00", "time of last sync")
-	loop := flag.Bool("loop", false, "true for endless looping")
 	flag.Parse()
 	config := LoadConfig(*cfgfile)
 
 	// create logger instance
 	log, lf := search.CreateLogger("synchypothesis", config.Logfile, config.Loglevel)
 	defer lf.Close()
-
-	since, err := dateparse.ParseAny(*sinceFlag)
-	if err != nil {
-		log.Panicf("cannot parse since parameter %v", *sinceFlag)
-		return
-	}
 
 	stat, err := os.Stat(config.CacheDir)
 	if err != nil {
@@ -82,7 +73,7 @@ func main() {
 
 	bconfig := badger.DefaultOptions(config.CacheDir)
 	if runtime.GOOS == "windows" {
-		bconfig.Truncate = true
+		//		bconfig.Truncate = true
 	}
 	bconfig.Logger = log
 	db, err := badger.Open(bconfig)
@@ -97,6 +88,7 @@ func main() {
 		log.Panic(err)
 		return
 	}
+	log.Infof("%v", mte)
 
 	hy, err := hypothesis.NewHypothesis(config.Hypothesis.Endpoint, config.Hypothesis.Apikey, log)
 	if err != nil {

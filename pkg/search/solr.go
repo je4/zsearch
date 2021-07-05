@@ -306,6 +306,7 @@ func (mts *MTSolr) LoadEntities(ids []string) (map[string]*Document, error) {
 			Place:           content.GetPlace(),
 			Date:            content.GetDate(),
 			CollectionTitle: content.GetCollectionTitle(),
+			Publlisher:      content.GetPublisher(),
 			Persons:         content.GetPersons(),
 			Tags:            content.GetTags(),
 			Media:           content.GetMedia(nil),
