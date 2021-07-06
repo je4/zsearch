@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -247,6 +248,27 @@ func (item *Item) GetTags() []string {
 // https://mediathek.hgk.fhnw.ch/indexer.ng/media.php?id=4.4419.2211214
 // http://hdl.handle.net/20.500.11806/mediathek/inventory/B0000078520/4.4421.2227476
 
+func getOrientation(metadata *mediaserver.Metadata) int64 {
+	var orientation int64 = 1
+	if metadata.Image != nil {
+		if image, ok := metadata.Image.(map[string]interface{}); ok {
+			if image["properties"] != nil {
+				if props, ok := image["properties"].(map[string]interface{}); ok {
+					if props["exif:Orientation"] != nil {
+						if oStr, ok := props["exif:Orientation"].(string); ok {
+							if oVal, err := strconv.ParseInt(oStr, 10, 64); err == nil {
+								orientation = oVal
+							}
+						}
+					}
+				}
+
+			}
+		}
+	}
+	return orientation
+}
+
 func (item *Item) GetMedia(ms mediaserver.Mediaserver) map[string]MediaList {
 	if ms == nil {
 		return map[string]MediaList{}
@@ -331,15 +353,17 @@ func (item *Item) GetMedia(ms mediaserver.Mediaserver) map[string]MediaList {
 			if name == "" {
 				name = fmt.Sprintf("#%v.%v", item.Group.Id, child.Key)
 			}
+
 			media := Media{
-				Name:     name,
-				Mimetype: metadata.Mimetype,
-				Type:     metadata.Type,
-				Uri:      fmt.Sprintf("mediaserver:%s/%s", collection, signature),
-				Width:    metadata.Width,
-				Height:   metadata.Height,
-				Duration: metadata.Duration,
-				Fulltext: fulltext,
+				Name:        name,
+				Mimetype:    metadata.Mimetype,
+				Type:        metadata.Type,
+				Uri:         fmt.Sprintf("mediaserver:%s/%s", collection, signature),
+				Width:       metadata.Width,
+				Height:      metadata.Height,
+				Orientation: getOrientation(metadata),
+				Duration:    metadata.Duration,
+				Fulltext:    fulltext,
 			}
 
 			if _, ok := medias[media.Type]; !ok {
@@ -368,13 +392,14 @@ func (item *Item) GetPoster(ms mediaserver.Mediaserver) *Media {
 				metadata, err := ms.GetMetadata(collection, signature)
 				if err == nil {
 					return &Media{
-						Name:     "poster",
-						Mimetype: metadata.Mimetype,
-						Type:     metadata.Type,
-						Uri:      fmt.Sprintf("mediaserver:%v/%v", collection, signature),
-						Width:    metadata.Width,
-						Height:   metadata.Height,
-						Duration: metadata.Duration,
+						Name:        "poster",
+						Mimetype:    metadata.Mimetype,
+						Type:        metadata.Type,
+						Uri:         fmt.Sprintf("mediaserver:%v/%v", collection, signature),
+						Width:       metadata.Width,
+						Height:      metadata.Height,
+						Orientation: getOrientation(metadata),
+						Duration:    metadata.Duration,
 					}
 				}
 			}

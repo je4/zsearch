@@ -55,14 +55,15 @@ type Person struct {
 }
 
 type Media struct {
-	Name     string `json:"name"`
-	Mimetype string `json:"mimetype"`
-	Type     string `json:"type"`
-	Uri      string `json:"uri"`
-	Width    int64  `json:"width,omitempty"`
-	Height   int64  `json:"height,omitempty"`
-	Duration int64  `json:"duration,omitempty"`
-	Fulltext string `json:"fulltext,omitempty"`
+	Name        string `json:"name"`
+	Mimetype    string `json:"mimetype"`
+	Type        string `json:"type"`
+	Uri         string `json:"uri"`
+	Width       int64  `json:"width,omitempty"`
+	Height      int64  `json:"height,omitempty"`
+	Orientation int64  `json:"orientation,omitempty"`
+	Duration    int64  `json:"duration,omitempty"`
+	Fulltext    string `json:"fulltext,omitempty"`
 }
 
 type Query struct {

@@ -11,10 +11,10 @@ clearbeforesync = [
     ## 2514673, # rimab
     ## 2171465, # basle_bibliography_for_historical_performance_practice
     ## 2512784, # HGK Events
-    ## 1510020, # Institut Industrial Design / Thesen
     # 2612786, # lernen
 
     # 2206003, # ACT Basel  // indexer - not yet implemented
+    1510020, # Institut Industrial Design / Thesen
     2486551, # ACT 2020
     2483850, # Albena
     2317722, # archive_des_ephemeren
@@ -23,7 +23,7 @@ clearbeforesync = [
     2327162, # digitalbrainstorming
     2260611, # digitale see
     2605562, # erinnerungsraum
-    29831, # HGK Fotoarchiv
+    2329831, # HGK Fotoarchiv
     2250437, # Grenzgang
     704562,  # Handapparate
     2545256, # HGK Collections
@@ -44,9 +44,14 @@ clearbeforesync = [
     2497586, # pascale_grau
     1624911, # pcb_basel
     2604593, # Peter von Arx
+    2488157, # Kasko digital
     2068924, # summe2017
     2559823, # videowochen_im_wenkenpark
     2579176, # Wissenscluster
+    2758283, # Applied Fine Performaing Arts
+    2857696, # Doce en Diciembre
+    2910166, # Kasko Memoriav
+    4278174, # Institut Mode-Design Web
 ]
 
 groups = [
@@ -54,9 +59,9 @@ groups = [
     ## 2514673, # rimab
     ## 2171465, # basle_bibliography_for_historical_performance_practice
     ## 2512784, # HGK Events
-    ## 1510020, # Institut Industrial Design / Thesen
     # 2612786, # lernen
 
+    # 1510020, # Institut Industrial Design / Thesen
     # 2206003, # ACT Basel  // indexer - not yet implemented
     # 2486551, # ACT 2020
     # 2483850, # Albena
@@ -72,7 +77,7 @@ groups = [
     # 2545256, # HGK Collections
     # 2570300, # hphuser_import
     # 1510019, # Hyperwerk
-    2571475, # IKUVID
+    # 2571475, # IKUVID
     # 2315925, # Masterstudio / Thesen
     # 2608921, # Institut Kunst
     # 1510009, # Institut Kunst intern
@@ -87,9 +92,14 @@ groups = [
     # 2497586, # pascale_grau
     # 1624911, # pcb_basel
     # 2604593, # Peter von Arx
+    # 2488157, # Kasko digital
     # 2068924, # summe2017
     # 2559823, # videowochen_im_wenkenpark
     # 2579176, # Wissenscluster
+    # 2758283, # Applied Fine Performaing Arts
+    # 2857696, # Doce en Diciembre
+    # 2910166, # Kasko Memoriav
+    4278174, # Institut Mode-Design Web
 ]
 
 [prefix]
@@ -109,7 +119,7 @@ groups = [
 
 
 [elasticsearch]
-    endpoint = ["http://localhost:9201"]
+    endpoint = ["http://localhost:9200"]
     index = "test"
 
 [query]
@@ -146,16 +156,38 @@ groups = [
 
 
 [xsshtunnel]
-user = "root"
-privatekey = "C:/daten/keys/putty_ed25519.priv.openssh"
+    user = "root"
+    privatekey = "C:/daten/keys/putty_ed25519.priv.openssh"
     [sshtunnel.serverendpoint]
     port = 22
     host = "ba14ns21403.fhnw.ch"
 
-    [sshtunnel.localendpoint]
-    port = 5435
-    host = "localhost"
+    [[sshtunnel.tunnel]]
+        name = "postgres"
+        [sshtunnel.tunnel.localendpoint]
+        port = 5435
+        host = "localhost"
 
-    [sshtunnel.remoteendpoint]
-    port = 5432
-    host = "v000306.adm.ds.fhnw.ch"
+        [sshtunnel.tunnel.remoteendpoint]
+        port = 5432
+        host = "v000306.adm.ds.fhnw.ch"
+
+    [[sshtunnel.tunnel]]
+        name = "elasticsearch"
+        [sshtunnel.tunnel.localendpoint]
+        port = 9201
+        host = "localhost"
+
+        [sshtunnel.tunnel.remoteendpoint]
+        port = 9200
+        host = "asara269.adm.ds.fhnw.ch"
+
+    [[sshtunnel.tunnel]]
+        name = "mysql"
+        [sshtunnel.tunnel.localendpoint]
+        port = 3308
+        host = "localhost"
+
+        [sshtunnel.tunnel.remoteendpoint]
+        port = 3306
+        host = "v000306.adm.ds.fhnw.ch"

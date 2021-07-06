@@ -24,7 +24,6 @@ import (
 	"github.com/dgraph-io/badger/v3"
 	"github.com/goph/emperror"
 	"github.com/je4/sitemap"
-	"github.com/je4/zsearch/v2/pkg/fairservice"
 	"github.com/je4/zsearch/v2/pkg/mediaserver"
 	"github.com/je4/zsearch/v2/pkg/search"
 	sshtunnel "github.com/je4/zsearch/v2/pkg/sshTunnel"
@@ -187,15 +186,17 @@ func main() {
 
 	if config.SSHTunnel.User != "" && config.SSHTunnel.PrivateKey != "" {
 		tunnels := map[string]*sshtunnel.SourceDestination{}
-		tunnels["postgres"] = &sshtunnel.SourceDestination{
-			Local: &sshtunnel.Endpoint{
-				Host: config.SSHTunnel.LocalEndpoint.Host,
-				Port: config.SSHTunnel.LocalEndpoint.Port,
-			},
-			Remote: &sshtunnel.Endpoint{
-				Host: config.SSHTunnel.RemoteEndpoint.Host,
-				Port: config.SSHTunnel.RemoteEndpoint.Port,
-			},
+		for _, t := range config.SSHTunnel.Tunnel {
+			tunnels[t.Name] = &sshtunnel.SourceDestination{
+				Local: &sshtunnel.Endpoint{
+					Host: t.LocalEndpoint.Host,
+					Port: t.LocalEndpoint.Port,
+				},
+				Remote: &sshtunnel.Endpoint{
+					Host: t.RemoteEndpoint.Host,
+					Port: t.RemoteEndpoint.Port,
+				},
+			}
 		}
 		tunnel, err := sshtunnel.NewSSHTunnel(
 			config.SSHTunnel.User,
@@ -268,10 +269,13 @@ func main() {
 		return
 	}
 
-	fair, err := fairservice.NewFairService(config.FairService.Address, config.FairService.CertSkipVerify, config.FairService.jwtKey)
-	if err != nil {
-		log.Panicf("cannot instantiate fair service: %v", err)
-	}
+	/*
+		fair, err := fairservice.NewFairService(config.FairService.Address, config.FairService.CertSkipVerify, config.FairService.jwtKey)
+		if err != nil {
+			log.Panicf("cannot instantiate fair service: %v", err)
+		}
+
+	*/
 
 	zot, err := zotero.NewZotero(
 		config.Zotero.Endpoint,
@@ -355,11 +359,14 @@ func main() {
 					if err := mte.UpdateTimestamp(i, ms, now); err != nil {
 						return emperror.Wrapf(err, "cannot update item")
 					}
-					uuid, err := fair.Create(i)
-					if err != nil {
-						return emperror.Wrap(err, "cannot create fair entity")
-					}
-					log.Infof("uuid #%s inserted", uuid)
+					/*
+						uuid, err := fair.Create(i)
+						if err != nil {
+							return emperror.Wrap(err, "cannot create fair entity")
+						}
+
+						log.Infof("uuid #%s inserted", uuid)
+					*/
 					counter++
 					return nil
 				},

@@ -85,12 +85,17 @@ type Endpoint struct {
 	Port int    `toml:"port"`
 }
 
+type Tunnel struct {
+	Name           string   `toml:"name"`
+	LocalEndpoint  Endpoint `toml:"localendpoint"`
+	RemoteEndpoint Endpoint `toml:"remoteendpoint"`
+}
+
 type SSHTunnel struct {
 	User           string   `toml:"user"`
 	PrivateKey     string   `toml:"privatekey"`
-	LocalEndpoint  Endpoint `toml:"localendpoint"`
 	ServerEndpoint Endpoint `toml:"serverendpoint"`
-	RemoteEndpoint Endpoint `toml:"remoteendpoint"`
+	Tunnel         []Tunnel `toml:"tunnel"`
 }
 
 type Config struct {

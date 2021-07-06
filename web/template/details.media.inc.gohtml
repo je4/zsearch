@@ -165,12 +165,12 @@
                         width="250"
                         height="250"
                         layout="nodisplay"
-                        src="{{medialink $image.Uri "resize" "size250x250/crop/formatWEBP" (not $contentPublic)}}">
+                        src="{{medialink $image.Uri "resize" "size250x250/crop/formatWEBP/autorotate" (not $contentPublic)}}">
                     <amp-img
                             width="250"
                             height="250"
                             fallback
-                            src="{{medialink $image.Uri "resize" "size250x250/crop/formatJPEG" (not $contentPublic)}}">
+                            src="{{medialink $image.Uri "resize" "size250x250/crop/formatJPEG/autorotate" (not $contentPublic)}}">
                     </amp-img>
                 </amp-img>
                 {{end}}
@@ -183,7 +183,7 @@
                         <!-- Image -->
                         <amp-img
                                 aria-label="{{$image.Name}}"
-                                src="{{medialink $image.Uri "resize" "size1280x720/formatWEBP" (not $contentPublic)}}"
+                                src="{{medialink $image.Uri "resize" "size1280x720/formatWEBP/autorotate" (not $contentPublic)}}"
                                 width="{{ $image.Width }}"
                                 height="{{ $image.Height }}"
                                 layout="responsive"
@@ -192,7 +192,7 @@
                                 noloading="">
                             <amp-img
                                     aria-label="{{$image.Name}}"
-                                    src="{{medialink $image.Uri "resize" "size1280x720/formatJPEG" (not $contentPublic)}}"
+                                    src="{{medialink $image.Uri "resize" "size1280x720/formatJPEG/autorotate" (not $contentPublic)}}"
                                     width="{{ $image.Width }}"
                                     height="{{ $image.Height }}"
                                     layout="responsive"
