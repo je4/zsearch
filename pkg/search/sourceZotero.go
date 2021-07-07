@@ -57,6 +57,10 @@ func (item *Item) Name() string {
 	return "zotero2"
 }
 
+func (item *Item) GetSource() string {
+	return fmt.Sprintf("%s-%v", item.Name(), item.Group.Id)
+}
+
 func (item *Item) GetSignature() string {
 	return fmt.Sprintf("%s-%v.%v", item.Name(), item.Group.Id, item.Key)
 }
@@ -107,6 +111,9 @@ func (item *Item) GetCollectionTitle() string {
 }
 
 func (item *Item) GetPublisher() string {
+	if item.Data.Publisher == "" {
+		return "Mediathek HGK"
+	}
 	return item.Data.Publisher
 }
 

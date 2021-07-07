@@ -14,6 +14,7 @@ import (
 	"io/ioutil"
 	"net"
 	"sync"
+	"time"
 )
 
 type Endpoint struct {
@@ -76,8 +77,9 @@ func (tunnel *SSHtunnel) String() string {
 		tunnel.config.User,
 		tunnel.server.Host, tunnel.server.Port,
 	)
-	for _, srcdests := range tunnel.tunnels {
-		str += fmt.Sprintf(" - (%v:%v -> %v:%v)",
+	for name, srcdests := range tunnel.tunnels {
+		str += fmt.Sprintf(" - ([%v] %v:%v -> %v:%v)",
+			name,
 			srcdests.Local.Host, srcdests.Local.Port,
 			srcdests.Remote.Host, srcdests.Remote.Port,
 		)
@@ -107,6 +109,11 @@ func (tunnel *SSHtunnel) Start() error {
 	}
 
 	for key, t := range tunnel.tunnels {
+		tunnel.log.Infof("starting tunnel [%v] %v:%v -> %v:%v)",
+			key,
+			t.Local.Host, t.Local.Port,
+			t.Remote.Host, t.Remote.Port,
+		)
 		tunnel.listener[key], err = net.Listen("tcp", t.Local.String())
 		if err != nil {
 			return emperror.Wrapf(err, "cannot start listener on %v", t.Local.String())
@@ -115,10 +122,12 @@ func (tunnel *SSHtunnel) Start() error {
 
 		go func(k string) {
 			//defer tunnel.wg.Done()
+			tunnel.log.Debugf("start accepting %v", k)
 			conn, err := tunnel.listener[k].Accept()
 			if err != nil {
 				select {
 				case <-tunnel.quit[k]:
+					tunnel.log.Errorf("quit tunnel %v", k)
 					return
 				default:
 					tunnel.log.Errorf("error accepting connection on %v", tunnel.tunnels[k].Local.String())
@@ -126,12 +135,15 @@ func (tunnel *SSHtunnel) Start() error {
 			} else {
 				tunnel.wg.Add(1)
 				go func() {
+					tunnel.log.Debugf("tunnel %v forward()", k)
 					tunnel.forward(conn, tunnel.tunnels[k].Remote)
 					tunnel.wg.Done()
+					tunnel.log.Debugf("tunnel %v forward() done", k)
 				}()
 			}
 		}(key)
 	}
+	time.Sleep(2 * time.Second)
 	return nil
 }
 

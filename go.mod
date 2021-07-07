@@ -30,7 +30,7 @@ require (
 	github.com/gorilla/sessions v1.2.1
 	github.com/htfy96/reformism v0.0.0-20160819020323-e5bfca398e73
 	github.com/huandu/xstrings v1.3.2 // indirect
-	github.com/je4/FairService/v2 v2.0.0-20210705152140-df2decd988e7
+	github.com/je4/FairService/v2 v2.0.0-20210707152555-9db4753cf1b0
 	github.com/je4/sitemap v1.0.1-0.20201109172531-8a7e0eb5b921
 	github.com/je4/zsync v0.0.0-20210112120625-a1894ce600a0
 	github.com/juliangruber/go-intersect v1.0.0

@@ -29,7 +29,7 @@ clearbeforesync = [
     2545256, # HGK Collections
     2570300, # hphuser_import
     1510019, # Hyperwerk
-    # 2571475, # IKUVID
+    2571475, # IKUVID
     2315925, # Masterstudio / Thesen
     2608921, # Institut Kunst
     1510009, # Institut Kunst intern
@@ -51,7 +51,7 @@ clearbeforesync = [
     2758283, # Applied Fine Performaing Arts
     2857696, # Doce en Diciembre
     2910166, # Kasko Memoriav
-    4278174, # Institut Mode-Design Web
+    # 4278174, # Institut Mode-Design Web
 ]
 
 groups = [
@@ -145,7 +145,7 @@ groups = [
         schema = "mediaserver"
 
 [fairservice]
-    address = "https://localhost:8443/item"
+    address = "https://localhost:8443/mediathek/item"
     certskipverify = true
 
 [s3]
@@ -155,7 +155,7 @@ groups = [
     useSSL = true
 
 
-[xsshtunnel]
+[_sshtunnel]
     user = "root"
     privatekey = "C:/daten/keys/putty_ed25519.priv.openssh"
     [sshtunnel.serverendpoint]
@@ -165,7 +165,7 @@ groups = [
     [[sshtunnel.tunnel]]
         name = "postgres"
         [sshtunnel.tunnel.localendpoint]
-        port = 5435
+        port = 5436
         host = "localhost"
 
         [sshtunnel.tunnel.remoteendpoint]
@@ -175,7 +175,7 @@ groups = [
     [[sshtunnel.tunnel]]
         name = "elasticsearch"
         [sshtunnel.tunnel.localendpoint]
-        port = 9201
+        port = 9205
         host = "localhost"
 
         [sshtunnel.tunnel.remoteendpoint]

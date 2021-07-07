@@ -24,6 +24,7 @@ import (
 	"github.com/dgraph-io/badger/v3"
 	"github.com/goph/emperror"
 	"github.com/je4/sitemap"
+	"github.com/je4/zsearch/v2/pkg/fairservice"
 	"github.com/je4/zsearch/v2/pkg/mediaserver"
 	"github.com/je4/zsearch/v2/pkg/search"
 	sshtunnel "github.com/je4/zsearch/v2/pkg/sshTunnel"
@@ -269,13 +270,10 @@ func main() {
 		return
 	}
 
-	/*
-		fair, err := fairservice.NewFairService(config.FairService.Address, config.FairService.CertSkipVerify, config.FairService.jwtKey)
-		if err != nil {
-			log.Panicf("cannot instantiate fair service: %v", err)
-		}
-
-	*/
+	fair, err := fairservice.NewFairService(config.FairService.Address, config.FairService.CertSkipVerify, config.FairService.jwtKey)
+	if err != nil {
+		log.Panicf("cannot instantiate fair service: %v", err)
+	}
 
 	zot, err := zotero.NewZotero(
 		config.Zotero.Endpoint,
@@ -359,14 +357,14 @@ func main() {
 					if err := mte.UpdateTimestamp(i, ms, now); err != nil {
 						return emperror.Wrapf(err, "cannot update item")
 					}
-					/*
-						uuid, err := fair.Create(i)
+					if fair.Address != "" {
+						uuid, err := fair.Create(i, ms)
 						if err != nil {
 							return emperror.Wrap(err, "cannot create fair entity")
 						}
 
 						log.Infof("uuid #%s inserted", uuid)
-					*/
+					}
 					counter++
 					return nil
 				},
