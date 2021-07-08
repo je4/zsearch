@@ -479,6 +479,10 @@ func (item *Item) GetAbstract() string {
 	return zotero.TextNoMeta(item.Data.AbstractNote + "\n" + item.Data.Extra)
 }
 
+func (item *Item) GetRights() string {
+	return item.Data.Rights
+}
+
 var zoterolinkregexp = regexp.MustCompile("^https?://zotero.org/groups/([^/]+)/items/([^/]+)$")
 
 func (item *Item) GetReferences() []Reference {

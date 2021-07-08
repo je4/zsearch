@@ -5,7 +5,8 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/je4/FairService/v2/pkg/model/myfair"
+	"github.com/je4/FairService/v2/pkg/fair"
+	fairModel "github.com/je4/FairService/v2/pkg/model/myfair"
 	myfairService "github.com/je4/FairService/v2/pkg/service"
 	"github.com/je4/zsearch/v2/pkg/mediaserver"
 	"github.com/je4/zsearch/v2/pkg/search"
@@ -30,16 +31,16 @@ func NewFairService(address string, certSkipVerify bool, jwtKey string) (*FairSe
 }
 
 func (fs *FairService) Create(item *search.Item, ms mediaserver.Mediaserver) (string, error) {
-	createData := myfairService.CreateData{
+	createData := fair.ItemData{
 		Source:    item.GetSource(),
 		Signature: item.GetSignature(),
-		Metadata: myfair.Core{
-			Identifier: []myfair.Identifier{{
+		Metadata: fairModel.Core{
+			Identifier: []fairModel.Identifier{{
 				Value:          item.GetSignatureOriginal(),
 				IdentifierType: "zotero",
 			}},
-			Person: []myfair.Person{},
-			Title: []myfair.Title{
+			Person: []fairModel.Person{},
+			Title: []fairModel.Title{
 				{
 					Data: item.GetTitle(),
 					Type: "",
@@ -48,16 +49,17 @@ func (fs *FairService) Create(item *search.Item, ms mediaserver.Mediaserver) (st
 			Publisher:       item.GetPublisher(),
 			PublicationYear: item.GetDate(),
 			ResourceType:    mapZsearch2Myfair(item.GetContentType()),
-			Media:           []*myfair.Media{},
+			Media:           []*fairModel.Media{},
+			Rights:          item.GetRights(),
 		},
 		Set:     item.GetCatalogs(),
 		Catalog: item.GetCatalogs(),
-		Access:  myfairService.DataAccessClosed,
+		Access:  fair.DataAccessClosed,
 	}
 	medias := item.GetMedia(ms)
 	poster := item.GetPoster(ms)
 	if poster != nil {
-		createData.Metadata.Poster = &myfair.Media{
+		createData.Metadata.Poster = &fairModel.Media{
 			Name:        poster.Name,
 			Mimetype:    poster.Mimetype,
 			Type:        poster.Type,
@@ -71,7 +73,7 @@ func (fs *FairService) Create(item *search.Item, ms mediaserver.Mediaserver) (st
 	}
 	for _, medias := range medias {
 		for _, media := range medias {
-			createData.Metadata.Media = append(createData.Metadata.Media, &myfair.Media{
+			createData.Metadata.Media = append(createData.Metadata.Media, &fairModel.Media{
 				Name:        media.Name,
 				Mimetype:    media.Mimetype,
 				Type:        media.Type,
@@ -102,23 +104,23 @@ func (fs *FairService) Create(item *search.Item, ms mediaserver.Mediaserver) (st
 		}
 	}
 	if contentOK && metaOK {
-		createData.Access = myfairService.DataAccessPublic
+		createData.Access = fair.DataAccessPublic
 	}
 	if metaOK && !contentOK {
-		createData.Access = myfairService.DataAccessClosedData
+		createData.Access = fair.DataAccessClosedData
 	}
 	if !metaOK {
-		createData.Access = myfairService.DataAccessClosed
+		createData.Access = fair.DataAccessClosed
 	}
 
 	for _, p := range item.GetPersons() {
-		createData.Metadata.Person = append(createData.Metadata.Person, myfair.Person{
-			PersonType:     myfair.PersonTypeAuthor,
-			PersonName:     myfair.Name{Value: p.Name},
+		createData.Metadata.Person = append(createData.Metadata.Person, fairModel.Person{
+			PersonType:     fairModel.PersonTypeAuthor,
+			PersonName:     fairModel.Name{Value: p.Name},
 			GivenName:      "",
 			FamilyName:     "",
 			Affiliation:    "",
-			NameIdentifier: myfair.NameIdentifier{},
+			NameIdentifier: fairModel.NameIdentifier{},
 		})
 	}
 
