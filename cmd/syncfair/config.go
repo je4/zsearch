@@ -52,11 +52,6 @@ type MediaserverMySQL struct {
 	Url string       `toml:"url"`
 }
 
-type Cfg_ElasticSearch struct {
-	Endpoint []string `toml:"endpoint"`
-	Index    string   `toml:"index"`
-}
-
 type Cfg_S3 struct {
 	Endpoint        string `toml:"endpoint"`
 	AccessKeyId     string `toml:"accessKeyId"`
@@ -64,14 +59,15 @@ type Cfg_S3 struct {
 	UseSSL          bool   `toml:"useSSL"`
 }
 
-type Hypothesis struct {
-	Apikey   string `toml:"apikey"`
-	Endpoint string `toml:"endpoint"`
-}
-
 type Query struct {
 	BaseCatalog []string `toml:"basecatalog"`
 	//SubFilter   []SubFilter `toml:"subfilter"`
+}
+
+type FairService struct {
+	Address        string `toml:"address"`
+	CertSkipVerify bool   `toml:"certskipverify"`
+	jwtKey         string `toml:"jwtkey"`
 }
 
 type Endpoint struct {
@@ -95,8 +91,6 @@ type SSHTunnel struct {
 type Config struct {
 	Logfile             string            `toml:"logfile"`
 	Loglevel            string            `toml:"loglevel"`
-	ElasticSearch       Cfg_ElasticSearch `toml:"elasticsearch"`
-	Hypothesis          Hypothesis        `toml:"hypothesis"`
 	CacheDir            string            `toml:"cachedir"`
 	StaticDir           string            `toml:"staticdir"`
 	AddrExt             string            `toml:"addrext"`
@@ -110,6 +104,7 @@ type Config struct {
 	Groups              []int64           `toml:"groups"`
 	ClearBeforSync      []int64           `toml:"clearbeforesync"`
 	Query               Query             `toml:"query"`
+	FairService         FairService       `toml:"fairservice"`
 	SSHTunnel           SSHTunnel         `toml:"sshtunnel"`
 }
 

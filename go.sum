@@ -359,8 +359,8 @@ github.com/jackc/puddle v1.1.1/go.mod h1:m4B5Dj62Y0fbyuIc15OsIqK0+JU8nkqQjsgx7dv
 github.com/jackc/puddle v1.1.3/go.mod h1:m4B5Dj62Y0fbyuIc15OsIqK0+JU8nkqQjsgx7dvjSWk=
 github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 h1:BQSFePA1RWJOlocH6Fxy8MmwDt+yVQYULKfN0RoTN8A=
 github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99/go.mod h1:1lJo3i6rXxKeerYnT8Nvf0QmHCRC1n8sfWVwXF2Frvo=
-github.com/je4/FairService/v2 v2.0.0-20210708124140-749dd2b8ec5c h1:mtADMY3SBq+rnDGsZb5rhJZfV5xGKtBZc9+9vDJ+Y4c=
-github.com/je4/FairService/v2 v2.0.0-20210708124140-749dd2b8ec5c/go.mod h1:kA7xbVDmMifExKLpJxl4dYHbOqx7TJSoonebb0+wCTs=
+github.com/je4/FairService/v2 v2.0.0-20210713125801-b58e12db3a3b h1:kMm6C3VAb8PeHardwa1QIo98p13JVm2SOoEcPiPwayo=
+github.com/je4/FairService/v2 v2.0.0-20210713125801-b58e12db3a3b/go.mod h1:kA7xbVDmMifExKLpJxl4dYHbOqx7TJSoonebb0+wCTs=
 github.com/je4/sitemap v1.0.1-0.20201109172531-8a7e0eb5b921 h1:YBBfnbPVf87tQzEpLBsLNZa5S0rRbgPVK6TiTuQ6vJM=
 github.com/je4/sitemap v1.0.1-0.20201109172531-8a7e0eb5b921/go.mod h1:wPwiCw+mNfXMHsKhHvXCZOXvn87SG9IjGEBY33pmoj0=
 github.com/je4/utils/v2 v2.0.0-20210702125424-8c1cdd3f1ccc h1:bQ6x6C0YUwLpr1UrI/VeH/0N9lbTumiA6VVQAaANGjI=

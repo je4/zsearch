@@ -30,6 +30,91 @@ func NewFairService(address string, certSkipVerify bool, jwtKey string) (*FairSe
 	return fs, nil
 }
 
+func (fs *FairService) StartUpdate(source string) error {
+	srcData := fair.SourceData{Source: source}
+	data, err := json.Marshal(srcData)
+	if err != nil {
+		return errors.Wrapf(err, "cannot marshal [%v]", srcData)
+	}
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: fs.CertSkipVerify},
+	}
+	client := &http.Client{Transport: tr}
+	response, err := client.Post(fs.Address+"/startupdate", "text/json", bytes.NewBuffer(data))
+	if err != nil {
+		return errors.Wrapf(err, "cannot post to %s", fs.Address)
+	}
+	bodyBytes, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return errors.Wrap(err, "cannot read response body")
+	}
+	result := myfairService.CreateResultStatus{}
+	if err := json.Unmarshal(bodyBytes, &result); err != nil {
+		return errors.Wrapf(err, "cannot decode result %s", string(bodyBytes))
+	}
+	if result.Status != "ok" {
+		return errors.New(fmt.Sprintf("error starting update: %s", result.Message))
+	}
+	return nil
+
+}
+func (fs *FairService) EndUpdate(source string) error {
+	srcData := fair.SourceData{Source: source}
+	data, err := json.Marshal(srcData)
+	if err != nil {
+		return errors.Wrapf(err, "cannot marshal [%v]", srcData)
+	}
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: fs.CertSkipVerify},
+	}
+	client := &http.Client{Transport: tr}
+	response, err := client.Post(fs.Address+"/endupdate", "text/json", bytes.NewBuffer(data))
+	if err != nil {
+		return errors.Wrapf(err, "cannot post to %s", fs.Address)
+	}
+	bodyBytes, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return errors.Wrap(err, "cannot read response body")
+	}
+	result := myfairService.CreateResultStatus{}
+	if err := json.Unmarshal(bodyBytes, &result); err != nil {
+		return errors.Wrapf(err, "cannot decode result %s", string(bodyBytes))
+	}
+	if result.Status != "ok" {
+		return errors.New(fmt.Sprintf("error starting update: %s", result.Message))
+	}
+	return nil
+
+}
+func (fs *FairService) AbortUpdate(source string) error {
+	srcData := fair.SourceData{Source: source}
+	data, err := json.Marshal(srcData)
+	if err != nil {
+		return errors.Wrapf(err, "cannot marshal [%v]", srcData)
+	}
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: fs.CertSkipVerify},
+	}
+	client := &http.Client{Transport: tr}
+	response, err := client.Post(fs.Address+"/abortupdate", "text/json", bytes.NewBuffer(data))
+	if err != nil {
+		return errors.Wrapf(err, "cannot post to %s", fs.Address)
+	}
+	bodyBytes, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return errors.Wrap(err, "cannot read response body")
+	}
+	result := myfairService.CreateResultStatus{}
+	if err := json.Unmarshal(bodyBytes, &result); err != nil {
+		return errors.Wrapf(err, "cannot decode result %s", string(bodyBytes))
+	}
+	if result.Status != "ok" {
+		return errors.New(fmt.Sprintf("error starting update: %s", result.Message))
+	}
+	return nil
+
+}
+
 func (fs *FairService) Create(item *search.Item, ms mediaserver.Mediaserver) (string, error) {
 	createData := fair.ItemData{
 		Source:    item.GetSource(),
@@ -51,6 +136,7 @@ func (fs *FairService) Create(item *search.Item, ms mediaserver.Mediaserver) (st
 			ResourceType:    mapZsearch2Myfair(item.GetContentType()),
 			Media:           []*fairModel.Media{},
 			Rights:          item.GetRights(),
+			License:         item.GetLicense(),
 		},
 		Set:     item.GetCatalogs(),
 		Catalog: item.GetCatalogs(),
@@ -132,7 +218,7 @@ func (fs *FairService) Create(item *search.Item, ms mediaserver.Mediaserver) (st
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: fs.CertSkipVerify},
 	}
 	client := &http.Client{Transport: tr}
-	response, err := client.Post(fs.Address, "text/json", bytes.NewBuffer(data))
+	response, err := client.Post(fs.Address+"/item", "text/json", bytes.NewBuffer(data))
 	if err != nil {
 		return "", errors.Wrapf(err, "cannot post to %s", fs.Address)
 	}

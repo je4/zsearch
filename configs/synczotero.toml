@@ -145,7 +145,7 @@ groups = [
         schema = "mediaserver"
 
 [fairservice]
-    address = "https://localhost:8443/mediathek/item"
+    address = "https://localhost:8443/mediathek"
     certskipverify = true
 
 [s3]

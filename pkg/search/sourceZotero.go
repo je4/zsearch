@@ -483,6 +483,16 @@ func (item *Item) GetRights() string {
 	return item.Data.Rights
 }
 
+var urlRegex = regexp.MustCompile(`(https?:\/\/[^@\/\n]+[^: ;):\n]+[^: ;)?:\n.])`)
+
+func (item *Item) GetLicense() string {
+	matches := urlRegex.FindStringSubmatch(item.Data.Rights)
+	if matches == nil {
+		return ""
+	}
+	return matches[1]
+}
+
 var zoterolinkregexp = regexp.MustCompile("^https?://zotero.org/groups/([^/]+)/items/([^/]+)$")
 
 func (item *Item) GetReferences() []Reference {

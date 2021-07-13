@@ -24,6 +24,7 @@ import (
 	"github.com/dgraph-io/badger/v3"
 	"github.com/goph/emperror"
 	"github.com/je4/sitemap"
+	"github.com/je4/zsearch/v2/pkg/fairservice"
 	"github.com/je4/zsearch/v2/pkg/mediaserver"
 	"github.com/je4/zsearch/v2/pkg/search"
 	sshtunnel "github.com/je4/zsearch/v2/pkg/sshTunnel"
@@ -121,7 +122,6 @@ func buildSitemap(mte *search.MTElasticSearch, config *Config, log *logging.Logg
 func main() {
 	cfgfile := flag.String("cfg", "./synczotero.toml", "locations of config file")
 	sinceFlag := flag.String("since", "1970-01-01T00:00:00", "time of last sync")
-	loop := flag.Bool("loop", false, "true for endless looping")
 	flag.Parse()
 	config := LoadConfig(*cfgfile)
 
@@ -220,12 +220,6 @@ func main() {
 		time.Sleep(2 * time.Second)
 	}
 
-	mte, err := search.NewMTElasticSearch(config.ElasticSearch.Endpoint, config.ElasticSearch.Index, log)
-	if err != nil {
-		log.Panic(err)
-		return
-	}
-
 	// get database connection handle
 	zoteroDB, err := sql.Open(config.Zotero.DB.ServerType, config.Zotero.DB.DSN)
 	if err != nil {
@@ -269,6 +263,11 @@ func main() {
 		return
 	}
 
+	fair, err := fairservice.NewFairService(config.FairService.Address, config.FairService.CertSkipVerify, config.FairService.jwtKey)
+	if err != nil {
+		log.Panicf("cannot instantiate fair service: %v", err)
+	}
+
 	zot, err := zotero.NewZotero(
 		config.Zotero.Endpoint,
 		config.Zotero.Apikey,
@@ -282,92 +281,49 @@ func main() {
 		log.Panicf("cannot create zotero instance: %v", err)
 		return
 	}
-
-	first := true
-
-	for {
-
-		var counter int64 = 0
-		now := time.Now()
-		for _, groupid := range config.Groups {
-			group, err := zot.LoadGroupLocal(groupid)
-			if err != nil {
-				log.Errorf("cannot load groups: %v", err)
-				break
-			}
-			//since := time.Date(1970, 01, 01, 0, 0, 0, 0, time.Local)
-			if first {
-				cfg := &search.ScrollConfig{
-					FiltersFields: map[string][]string{
-						"signature": []string{fmt.Sprintf("zotero2-%v.*", groupid)},
-					},
-					QStr:           "",
-					Groups:         []string{},
-					ContentVisible: false,
-					IsAdmin:        true,
-				}
-
-				var doClear = false
-				for _, cleargroupid := range config.ClearBeforSync {
-					if cleargroupid == groupid {
-						doClear = true
-						break
-					}
-				}
-				if doClear {
-					since = time.Date(1970, 01, 01, 0, 0, 0, 0, time.Local)
-					num, err := mte.Delete(cfg)
-					if err != nil {
-						log.Errorf("cannot delete items with signature prefix zotero2-%v: %v", groupid, err)
-						break
-					}
-					log.Infof("%v items with signature prefix zotero2-%v deleted", num, groupid)
-				} else {
-					since, err = mte.LastUpdate(cfg)
-					//since = time.Date(1970, 01, 01, 0, 0, 0, 0, time.Local)
-					if err != nil {
-						log.Errorf("cannot get last update of group #%v: %v", groupid, err)
-						break
-					}
-				}
-			}
-			// starting update
-			group.IterateItemsAllLocal(
-				&since,
-				func(item *zotero.Item) error {
-					if item.Deleted || item.Trashed {
-						return nil
-					}
-					if item.Data.ParentItem != "" {
-						return nil
-					}
-					_type, err := item.GetType()
-					if err != nil {
-						return emperror.Wrapf(err, "cannot get item type")
-					}
-					if _type == "attachment" {
-						return nil
-					}
-					i := (*search.Item)(item)
-					if err := mte.UpdateTimestamp(i, ms, now); err != nil {
-						return emperror.Wrapf(err, "cannot update item")
-					}
-					counter++
-					return nil
-				},
-			)
-		}
-		if counter > 0 || !*loop {
-			if err := buildSitemap(mte, &config, log); err != nil {
-				log.Panic(err)
-			}
-		}
-		if !*loop {
+	for _, groupid := range config.Groups {
+		group, err := zot.LoadGroupLocal(groupid)
+		if err != nil {
+			log.Errorf("cannot load groups: %v", err)
 			break
 		}
-		since = now
-		log.Infof("sleeping %v", config.Sleep.Duration.String())
-		time.Sleep(config.Sleep.Duration)
-		first = false
+		//since := time.Date(1970, 01, 01, 0, 0, 0, 0, time.Local)
+		since = time.Date(1970, 01, 01, 0, 0, 0, 0, time.Local)
+		source := fmt.Sprintf("zotero2-%v", group.Id)
+		// starting update
+		if err := fair.StartUpdate(source); err != nil {
+			log.Errorf("cannot start update of source %v: %v", source, err)
+			break
+		}
+		// abort has no effect if already ended
+		defer fair.AbortUpdate(source)
+		group.IterateItemsAllLocal(
+			&since,
+			func(item *zotero.Item) error {
+				if item.Deleted || item.Trashed {
+					return nil
+				}
+				if item.Data.ParentItem != "" {
+					return nil
+				}
+				_type, err := item.GetType()
+				if err != nil {
+					return emperror.Wrapf(err, "cannot get item type")
+				}
+				if _type == "attachment" {
+					return nil
+				}
+				i := (*search.Item)(item)
+				uuid, err := fair.Create(i, ms)
+				if err != nil {
+					return emperror.Wrap(err, "cannot create fair entity")
+				}
+
+				log.Infof("uuid #%s inserted", uuid)
+				return nil
+			},
+		)
+		// update deletions
+		fair.EndUpdate(source)
 	}
 }
