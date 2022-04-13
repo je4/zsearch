@@ -1,0 +1,13 @@
+.idea
+configs/search.toml
+configs/synczotero2.toml
+configs/synciid.toml
+configs/syncdiplom.toml
+configs/syncfair.toml
+configs/syncbang.toml
+*.pem
+web/static/ionicons/*
+web/static/videojs/
+cmd/syncbang/export/bootstrap
+cmd/syncbang/export/video-js
+bootstrap*

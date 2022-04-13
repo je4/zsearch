@@ -1,0 +1,149 @@
+<!-- --------------------------------
+    BEGIN - Content wide
+-------------------------------- -->
+<div class="xs-hide sm-hide">
+    {{range $key, $field := .Result.Items}}
+        <div style="margin-bottom: 2px;" class="md-result-list relative md-flex flex-wrap items-center md-mx0 pl2 pb1 overflow-hidden">
+            <a class="text-decoration-none" href="{{$field.Link}}">
+                <div class="table full-width">
+                    <div class="tr full-width">
+                        <div class="td align-top" style="width:130px;">
+                            <b>{{$field.AuthorText}}</b>
+                        </div>
+                        <div class="td align-top" style="width:24px; padding-left: 5px; padding-right: 15px;">
+                            <svg
+                                    aria-label="Icon {{$field.Type}}"
+                                    id="svg12"
+                                    version="1.1"
+                                    viewBox="0 0 512 512"
+                                    height="24"
+                                    width="24">
+                                <use href="{{$field.Icon}}"></use>
+                                <desc>{{$field.Type}}</desc>
+                            </svg>
+                        </div>
+                        <div class="td align-top">
+                            <div style="">
+                                <b>{{$field.Title}}</b>
+                            </div>
+                            {{if not (eq $field.Date "")}}{{$field.Date}}<br />{{end}}
+                            {{if not (eq $field.Collection "")}}{{$field.Collection}}<br />{{end}}
+                            {{if (gt (len $field.Media) 0)}}
+                                {{if $field.ContentOK}}
+                                    <svg
+                                            aria-label="Icon Has Content"
+                                            id="svg12"
+                                            version="1.1"
+                                            viewBox="0 0 512 512"
+                                            height="16"
+                                            width="16">
+                                        <use href="#ion-lock-open-outline"></use>
+                                        <desc>content accessible</desc>
+                                    </svg>
+                                {{else}}
+                                    <svg
+                                            aria-label="Icon No Content"
+                                            id="svg12"
+                                            version="1.1"
+                                            viewBox="0 0 512 512"
+                                            height="16"
+                                            width="16">
+                                        <use href="#ion-lock-closed-outline"></use>
+                                        <desc>content closed</desc>
+                                    </svg>
+                                {{end}}
+                                {{range $type, $count := $field.Media}}
+                                    {{if gt $count 0}}{{$type}}:{{$count}}{{end}}
+                                {{end}}
+                            {{end}}
+                        </div>
+                    </div>
+                </div>
+                {{if $field.Highlight}}
+                    <div class="highlightbox">
+                        {{range $fld, $hls := $field.Highlight}}
+                            {{range $hl := $hls}}
+                                {{html $hl}}
+                            {{end}}
+                        {{end}}
+                    </div>
+                {{end}}
+            </a>
+        </div>
+    {{end}}
+</div>
+<!-- --------------------------------
+    END - Content wide
+-------------------------------- -->
+<!-- --------------------------------
+    BEGIN - Content small
+-------------------------------- -->
+<div class="md-hide lg-hide">
+    {{range $key, $field := .Result.Items}}
+        <div class="md-result-list relative md-flex flex-wrap items-center md-mx0 pl2 overflow-hidden" style="padding-bottom: 7px;">
+            <a class="text-decoration-none" href="{{$field.Link}}">
+                <div class="table">
+                    <div class="tr">
+                        <div class="td align-top" style="width:24px; padding-left: 5px; padding-right: 15px;">
+                            <svg
+                                    aria-label="Icon {{$field.Type}}"
+                                    version="1.1"
+                                    viewBox="0 0 512 512"
+                                    height="24"
+                                    width="24">
+                                <use href="{{$field.Icon}}"></use>
+                                <desc>{{$field.Type}}</desc>
+                            </svg>
+                        </div>
+                        <div class="td">
+                            <h2 class="h6 overflow-hidden" style="height:18px;">
+                                {{$field.Title}}
+                            </h2>
+                            {{if not (eq $field.Date "")}}{{$field.Date}}<br />{{end}}
+                            <b style="white-space: nowrap;">{{$field.AuthorText}}</b><br />
+                            {{if not (eq $field.Collection "")}}<span  style="white-space: nowrap;">{{$field.Collection}}</span><br />{{end}}
+                            {{if (gt (len $field.Media) 0)}}
+                                {{if $field.ContentOK}}
+                                    <svg
+                                            aria-label="Icon Has Content"
+                                            version="1.1"
+                                            viewBox="0 0 512 512"
+                                            height="16"
+                                            width="16">
+                                        <use href="#ion-lock-open-outline"></use>
+                                        <desc>content accessible</desc>
+                                    </svg>
+                                {{else}}
+                                    <svg
+                                            aria-label="Icon No Content"
+                                            version="1.1"
+                                            viewBox="0 0 512 512"
+                                            height="16"
+                                            width="16">
+                                        <use href="#ion-lock-closed-outline"></use>
+                                        <desc>content closed</desc>
+                                    </svg>
+                                {{end}}
+                                {{range $type, $count := $field.Media}}
+                                    {{if gt $count 0}}{{$type}}:{{$count}}{{end}}
+                                {{end}}
+                            {{end}}
+                        </div>
+                    </div>
+                </div>
+                {{if $field.Highlight}}
+                    <div class="highlightbox">
+                        {{range $fld, $hls := $field.Highlight}}
+                            {{range $hl := $hls}}
+                                {{html $hl}}
+                            {{end}}
+                        {{end}}
+                    </div>
+                {{end}}
+            </a>
+        </div>
+    {{end}}
+</div>
+<!-- --------------------------------
+    END - Content small
+-------------------------------- -->

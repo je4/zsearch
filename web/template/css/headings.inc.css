@@ -1,0 +1,189 @@
+.h00 {
+    font-size: 4rem
+}
+
+.h0 {
+    font-size: 3rem
+}
+
+.h1 {
+    font-size: 3.5rem
+}
+
+/*
+h1 {
+    font-size: 2em;
+    margin: .67em 0
+}
+ */
+
+.h2 {
+    font-size: 2.2rem
+}
+
+.h3 {
+    font-size: 1.75rem;
+}
+
+.h4 {
+    font-size: 1.38rem
+}
+
+.h5 {
+    font-size: 1.125rem
+}
+
+.h6 {
+    font-size: 1rem
+}
+
+.h7 {
+    font-size: .94rem
+}
+
+.h1,.h2,.h3,.h4,.h5,.h6,.h7,h1,h2,h3,h4,h5,h6,h7 {
+    line-height: normal;
+    letter-spacing: normal;
+}
+
+
+
+@media (min-width:40.06rem) {
+    .sm-h00 {
+        font-size: 4rem
+    }
+
+    .sm-h0 {
+        font-size: 3rem
+    }
+
+    .sm-h1 {
+        font-size: 3.5rem
+    }
+
+    .sm-h2 {
+        font-size: 2.2rem
+    }
+
+    .sm-h3 {
+        font-size: 1.75rem
+    }
+
+    .sm-h4 {
+        font-size: 1.38rem
+    }
+
+    .sm-h5 {
+        font-size: 1.125rem
+    }
+
+    .sm-h6 {
+        font-size: 1rem
+    }
+}
+
+@media (min-width:52.06rem) {
+    .md-h00 {
+        font-size: 4rem
+    }
+
+    .md-h0 {
+        font-size: 3rem
+    }
+
+    .md-h1 {
+        font-size: 3.5rem
+    }
+
+    .md-h2 {
+        font-size: 2.2rem
+    }
+
+    .md-h3 {
+        font-size: 1.75rem
+    }
+
+    .md-h4 {
+        font-size: 1.38rem
+    }
+
+    .md-h5 {
+        font-size: 1.125rem
+    }
+
+    .md-h6 {
+        font-size: 1rem
+    }
+}
+
+@media (min-width:64.06rem) {
+    .lg-h00 {
+        font-size: 4rem
+    }
+
+    .lg-h0 {
+        font-size: 3rem
+    }
+
+    .lg-h1 {
+        font-size: 3.5rem
+    }
+
+    .lg-h2 {
+        font-size: 2.2rem
+    }
+
+    .lg-h3 {
+        font-size: 1.75rem
+    }
+
+    .lg-h4 {
+        font-size: 1.38rem
+    }
+
+    .lg-h5 {
+        font-size: 1.125rem
+    }
+
+    .lg-h6 {
+        font-size: 1rem
+    }
+}
+
+
+.h1,h1 {
+    font-size: 3.5rem;
+    line-height: 3.5rem
+}
+
+.h2,h2 {
+    font-size: 2.2rem;
+    line-height: 2.5rem
+}
+
+.h3,h3 {
+    font-size: 1.75rem;
+    line-height: 2rem
+}
+
+.h4,h4 {
+    font-size: 1.38rem;
+    line-height: 1.5rem
+}
+
+.h5,h5 {
+    font-size: 1.125rem;
+    line-height: 1.125rem
+}
+
+.h6,h6 {
+    font-size: 1rem;
+    line-height: 1rem
+}
+
+h1,h2,h3,h4,h5,h6 {
+    margin: 0;
+    padding: 0;
+    font-weight: 400;
+    letter-spacing: .06rem
+}

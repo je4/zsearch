@@ -1,0 +1,67 @@
+.commerce-loader,.commerce-loader:after,.commerce-loader:before {
+    border-radius: 50%;
+    width: .5rem;
+    height: .5rem;
+    animation-fill-mode: both;
+    animation: a 1.44s infinite ease-in-out;
+    will-change: contents
+}
+
+.commerce-loader {
+    color: #666;
+    margin: 24% auto;
+    animation-delay: .16s
+}
+
+.commerce-loader:after,.commerce-loader:before {
+    content: "";
+    position: absolute;
+    top: 0
+}
+
+.commerce-loader:before {
+    left: -1rem;
+    animation-delay: 0s
+}
+
+.commerce-loader:after {
+    left: 1rem;
+    animation-delay: .32s
+}
+
+.commerce-hero-image .commerce-loader {
+    margin-top: 200px
+}
+
+.commerce-listing-banner .commerce-loader {
+    margin-top: 100px
+}
+
+.commerce-listing-filters {
+    border-top: 1px solid #f3f3f3;
+    border-bottom: 1px solid #f3f3f3
+}
+
+@media (min-width:52.06rem) {
+    .commerce-listing-filters {
+        border: none
+    }
+}
+
+.commerce-select-wrapper {
+    position: relative;
+    padding-right: 13px
+}
+
+@media (min-width:52.06rem) {
+    .commerce-side-panel {
+        position: -webkit-sticky;
+        position: sticky;
+        top: 5rem
+    }
+
+    .md-commerce-header {
+        margin-top: 1.5rem;
+    }
+}
+

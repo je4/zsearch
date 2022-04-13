@@ -1,0 +1,197 @@
+logfile = "" # log file location
+loglevel = "DEBUG" # CRITICAL|ERROR|WARNING|NOTICE|INFO|DEBUG
+cachedir = "C:/temp/badger2"
+staticdir = "C:/temp/sitemap"
+sitemapprefix = "catalogue"
+addrext = "https://localhost:443/"
+sleep = "1m"
+
+clearbeforesync = [
+    ## 2553473, # HGK Publikationen
+    ## 2514673, # rimab
+    ## 2171465, # basle_bibliography_for_historical_performance_practice
+    ## 2512784, # HGK Events
+    ## 2476895, # irf
+    # 2612786, # lernen
+
+    2206003, # ACT Basel  // indexer - not yet implemented
+    1510020, # Institut Industrial Design / Thesen
+    2486551, # ACT 2020
+    2483850, # Albena
+    2317722, # archive_des_ephemeren
+    2474728, # armin
+    2561875, # company_cultures__leitbilder
+    2327162, # digitalbrainstorming
+    2260611, # digitale see
+    2605562, # erinnerungsraum
+    2329831, # HGK Fotoarchiv
+    2250437, # Grenzgang
+    704562,  # Handapparate
+    2545256, # HGK Collections
+    2570300, # hphuser_import
+    1510019, # Hyperwerk
+    2571475, # IKUVID
+    2315925, # Masterstudio / Thesen
+    2608921, # Institut Kunst
+    1510009, # Institut Kunst intern
+    1510034, # institut_mode_design
+    2571213, # SIK interviews archiv performativ
+    2009066, # invar
+    2358931, # julia
+    2582183, # julia_2020
+    2634291, # knstlerinnen
+    2608904, # panch
+    2497586, # pascale_grau
+    1624911, # pcb_basel
+    2604593, # Peter von Arx
+    2488157, # Kasko digital
+    2068924, # summe2017
+    2559823, # videowochen_im_wenkenpark
+    2579176, # Wissenscluster
+    # 2758283, # Applied Fine Performaing Arts
+    # 2857696, # Doce en Diciembre
+    # 2910166, # Kasko Memoriav
+    # 4278174, # Institut Mode-Design Web
+    2758283, # applied_fine_performaing_arts
+]
+
+groups = [
+    ## 2553473, # HGK Publikationen
+    ## 2514673, # rimab
+    ## 2171465, # basle_bibliography_for_historical_performance_practice
+    ## 2512784, # HGK Events
+    ## 2476895, # irf
+    ## 2612786, # lernen
+
+    #  1510020, # Institut Industrial Design / Thesen
+    #  2206003, # ACT Basel  // indexer - not yet implemented
+    #  2486551, # ACT 2020
+    #  2483850, # Albena
+    #  2317722, # archive_des_ephemeren
+    #  2474728, # armin
+    #  2561875, # company_cultures__leitbilder
+    #  2327162, # digitalbrainstorming
+    #  2260611, # digitale see
+    #  2605562, # erinnerungsraum
+    #  2329831, # HGK Fotoarchiv
+    #  2250437, # Grenzgang
+    #  704562,  # Handapparate
+    #  545256, # HGK Collections
+    #  2570300, # hphuser_import
+    #  1510019, # Hyperwerk
+    #  2571475, # IKUVID
+    #  2315925, # Masterstudio / Thesen
+    #  2608921, # Institut Kunst
+    #  1510009, # Institut Kunst intern
+    # 1510034, # institut_mode_design
+    #  2571213, # SIK interviews archiv performativ
+    #  2009066, # invar
+    #  2358931, # julia
+    #  2582183, # julia_2020
+    #  2634291, # knstlerinnen
+    2608904, # panch
+    #  2497586, # pascale_grau
+    #  1624911, # pcb_basel
+    #  2604593, # Peter von Arx
+    #  2488157, # Kasko digital
+    #  2068924, # summe2017
+    #  2559823, # videowochen_im_wenkenpark
+    #  2579176, # Wissenscluster
+    #  2758283, # Applied Fine Performaing Arts
+    #  2857696, # Doce en Diciembre
+    #  2910166, # Kasko Memoriav
+    # 4278174, # Institut Mode-Design Web
+    #  2758283, # applied_fine_performaing_arts
+]
+
+fairgroups = [
+    704562,  # Handapparate
+    2608904, # panch
+]
+
+[prefix]
+    detail = "/detail"
+    update = "/update"
+    search = "/search"
+    collections = "/collections"
+    cse = "/cse"
+    cluster = "/cluster"
+    api = "/api"
+    static = "/static"
+    images = "/images"
+
+[hypothesis]
+    apikey = "6879-31NYxNzRNVeudq5mmbCEwx3MuXVLa8vUkvqo0bW0Lt8"
+    endpoint = "https://hypothes.is/api"
+
+[query]
+    basecatalog = ["mediathek"]
+
+
+[zotero]
+    endpoint = "https://api.zotero.org"
+    apikey = "XxuGdxZuXiB1epXH8B9XX2oR"
+    [zotero.database]
+        servertype = "postgres"
+        dsn = "postgres://zotero:secert@localhost:5433/zotero"
+        connection_max = 5000
+        schema = "s3"
+
+[mediaserver]
+    url = "https://ba14ns21403-sec1.fhnw.ch/mediasrv"
+    [mediaserver.database]
+        servertype = "mysql"
+        dsn = "mediaserver:secret@tcp(localhost:3306)/mediaserver?charset=utf8"
+        connection_max = 5000
+        schema = "mediaserver"
+
+[fairservice]
+    servicename = "FairService"
+    #address = "https://localhost:8443/mediathek"
+    address = "https://dataverse.hgk.fhnw.ch/mediathek"
+    certskipverify = true
+    jwtkey = "secret"
+    jwtalg = "HS512"
+
+[zsearchservice]
+    servicename = "ZSearch"
+    #address = "https://localhost:443/api"
+    address = "https://mediathek.hgk.fhnw.ch/amp/api"
+    certskipverify = true
+    jwtkey = "geheim"
+    jwtalg = "HS512"
+
+[s3]
+    endpoint = "minio.campusderkuenste.ch"
+    accessKeyId = "zotero"
+    secretAccessKey = "secret"
+    useSSL = true
+
+
+[_tunnel.ba14ns21403]
+    user = "root"
+    privatekey = "C:/daten/keys/putty_ed25519.priv.openssh"
+    [_tunnel.ba14ns21403.endpoint]
+        port = 22
+        host = "ba14ns21403.fhnw.ch"
+    # postgres
+    [_tunnel.ba14ns21403.forward.postgres.local]
+        port = 5433
+        host = "localhost"
+    [_tunnel.ba14ns21403.forward.postgres.remote]
+        port = 5432
+        host = "v000306.adm.ds.fhnw.ch"
+    # elasticsearch
+    [_tunnel.ba14ns21403.forward.elasticsearch.local]
+        port = 9200
+        host = "localhost"
+    [_tunnel.ba14ns21403.forward.elasticsearch.remote]
+        port = 9200
+        host = "asara269.adm.ds.fhnw.ch"
+    # mysql
+    [_tunnel.ba14ns21403.forward.mysql.local]
+        port = 3306
+        host = "localhost"
+    [_tunnel.ba14ns21403.forward.mysql.remote]
+        port = 3306
+        host = "v000306.adm.ds.fhnw.ch"

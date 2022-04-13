@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="Jürgen Enge (juergen@info-age.net)">
+    <title>Einreichungen Bang Bang</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="datatables/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+
+
+    <style>
+        .bd-placeholder-img {
+            font-size: 1.125rem;
+            text-anchor: middle;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+        }
+
+        @media (min-width: 768px) {
+            .bd-placeholder-img-lg {
+                font-size: 3.5rem;
+            }
+        }
+    </style>
+
+
+</head>
+<body>
+<header>
+    <div class="collapse bg-dark" id="navbarHeader">
+        <div class="container">
+            <div class="row">
+                <div class="col-sm-8 col-md-7 py-4">
+                    <h4 class="text-white">About</h4>
+                    <p class="text-muted">{{len .Items}} Einreichungen für die Ausstellung Bang Bang</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="navbar navbar-dark bg-dark shadow-sm">
+        <div class="container">
+            <a href="#" class="navbar-brand d-flex align-items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" aria-hidden="true" class="me-2" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                <strong>Bang Bang</strong>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarHeader" aria-controls="navbarHeader" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        </div>
+    </div>
+</header>
+
+<main>
+
+    <section class="py-5 text-center container">
+        <div class="row py-lg-5">
+            <div class="col-lg-6 col-md-8 mx-auto">
+                <h1 class="fw-light"><a href="index.html">Bang Bang ({{len .Items}} Werke)</a></h1>
+            </div>
+        </div>
+    </section>
+
+    <div class="album py-5 bg-light">
+        <div class="container-fluid">
+
+            <div class="row g-3">
+                <table id="works" class="table table-striped" style="width:100%">
+                    <thead>
+                    <tr>
+                        <th></th>
+                        <th>#</th>
+                        <th>KünstlerIn</th>
+                        <th>Jahr</th>
+                        <th>Titel</th>
+                        <th>Medium</th>
+                        <th>PerformerIn</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                        {{range $item := .Items}}
+                            <tr>
+                                <td>
+                                    {{if $item.Poster}}
+                                        <img style="width: 50px; height:50px; object-fit: cover;" src="thumb/{{mediaUrl (list $item.Poster.Uri "resize/formatpng/size50x50" | join "/") "thumb" "png"}}" loading="lazy" />
+                                    {{else}}
+                                        <img src="media/placeholder.svg" style="width: 50px; height:50px;" loading="lazy" />
+                                    {{end}}
+                                </td>
+                               <td>{{$item.SignatureOriginal}}</td>
+                                <td>
+                                    {{range $p := $item.Persons}}
+                                        {{$p.Name}}{{if ne $p.Role ""}} ({{$p.Role}}){{end}}
+                                    {{end}}
+                                </td>
+                                <td>{{$item.Date}}</td>
+                                <td><a href="werke/{{$item.SignatureOriginal}}/index.html" target="_blank">{{$item.Title}}</a></td>
+                                <td>
+                                    {{trimSuffix " (Reihenfolge am Ende vom Dateinamen benennen!) / Photo series (name sequence at the end of the file name!)" (index $item.Meta "medium")}}
+                                    {{if gt (len $item.Media) 0}}
+                                        {{range $key, $medias := $item.Media}}
+                                            // {{with (eq $key "image")}}Bilder:{{end}}
+                                            {{with (eq $key "video")}}Videos:{{end}}
+                                            {{with (eq $key "audio")}}Audio:{{end}}
+                                            {{with (eq $key "pdf")}}PDF:{{end}}
+                                            {{with (eq $key "default")}}Unbekannt:{{end}} {{len $medias}}
+                                        {{end}}
+                                    {{else}}
+                                        // keine Uploads
+                                    {{end}}
+                                </td>
+                                <td>{{index $item.Meta "performers"}}</td>
+                            </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<footer class="text-muted py-5">
+    <div class="container">
+        <p class="float-end mb-1">
+            <a href="#">Back to top</a>
+        </p>
+        <p class="mb-1">Provided by <a href="https://mediathek.hgk.fhnw.ch">Mediathek HGK FHNW</a> and <a href="juergen@info-age.ch">info-age GmbH, Basel</a></p>
+    </div>
+</footer>
+
+
+<script src="bootstrap/js/bootstrap.bundle.js"></script>
+<script src="jquery/js/jquery-3.5.1.js"></script>
+<script src="datatables/js/jquery.dataTables.min.js"></script>
+<script src="datatables/js/dataTables.bootstrap5.min.js"></script>
+
+
+<script>
+    $(document).ready(function() {
+        $('#works').DataTable({
+            paging:   true,
+            ordering: true,
+            info:     false,
+            search:  true
+        } );
+    } );
+</script>
+</body>
+</html>
+

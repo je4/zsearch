@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="Jürgen Enge (juergen@info-age.net)">
+    <title>{{.Item.Title}}</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="../../bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="../../video-js/css/video-js.css" rel="stylesheet" />
+
+
+    <style>
+        .bd-placeholder-img {
+            font-size: 1.125rem;
+            text-anchor: middle;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+        }
+
+        @media (min-width: 768px) {
+            .bd-placeholder-img-lg {
+                font-size: 3.5rem;
+            }
+        }
+    </style>
+
+
+</head>
+<body>
+
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageLabel">New message</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <img class="d-block w-100" src="" data-bs-dismiss="modal" />
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<header>
+    <div class="collapse bg-dark" id="navbarHeader">
+        <div class="container">
+            <div class="row">
+                <div class="col-sm-8 col-md-7 py-4">
+                    <h4 class="text-white">About</h4>
+                    <p class="text-muted">Einreichung für die Ausstellung Bang Bang</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="navbar navbar-dark bg-dark shadow-sm">
+        <div class="container">
+            <a href="#" class="navbar-brand d-flex align-items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" aria-hidden="true" class="me-2" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                <strong>{{.Item.Title}}</strong>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarHeader" aria-controls="navbarHeader" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+        </div>
+    </div>
+</header>
+
+<main>
+
+    {{$metaIgnore := list "titel" "year" }}
+    {{$derivatePath := list "werke" .Item.SignatureOriginal "derivate" | join "/"}}
+    {{$masterPath := list "werke" .Item.SignatureOriginal "master" | join "/"}}
+    <section class="py-5 container">
+        <div class="row py-lg-5">
+            <div class="col-lg-10 col-md-12 mx-auto">
+                <h1 class="fw-light">{{if (eq .Item.Source "zotero2-1624911")}}Performance Chronik Basel{{end}}<br />#{{.Item.SignatureOriginal}} <span style="font-weight: bold;">{{.Item.Title}}</span>, {{.Item.Date}}</h1>
+                <!--
+                {{if ne (index .Item.Meta "artists") ""}}<h2>KünstlerIn: <span style="font-weight: bold;">{{index .Item.Meta "artists"}}</span></h2>{{end}}
+                {{$metaIgnore = append $metaIgnore "artists"}}
+                {{if ne (index .Item.Meta "performers") ""}}<h2>PerformerIn: <span style="font-weight: bold;">{{index .Item.Meta "performers"}}</span></h2>{{end}}
+                {{$metaIgnore = append $metaIgnore "performers"}}
+                {{if ne (index .Item.Meta "camera") ""}}<h2>Kamera: <span style="font-weight: bold;">{{index .Item.Meta "camera"}}</span></h2>{{end}}
+                {{$metaIgnore = append $metaIgnore "camera"}}
+                -->
+                {{range $p := .Item.Persons}}
+                    <h2>{{$p.Role}}: <span style="font-weight: bold;">{{$p.Name}}</span></h2>
+                {{end}}
+                <p class="lead">
+                    {{index .Item.Meta "descr"}}
+                    {{$metaIgnore = append $metaIgnore "descr"}}
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <div class="album py-5 bg-light">
+        <div class="container-fluid">
+
+            {{range $type,$medias := .Item.Media }}
+                {{if eq $type "image"}}
+                    <h2 class="display-6 text-center mb-4">Bilder</h2>
+                    <div class="row g-3">
+                        {{range $media := $medias}}
+                            <div class="col" style="max-width: 300px;">
+                                <div class="card shadow-sm">
+                                    <img
+                                            style=""
+                                            src="derivate/{{mediaUrl (list $media.Uri "resize/formatjpeg/size240x240" | join "/") $derivatePath "jpg"}}"
+                                            loading="lazy"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#imageModal"
+                                            data-bs-imageurl="derivate/{{mediaUrl (list $media.Uri "resize/formatjpeg/size800x600" | join "/") $derivatePath "jpg"}}"
+                                            data-bs-imagetitle="{{trimPrefix "mediaserver:bangbang/" $media.Uri}}"
+                                    />
+
+                                    <div class="card-body">
+                                        <p class="card-text">
+                                            <a href="master/{{mediaUrl (list $media.Uri "/master" | join "") $masterPath ""}}" target="_blank">{{trimPrefix "mediaserver:bangbang/" $media.Uri}}</a>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        {{end}}
+                    </div>
+                {{end}}
+            {{end}}
+
+            {{range $type,$medias := .Item.Media }}
+                {{if eq $type "pdf"}}
+                    <div class="row g-3">
+                        <h2 class="display-6 text-center mb-4">PDF Dokumente</h2>
+                        {{range $media := $medias}}
+                            <div class="col" style="max-width: 300px;">
+                                <div class="card shadow-sm">
+                                    <img style="width: 282px; height:240px; object-fit: cover;" src="derivate/{{mediaUrl (list $media.Uri "$$poster/resize/formatjpeg/size240x240" | join "") $derivatePath "jpg"}}" loading="lazy" />
+
+                                    <div class="card-body">
+                                        <p class="card-text">
+                                            <a href="master/{{mediaUrl (list $media.Uri "/master" | join "") $masterPath ""}}" target="_blank">{{trimPrefix "mediaserver:bangbang/" $media.Uri}}</a>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        {{end}}
+                    </div>
+                {{end}}
+            {{end}}
+
+            {{/* Videos */}}
+            {{range $type,$medias := .Item.Media }}
+                {{if eq $type "video"}}
+                    <h2 class="display-6 text-center mb-4">Video Dateien</h2>
+                    {{range $media := $medias}}
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="row g-0 border rounded overflow-hidden flex-md-row mb-4 shadow-sm h-md-250 position-relative">
+                                <div class="col p-4 d-flex flex-column position-static align-items-center">
+                                    <video
+                                        class="video-js vjs-default-skin vjs-big-play-centered"
+                                        controls
+                                        preload="auto"
+                                        width="640"
+                                        height="264"
+                                        poster="derivate/{{mediaUrl (list $media.Uri "$$timeshot$$3/resize/formatjpeg/size640x264" | join "") $derivatePath "jpg"}}"
+                                        data-setup="{}"
+                                    >
+                                        <source src="derivate/{{mediaUrl (list $media.Uri "$$web/master" | join "") $derivatePath "mp4"}}" type="video/mp4" />
+                                        <p class="vjs-no-js">
+                                            To view this video please enable JavaScript, and consider upgrading to a
+                                            web browser that
+                                            <a href="https://videojs.com/html5-video-support/" target="_blank"
+                                            >supports HTML5 video</a
+                                            >
+                                        </p>
+                                    </video>
+                                    <br />
+                                    <div class="">
+                                        Auszug mit automatisch generierten Videoshots:
+                                        <br />
+                                    {{range $shot := list "3" "8" "12" "17" "22"}}
+                                        <img src="derivate/{{mediaUrl (list $media.Uri "$$timeshot$$" $shot "/resize/formatjpeg/size320x132" | join "") $derivatePath "jpg"}}" class="img-thumbnail" alt="Videoshot {{$shot}}">
+                                    {{end}}
+                                    </div>
+                                    <br />
+                                    <a href="master/{{mediaUrl (list $media.Uri "/master" | join "") $masterPath ""}}" target="_blank">Master Media file - {{trimPrefix "mediaserver:bangbang/" $media.Uri}}</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {{end}}
+                {{end}}
+            {{end}}
+
+            {{/* Audio */}}
+            {{range $type,$medias := .Item.Media }}
+                {{if eq $type "audio"}}
+                    <h2 class="display-6 text-center mb-4">Audio Dateien</h2>
+                    {{range $media := $medias}}
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="row g-0 border rounded overflow-hidden flex-md-row mb-4 shadow-sm h-md-250 position-relative">
+                                    <div class="col p-4 d-flex flex-column position-static align-items-center">
+                                        <video
+                                                class="video-js vjs-default-skin vjs-big-play-centered"
+                                                controls
+                                                preload="auto"
+                                                width="640"
+                                                height="264"
+                                                poster="derivate/{{mediaUrl (list $media.Uri "$$poster/resize/formatjpeg/size640x264/stretch" | join "") $derivatePath "jpg"}}"
+                                                data-setup="{}"
+                                        >
+                                            <source src="derivate/{{mediaUrl (list $media.Uri "$$web$$1/master" | join "") $derivatePath "m4a"}}" type="audio/mp4" />
+                                            <p class="vjs-no-js">
+                                                To view this video please enable JavaScript, and consider upgrading to a
+                                                web browser that
+                                                <a href="https://videojs.com/html5-video-support/" target="_blank"
+                                                >supports HTML5 video</a
+                                                >
+                                            </p>
+                                        </video>
+                                        <br />
+                                        <a href="master/{{mediaUrl (list $media.Uri "/master" | join "") $masterPath ""}}" target="_blank">Master Media file - {{trimPrefix "mediaserver:bangbang/" $media.Uri}}</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {{end}}
+                {{end}}
+            {{end}}
+
+            {{/* Unknown */}}
+            {{range $type,$medias := .Item.Media }}
+            {{if eq $type "default"}}
+            <h2 class="display-6 text-center mb-4">Unbekannte Dateien</h2>
+            <div class="row">
+                <div class="col-md-12">
+                {{range $media := $medias}}
+                    <a href="master/{{mediaUrl (list $media.Uri "/master" | join "") $masterPath ""}}" target="_blank">{{trimPrefix "mediaserver:bangbang/" $media.Uri}}</a><br />
+                {{end}}
+                </div>
+            </div>
+            {{end}}
+            {{end}}
+
+            {{/* Keine Uploads */}}
+            {{if eq (len .Item.Media) 0}}
+                    <h2 class="display-6 text-center mb-4">Es wurden keine Medien hochgeladen</h2>
+            {{end}}
+
+            <p></p>
+
+            <div class="row mb-2">
+                {{/* Medium */}}
+                <div class="col-md-6">
+                    <div class="row g-0 border rounded overflow-hidden flex-md-row mb-4 shadow-sm h-md-250 position-relative">
+                        <div class="col p-4 d-flex flex-column position-static">
+                            <strong class="d-inline-block mb-2 text-primary">Medium</strong>
+                            <p class="card-text mb-auto">
+                                {{index .Item.Meta "medium"}}<br />
+                                {{$metaIgnore = append $metaIgnore "medium"}}
+                                Alternative: {{index .Item.Meta "anderesformat"}}<br />
+                                {{$metaIgnore = append $metaIgnore "anderesformat"}}
+                                Dauer: {{index .Item.Meta "dauer"}}<br />
+                                {{$metaIgnore = append $metaIgnore "dauer"}}
+                            </p>
+                            <strong class="d-inline-block mb-2 text-primary">Digitale Medien</strong>
+                            <p class="card-text mb-auto">
+                                {{if gt (len .Item.Media) 0}}
+                                    {{range $key, $medias := .Item.Media}}
+                                        {{with (eq $key "image")}}Bilder:{{end}}
+                                        {{with (eq $key "video")}}Videos:{{end}}
+                                        {{with (eq $key "audio")}}Audio:{{end}}
+                                        {{with (eq $key "pdf")}}PDF:{{end}}
+                                        {{with (eq $key "default")}}Unbekannt:{{end}} {{len $medias}}<br />
+                                    {{end}}
+                                {{else}}
+                                    keine zur Verfügung gestellt
+                                {{end}}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {{/* Event */}}
+                <div class="col-md-6">
+                    <div class="row g-0 border rounded overflow-hidden flex-md-row mb-4 shadow-sm h-md-250 position-relative">
+                        <div class="col p-4 d-flex flex-column position-static">
+                            <strong class="d-inline-block mb-2 text-primary">Event</strong>
+                            <h3 class="mb-0">{{index .Item.Meta "festival"}}</h3>
+                            {{$metaIgnore = append $metaIgnore "festival"}}
+                            <p class="card-text mb-auto">
+                                Ort: {{index .Item.Meta "eventplace"}}<br />
+                                {{$metaIgnore = append $metaIgnore "eventplace"}}
+                                KuratorIn: {{index .Item.Meta "eventcurator"}}<br />
+                                {{$metaIgnore = append $metaIgnore "eventcurator"}}
+                                Dokumentationstyp: {{index .Item.Meta "doctype"}}<br />
+                                {{$metaIgnore = append $metaIgnore "doctype"}}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-2">
+                {{/* Kontakt */}}
+                <div class="col-md-6">
+                    <div class="row g-0 border rounded overflow-hidden flex-md-row mb-4 shadow-sm h-md-250 position-relative">
+                        <div class="col p-4 d-flex flex-column position-static">
+                            <strong class="d-inline-block mb-2 text-primary">Kontakt</strong>
+                            <h3 class="mb-0">{{index .Item.Meta "vorname"}} {{index .Item.Meta "nachname"}}</h3>
+                            {{$metaIgnore = append $metaIgnore "vorname"}}
+                            {{$metaIgnore = append $metaIgnore "nachname"}}
+                            <p class="card-text mb-auto">
+                                {{index .Item.Meta "adresse"}}<br />
+                                {{$metaIgnore = append $metaIgnore "adresse"}}
+                                Telefon: {{index .Item.Meta "tel"}}<br />
+                                {{$metaIgnore = append $metaIgnore "tel"}}
+                                Email: <a href="mailto:{{index .Item.Meta "email"}}">{{index .Item.Meta "email"}}</a><br />
+                                {{$metaIgnore = append $metaIgnore "email"}}
+                                Web: <a href="{{correctWeb (index .Item.Meta "web")}}" target="_blank">{{index .Item.Meta "web"}}</a><br />
+                                {{$metaIgnore = append $metaIgnore "web"}}
+                                Jahrgang: {{index .Item.Meta "jahrgang"}}<br />
+                                {{$metaIgnore = append $metaIgnore "jahrgang"}}
+                                Funktion: {{index .Item.Meta "function"}}<br />
+                                {{$metaIgnore = append $metaIgnore "function"}}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {{/* Rechte */}}
+                <div class="col-md-6">
+                    <div class="row g-0 border rounded overflow-hidden flex-md-row mb-4 shadow-sm h-md-250 position-relative">
+                        <div class="col p-4 d-flex flex-column position-static">
+                            <strong class="d-inline-block mb-2 text-primary">Rechte</strong>
+                            <p class="card-text mb-auto">
+                                Bang Bang: {{index .Item.Meta "rechtebangbang"}}<br />
+                                {{$metaIgnore = append $metaIgnore "rechtebangbang"}}
+                                Mediathek: {{index .Item.Meta "rechtemediathek"}}<br />
+                                {{$metaIgnore = append $metaIgnore "rechtemediathek"}}
+                            </p>
+                            {{if gt (len (index .Item.Meta "remark")) 0}}
+                                <strong class="d-inline-block mb-2 text-primary">Bemerkung</strong>
+                                <p class="card-text mb-auto">
+                                    {{index .Item.Meta "remark"}}<br />
+                                </p>
+                            {{end}}
+                            {{$metaIgnore = append $metaIgnore "remark"}}
+                            {{if gt (len (index .Item.Meta "additional")) 0}}
+                                <strong class="d-inline-block mb-2 text-primary">Zusatz</strong>
+                                <p class="card-text mb-auto">
+                                    Ort: {{index .Item.Meta "additional"}}<br />
+                                </p>
+                            {{end}}
+                            {{$metaIgnore = append $metaIgnore "additional"}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{if (gt (len .Item.Meta) (len $metaIgnore))}}
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th scope="col">Key</th>
+                        <th scope="col">Value</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {{range $key, $val := .Item.Meta}}
+                        {{if not (has $key $metaIgnore)}}
+                            <tr>
+                                <th scope="row">{{$key}}</th>
+                                <th>{{$val}}</th>
+                            </tr>
+                        {{end}}
+                    {{end}}
+                    </tbody>
+                </table>
+            {{end}}
+
+
+        </div>
+
+</main>
+
+<footer class="text-muted py-5">
+    <div class="container">
+        <p class="float-end mb-1">
+            <a href="#">Back to top</a>
+        </p>
+        <p class="mb-1">Provided by <a href="https://mediathek.hgk.fhnw.ch">Mediathek HGK FHNW</a> and <a href="juergen@info-age.ch">info-age GmbH, Basel</a></p>
+    </div>
+</footer>
+
+
+<script src="../../bootstrap/js/bootstrap.bundle.js"></script>
+<script src="../../video-js/js/video.min.js"></script>
+
+<script>
+    var imageModal = document.getElementById('imageModal')
+    imageModal.addEventListener('show.bs.modal', function (event) {
+        // Button that triggered the modal
+        var button = event.relatedTarget
+        // Extract info from data-bs-* attributes
+        var imageUrl = button.getAttribute('data-bs-imageurl')
+        var imageTitle = button.getAttribute('data-bs-imagetitle')
+
+        // If necessary, you could initiate an AJAX request here
+        // and then do the updating in a callback.
+        //
+        // Update the modal's content.
+        var modalTitle = imageModal.querySelector('.modal-title')
+        var modalBodyImg = imageModal.querySelector('.modal-body img')
+
+        modalTitle.textContent = imageTitle
+        modalBodyImg.src = imageUrl
+    })
+</script>
+
+</body>
+</html>
+

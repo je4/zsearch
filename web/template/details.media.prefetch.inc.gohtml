@@ -1,0 +1,33 @@
+<!-- Media prefetch area -->
+{{if .Doc.Media.video}}
+    {{if gt (len .Doc.Media.video) 0}}
+        {{$video := index .Doc.Media.video 0}}
+        {{$poster := printf "%s$$timeshot$$3" $video.Uri}}
+        <link rel="preload" as="image"
+              href="{{medialink $poster "resize" "size1280x720/formatJPEG" (not .ContentPublic)}}">
+
+    {{end}}
+{{else if .Doc.Media.audio}}
+    {{if gt (len .Doc.Media.audio) 0}}
+        {{$audio := index .Doc.Media.audio 0}}
+        {{$poster := printf "%s$$poster" $audio.Uri}}
+        <link rel="preload" as="image"
+              href="{{medialink $poster "resize" "size1280x150/stretch/formatWEBP/autorotate" (not .ContentPublic)}}">
+    {{end}}
+{{else if .Doc.Media.image}}
+    {{if gt (len .Doc.Media.image) 0}}
+        {{$image := index .Doc.Media.image 0}}
+        <link rel="preload" as="image"
+              href="{{medialink $image.Uri "resize" "size1280x720/formatWEBP/autorotate" (not .ContentPublic)}}">
+    {{end}}
+{{else if .Doc.Media.pdf}}
+    {{if gt (len .Doc.Media.pdf) 0}}
+        {{$pdf := index .Doc.Media.pdf 0}}
+        {{$poster := printf "%s$$poster" $pdf.Uri}}
+        <link rel="preload" as="image"
+              href="{{medialink $poster "resize" "size640x500/crop/formatJPEG" (not .ContentPublic)}}">
+    {{end}}
+{{end}}
+<!-- END Media Prefetch Area -->
+
+

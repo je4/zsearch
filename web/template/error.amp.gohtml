@@ -1,0 +1,103 @@
+<!---
+Copyright 2017 The AMP Start Authors. All Rights Reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS-IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+<!doctype html>
+<html ⚡="" lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>Mediathek - {{.Error}}</title>
+    <link rel="canonical" href="{{.Self}}">
+    <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
+    <meta name="amp-google-client-id-api" content="googleanalytics">
+
+    <script async="" src="https://cdn.ampproject.org/v0.js"></script>
+
+
+
+    <style amp-boilerplate="">body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate="">body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
+
+
+    <script custom-element="amp-sidebar" src="https://cdn.ampproject.org/v0/amp-sidebar-0.1.js" async=""></script>
+    <script custom-element="amp-bind" src="https://cdn.ampproject.org/v0/amp-bind-0.1.js" async=""></script>
+    <script custom-element="amp-carousel" src="https://cdn.ampproject.org/v0/amp-carousel-0.1.js" async=""></script>
+    <script custom-element="amp-selector" src="https://cdn.ampproject.org/v0/amp-selector-0.1.js" async=""></script>
+    <script async custom-element="amp-user-notification" src="https://cdn.ampproject.org/v0/amp-user-notification-0.1.js"></script>
+    <script async custom-template="amp-mustache" src="https://cdn.ampproject.org/v0/amp-mustache-0.2.js"></script>
+
+    <!-- link href="https://fonts.googleapis.com/css?family=Open+Sans+Condensed:300,700|Material+Icons+Outlined" rel="stylesheet" -->
+    <!-- <link href="https://fonts.googleapis.com/css?family=Material+Icons|Material+Icons+Outlined|Material+Icons+Two+Tone|Material+Icons+Round|Material+Icons+Sharp" rel="stylesheet"> -->
+
+    <style amp-custom="">
+        {{template "gsearch.inc.min.css" . }}
+        {{template "darkmode.inc.min.css" . }}
+        {{template "lightmode.inc.min.css" . }}
+        {{template "headings.inc.min.css" . }}
+        {{template "buttons.inc.min.css" . }}
+        {{template "commerce.inc.min.css" . }}
+        {{template "table.inc.min.css" . }}
+        {{template "col.inc.min.css" . }}
+        {{template "text.inc.min.css" . }}
+        {{template "margin.inc.min.css" . }}
+        {{template "flexbox.inc.min.css" . }}
+        {{template "padding.inc.min.css" . }}
+        {{template "main.inc.min.css" . }}
+        {{template "inter.inc.min.css" . }}
+    </style>
+</head>
+
+<body>
+<!-- Start Header -->
+{{template "header.inc.gohtml" . }}
+<!-- End Header -->
+
+<!-- Start Navbar -->
+{{template "navbar.inc.gohtml" . }}
+<!-- End Navbar -->
+
+<main id="content" role="main" class="main">
+    {{range $key, $notification := .Notifications}}
+        <amp-user-notification
+                layout="nodisplay"
+                class="amp-active"
+                id="amp-user-{{$notification.Id}}"
+                data-persist-dismissal="false">
+            <div class="h4 md-h4 message">
+            {{$notification.Message}}&nbsp;
+            <button class="gsearch-btn gsearch-btn-seemore caps" on="tap:amp-user-{{$notification.Id}}.dismiss">OK</button>
+            </div>
+        </amp-user-notification>
+    {{end}}
+    <section class="flex flex-wrap pb4 md-pb7">
+        <div class="col-12 md-col-12 flex flex-wrap content-start px2 md-pl5 md-pr7 md-pt4">
+            <div class="col-12 self-start pb2">
+                <h1 class="h3 md-h2">{{.Error}}</h1>
+                <div class="h4 md-h3">{{.Message}}</div>
+            </div>
+            <div class="col-12 self-start pb4">
+                <div class="h4 md-h4">
+
+
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+{{template "footer.inc.gohtml" . }}
+
+</body>
+</html>

@@ -1,0 +1,92 @@
+/**
+ * videojs-overlay-hyperlink
+ * @version 1.0.0
+ * @copyright 2018 Anudit Verma
+ * @license Apache-2.0
+ */
+.video-js .vjs-overlay{
+    position:absolute;
+    text-align:center;
+    font-size: .8rem;
+    font-family: Inter,sans-serif;
+    font-weight: 400;
+}
+.video-js .vjs-big-play-button {
+    border-radius: 0px;
+}
+
+.vjs-overlay>a {
+    text-decoration: underline;
+}
+.video-js .vjs-overlay-no-background{
+    max-width:33%
+}
+.video-js .vjs-overlay-background{
+    padding:10px;
+    width:33%;
+    border-style: solid;
+    border-width: 1px;
+}
+.video-js .vjs-overlay-top-left{
+    top:5px;
+    left:5px;
+}
+.video-js .vjs-overlay-top{
+    left:50%;
+    margin-left:-16.5%;
+    top:5px;
+}
+.video-js .vjs-overlay-top-right{
+    right:5px;
+    top:5px;
+}
+.video-js .vjs-overlay-right{
+    margin-top:-15px;
+    right:5px;
+    top:50%;
+}
+.video-js .vjs-overlay-bottom-right{
+    bottom:3.5em;
+    right:5px;
+}
+.video-js .vjs-overlay-bottom{
+    bottom:3.5em;
+    left:50%;
+    margin-left:-16.5%;
+    text-decoration: none;
+}
+.video-js .vjs-overlay-bottom-left{
+    bottom:3.5em;
+    left:5px
+}
+.video-js .vjs-overlay-left{
+    left:5px;
+    margin-top:-15px;
+    top:50%
+}
+
+@media (prefers-color-scheme: dark) {
+    .video-js .vjs-overlay{
+        color:#fff;
+    }
+    .vjs-overlay>a {
+        color: white;
+    }
+    .video-js .vjs-overlay-background{
+        background-color:#000000;
+        background-color:rgba(0,0,0,0.6);
+        border-color: rgba(255, 255, 255, 0.87);
+    }
+}
+@media (prefers-color-scheme: light) {
+    .video-js .vjs-overlay{
+        color:#000;
+    }
+    .vjs-overlay>a {
+        color: black;
+    }
+    .video-js .vjs-overlay-background{
+        background-color:#646464;
+        background-color:rgba(255,255,255,0.4);
+    }
+}

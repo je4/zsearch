@@ -1,0 +1,710 @@
+{
+  "version": 123,
+  "mapping_version": 7,
+  "settings_version": 27,
+  "aliases_version": 1,
+  "routing_num_shards": 1024,
+  "state": "open",
+  "settings": {
+    "index": {
+      "number_of_shards": "1",
+      "provided_name": "test",
+      "creation_date": "1604242279531",
+      "analysis": {
+        "filter": {
+          "digam_stem_filter_de": {
+            "type": "stemmer",
+            "language": "german"
+          },
+          "digam_stem_filter_en": {
+            "type": "stemmer",
+            "language": "english"
+          },
+          "digam_stem_filter_fr": {
+            "type": "stemmer",
+            "language": "french"
+          },
+          "digma_snow_filter_de": {
+            "type": "snowball",
+            "language": "German"
+          },
+          "digma_snow_filter_en": {
+            "type": "snowball",
+            "language": "English"
+          },
+          "shingle": {
+            "max_shingle_size": "3",
+            "min_shingle_size": "2",
+            "type": "shingle"
+          },
+          "digma_asciifolding": {
+            "type": "asciifolding",
+            "preserve_original": "true"
+          },
+          "digma_snow_filter_fr": {
+            "type": "snowball",
+            "language": "French"
+          }
+        },
+        "analyzer": {
+          "trigram": {
+            "filter": [
+              "lowercase"
+            ,
+              "shingle"
+            ],
+            "type": "custom",
+            "tokenizer": "standard"
+          },
+          "digma_stemmer": {
+            "filter": [
+              "lowercase"
+            ,
+              "digam_stem_filter_de",
+              "digam_stem_filter_fr",
+              "digam_stem_filter_en"
+            ],
+            "tokenizer": "standard"
+          },
+          "reverse": {
+            "filter": [
+              "lowercase"
+            ,
+              "reverse"
+            ],
+            "type": "custom",
+            "tokenizer": "standard"
+          },
+          "digma_snow_analyzer": {
+            "filter": [
+              "lowercase"
+            ,
+              "digma_asciifolding"
+            ,
+              "digma_snow_filter_de"
+            ,
+              "digma_snow_filter_en"
+            ,
+              "digma_snow_filter_fr"
+            ],
+            "tokenizer": "standard"
+          }
+        }
+      },
+      "number_of_replicas": "1",
+      "uuid": "XoJadEcoRcWdoMeplYrPnA",
+      "version": {
+        "created": "7090299",
+        "upgraded": "7100299"
+      }
+    }
+  },
+  "mappings": {
+    "_doc": {
+      "dynamic": "false",
+      "properties": {
+        "date": {
+          "type": "text",
+          "fields": {
+            "snow": {
+              "analyzer": "digma_snow_analyzer",
+              "type": "text"
+            },
+            "keyword": {
+              "ignore_above": 256,
+              "type": "keyword"
+            }
+          }
+        },
+        "collectiontitle": {
+          "type": "text",
+          "fields": {
+            "snow": {
+              "analyzer": "digma_snow_analyzer",
+              "type": "text"
+            },
+            "keyword": {
+              "ignore_above": 256,
+              "type": "keyword"
+            },
+            "stem": {
+              "analyzer": "digma_stemmer",
+              "type": "text"
+            }
+          }
+        },
+        "notes": {
+          "properties": {
+            "note": {
+              "type": "text",
+              "fields": {
+                "snow": {
+                  "analyzer": "digma_snow_analyzer",
+                  "type": "text"
+                },
+                "stem": {
+                  "analyzer": "digma_stemmer",
+                  "type": "text"
+                }
+              }
+            },
+            "title": {
+              "type": "text",
+              "fields": {
+                "snow": {
+                  "analyzer": "digma_snow_analyzer",
+                  "type": "text"
+                },
+                "keyword": {
+                  "ignore_above": 256,
+                  "type": "keyword"
+                },
+                "stem": {
+                  "analyzer": "digma_stemmer",
+                  "type": "text"
+                }
+              }
+            }
+          }
+        },
+        "signature": {
+          "type": "keyword"
+        },
+        "catalog": {
+          "type": "keyword"
+        },
+        "hasmedia": {
+          "type": "boolean"
+        },
+        "abstract": {
+          "type": "text",
+          "fields": {
+            "snow": {
+              "analyzer": "digma_snow_analyzer",
+              "type": "text"
+            },
+            "keyword": {
+              "ignore_above": 256,
+              "type": "keyword"
+            },
+            "stem": {
+              "analyzer": "digma_stemmer",
+              "type": "text"
+            }
+          }
+        },
+        "acl": {
+          "properties": {
+            "preview": {
+              "type": "keyword"
+            },
+            "meta": {
+              "type": "keyword"
+            },
+            "content": {
+              "type": "keyword"
+            }
+          }
+        },
+        "media": {
+          "properties": {
+            "image": {
+              "type": "nested",
+              "properties": {
+                "name": {
+                  "type": "text",
+                  "fields": {
+                    "keyword": {
+                      "ignore_above": 256,
+                      "type": "keyword"
+                    }
+                  }
+                },
+                "width": {
+                  "type": "long"
+                },
+                "mimetype": {
+                  "type": "text",
+                  "fields": {
+                    "keyword": {
+                      "ignore_above": 256,
+                      "type": "keyword"
+                    }
+                  }
+                },
+                "type": {
+                  "type": "text",
+                  "fields": {
+                    "keyword": {
+                      "ignore_above": 256,
+                      "type": "keyword"
+                    }
+                  }
+                },
+                "uri": {
+                  "type": "text",
+                  "fields": {
+                    "keyword": {
+                      "ignore_above": 256,
+                      "type": "keyword"
+                    }
+                  }
+                },
+                "height": {
+                  "type": "long"
+                }
+              }
+            },
+            "default": {
+              "type": "nested",
+              "properties": {
+                "duration": {
+                  "type": "long"
+                },
+                "name": {
+                  "type": "text",
+                  "fields": {
+                    "keyword": {
+                      "ignore_above": 256,
+                      "type": "keyword"
+                    }
+                  }
+                },
+                "width": {
+                  "type": "long"
+                },
+                "mimetype": {
+                  "type": "text",
+                  "fields": {
+                    "keyword": {
+                      "ignore_above": 256,
+                      "type": "keyword"
+                    }
+                  }
+                },
+                "type": {
+                  "type": "text",
+                  "fields": {
+                    "keyword": {
+                      "ignore_above": 256,
+                      "type": "keyword"
+                    }
+                  }
+                },
+                "uri": {
+                  "type": "text",
+                  "fields": {
+                    "keyword": {
+                      "ignore_above": 256,
+                      "type": "keyword"
+                    }
+                  }
+                },
+                "height": {
+                  "type": "long"
+                }
+              }
+            },
+            "pdf": {
+              "type": "nested",
+              "properties": {
+                "duration": {
+                  "type": "long"
+                },
+                "fulltext": {
+                  "type": "text",
+                  "fields": {
+                    "name": "stem",
+                    "analyzer": "digma_stemmer"
+                  }
+                },
+                "name": {
+                  "type": "text",
+                  "fields": {
+                    "keyword": {
+                      "ignore_above": 256,
+                      "type": "keyword"
+                    }
+                  }
+                },
+                "width": {
+                  "type": "long"
+                },
+                "mimetype": {
+                  "type": "text",
+                  "fields": {
+                    "keyword": {
+                      "ignore_above": 256,
+                      "type": "keyword"
+                    }
+                  }
+                },
+                "type": {
+                  "type": "text",
+                  "fields": {
+                    "keyword": {
+                      "ignore_above": 256,
+                      "type": "keyword"
+                    }
+                  }
+                },
+                "uri": {
+                  "type": "text",
+                  "fields": {
+                    "keyword": {
+                      "ignore_above": 256,
+                      "type": "keyword"
+                    }
+                  }
+                },
+                "height": {
+                  "type": "long"
+                }
+              }
+            },
+            "audio": {
+              "type": "nested",
+              "properties": {
+                "duration": {
+                  "type": "long"
+                },
+                "name": {
+                  "type": "text",
+                  "fields": {
+                    "keyword": {
+                      "ignore_above": 256,
+                      "type": "keyword"
+                    }
+                  }
+                },
+                "mimetype": {
+                  "type": "text",
+                  "fields": {
+                    "keyword": {
+                      "ignore_above": 256,
+                      "type": "keyword"
+                    }
+                  }
+                },
+                "type": {
+                  "type": "text",
+                  "fields": {
+                    "keyword": {
+                      "ignore_above": 256,
+                      "type": "keyword"
+                    }
+                  }
+                },
+                "uri": {
+                  "type": "text",
+                  "fields": {
+                    "keyword": {
+                      "ignore_above": 256,
+                      "type": "keyword"
+                    }
+                  }
+                }
+              }
+            },
+            "video": {
+              "type": "nested",
+              "properties": {
+                "duration": {
+                  "type": "long"
+                },
+                "name": {
+                  "type": "text",
+                  "fields": {
+                    "keyword": {
+                      "ignore_above": 256,
+                      "type": "keyword"
+                    }
+                  }
+                },
+                "width": {
+                  "type": "long"
+                },
+                "mimetype": {
+                  "type": "text",
+                  "fields": {
+                    "keyword": {
+                      "ignore_above": 256,
+                      "type": "keyword"
+                    }
+                  }
+                },
+                "type": {
+                  "type": "text",
+                  "fields": {
+                    "keyword": {
+                      "ignore_above": 256,
+                      "type": "keyword"
+                    }
+                  }
+                },
+                "uri": {
+                  "type": "text",
+                  "fields": {
+                    "keyword": {
+                      "ignore_above": 256,
+                      "type": "keyword"
+                    }
+                  }
+                },
+                "height": {
+                  "type": "long"
+                }
+              }
+            }
+          }
+        },
+        "source": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "ignore_above": 256,
+              "type": "keyword"
+            }
+          }
+        },
+        "title": {
+          "type": "text",
+          "fields": {
+            "trigram": {
+              "analyzer": "trigram",
+              "type": "text"
+            },
+            "snow": {
+              "analyzer": "digma_snow_analyzer",
+              "type": "text"
+            },
+            "keyword": {
+              "ignore_above": 256,
+              "type": "keyword"
+            },
+            "stem": {
+              "analyzer": "digma_stemmer",
+              "type": "text"
+            }
+          }
+        },
+        "type": {
+          "type": "keyword"
+        },
+        "dateadded": {
+          "type": "date"
+        },
+        "tags": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "ignore_above": 256,
+              "type": "keyword"
+            }
+          }
+        },
+        "persons": {
+          "type": "nested",
+          "properties": {
+            "role": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "ignore_above": 256,
+                  "type": "keyword"
+                }
+              }
+            },
+            "name": {
+              "type": "text",
+              "fields": {
+                "trigram": {
+                  "analyzer": "trigram",
+                  "type": "text"
+                },
+                "snow": {
+                  "analyzer": "digma_snow_analyzer",
+                  "type": "text"
+                },
+                "keyword": {
+                  "ignore_above": 256,
+                  "type": "keyword"
+                },
+                "stem": {
+                  "analyzer": "digma_stemmer",
+                  "type": "text"
+                }
+              }
+            }
+          }
+        },
+        "meta": {
+          "type": "nested",
+          "properties": {
+            "value": {
+              "type": "text",
+              "fields": {
+                "snow": {
+                  "analyzer": "digma_snow_analyzer",
+                  "type": "text"
+                },
+                "keyword": {
+                  "ignore_above": 256,
+                  "type": "keyword"
+                },
+                "stem": {
+                  "analyzer": "digma_stemmer",
+                  "type": "text"
+                }
+              }
+            },
+            "key": {
+              "ignore_above": 256,
+              "type": "keyword"
+            }
+          }
+        },
+        "extra": {
+          "type": "nested",
+          "properties": {
+            "value": {
+              "type": "text",
+              "fields": {
+                "snow": {
+                  "analyzer": "digma_snow_analyzer",
+                  "type": "text"
+                },
+                "keyword": {
+                  "ignore_above": 256,
+                  "type": "keyword"
+                },
+                "stem": {
+                  "analyzer": "digma_stemmer",
+                  "type": "text"
+                }
+              }
+            },
+            "key": {
+              "ignore_above": 128,
+              "type": "keyword"
+            }
+          }
+        },
+        "place": {
+          "type": "text",
+          "fields": {
+            "snow": {
+              "analyzer": "digma_snow_analyzer",
+              "type": "text"
+            },
+            "keyword": {
+              "ignore_above": 256,
+              "type": "keyword"
+            },
+            "stem": {
+              "analyzer": "digma_stemmer",
+              "type": "text"
+            }
+          }
+        },
+        "vars": {
+          "type": "nested",
+          "properties": {
+            "value": {
+              "type": "text",
+              "fields": {
+                "snow": {
+                  "analyzer": "digma_snow_analyzer",
+                  "type": "text"
+                },
+                "keyword": {
+                  "ignore_above": 256,
+                  "type": "keyword"
+                },
+                "stem": {
+                  "analyzer": "digma_stemmer",
+                  "type": "text"
+                }
+              }
+            },
+            "key": {
+              "ignore_above": 256,
+              "type": "keyword"
+            }
+          }
+        },
+        "category": {
+          "type": "keyword"
+        },
+        "mediatype": {
+          "type": "keyword"
+        },
+        "poster": {
+          "properties": {
+            "duration": {
+              "type": "long"
+            },
+            "name": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "ignore_above": 256,
+                  "type": "keyword"
+                }
+              }
+            },
+            "width": {
+              "type": "long"
+            },
+            "mimetype": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "ignore_above": 256,
+                  "type": "keyword"
+                }
+              }
+            },
+            "type": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "ignore_above": 256,
+                  "type": "keyword"
+                }
+              }
+            },
+            "uri": {
+              "type": "text",
+              "fields": {
+                "keyword": {
+                  "ignore_above": 256,
+                  "type": "keyword"
+                }
+              }
+            },
+            "height": {
+              "type": "long"
+            }
+          }
+        },
+        "timestamp": {
+          "type": "date"
+        }
+      }
+    }
+  },
+  "aliases": [ ],
+  "primary_terms": {
+    "0": 25
+  },
+  "in_sync_allocations": {
+    "0": [
+      "Jv23Hd-eTkGZ4shHU4s3UA"
+    ,
+      "64_Q8ZCJR6ClH-HJrx0I9w"
+    ]
+  },
+  "rollover_info": { },
+  "system": false
+}

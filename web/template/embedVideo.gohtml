@@ -1,0 +1,111 @@
+<html>
+{{$web := mediachild .Media.Uri "$$web"}}
+{{$vlink := medialink $web "master" "" false}}
+{{$poster := printf "%s$$timeshot$$3" .Media.Uri}}
+{{$plink := medialink $poster "resize" (printf "size%vx%v/formatJPEG" .Media.Width .Media.Height) false}}
+
+<head>
+    <link href="{{.RelPath}}/static/videojs/video-js.min.css" rel="stylesheet" />
+    <link href="{{.RelPath}}/static/css/videojs-overlay-hyperlink.css" rel="stylesheet">
+
+    <!-- preload standart font -->
+    <link rel="preload" as="font"
+          href="{{.RelPath}}/static/font/inter/Inter-roman.var.woff2?v=3.15"
+          type="font/woff2"
+          crossorigin="anonymous">
+    <link rel="preload" as="font"
+          href="{{.RelPath}}/static/font/inter/Inter-Bold.woff2?v=3.15"
+          type="font/woff2"
+          crossorigin="anonymous">
+
+    <!-- If you'd like to support IE8 (for Video.js versions prior to v7) -->
+    <!-- <script src="https://vjs.zencdn.net/ie8/1.1.2/videojs-ie8.min.js"></script> -->
+    <style>
+        body {
+            margin: 0px 0px 0px 0px;
+        }
+        .video-js {
+            width: 100vw; height: 100vh;
+        }
+        .video-js .vjs-big-play-button {
+            left: 50%;
+            top: 50%;
+            margin-left: -0.75em;
+            margin-top: -0.75em;
+        }
+        @media (prefers-color-scheme: light) {
+            body {
+                color: black;
+                background-color: white;
+            }
+            .video-js {
+                background-color: white;
+            }
+            .vjs-poster {
+                background-color: white;
+            }
+        }
+        @media (prefers-color-scheme: dark) {
+            body {
+                color: white;
+                background-color: black;
+            }
+            .video-js {
+                background-color: black;
+            }
+            .vjs-poster {
+                background-color: black;
+            }
+
+        }
+    </style>
+</head>
+
+<body>
+<video
+        id="zsearch-video"
+        class="video-js"
+        controls
+        preload="auto"
+        poster="{{$plink}}"
+        nativeControlsForTouch
+        data-setup="{}"
+>
+    <source src="{{$vlink}}" type="video/mp4"/>
+    <p class="vjs-no-js">
+        To view this video please enable JavaScript, and consider upgrading to a
+        web browser that
+        <a href="https://videojs.com/html5-video-support/" target="_blank"
+        >supports HTML5 video</a
+        >
+    </p>
+</video>
+
+<script src="{{.RelPath}}/static/videojs/video.min.js"></script>
+<script src="{{.RelPath}}/static/videojs/videojs-overlay-hyperlink.js"></script>
+
+<script>
+    (function(window, videojs) {
+        var player = window.player = videojs('zsearch-video');
+        player.overlay({
+            content: '<a href=# onclick="location.href=\'{{js .Link}}\';return false;">{{.LinkText}} at Mediathek HGK</a>',
+            debug: true,
+            overlays: [{
+                start: 'loadedmetadata',
+                end: 'play',
+                align: 'bottom'
+            }, {
+                start: 'pause',
+                end: 'play',
+                align: 'bottom'
+            }, {
+                start: 'end',
+                end: 'play',
+                align: 'bottom'
+            }]
+        });
+    }(window, window.videojs));
+</script>
+
+</body>
+</html>

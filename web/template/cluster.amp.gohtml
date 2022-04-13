@@ -1,0 +1,296 @@
+<!---
+Copyright 2020 Center for Digital Matter HGK FHNW, Basel.
+Copyright 2020 info-age GmbH, Basel.
+Copyright 2017 The AMP Start Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS-IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+{{$user := .BaseStatus.User}}
+<!doctype html>
+<html ⚡="" lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
+
+    <script async="" src="https://cdn.ampproject.org/v0.js"></script>
+
+    <!-- preload the hero image -->
+    <!--
+    <link rel="preload" as="image"
+          href="{{.RelPath}}/static/img/wide-mediathek-hero_1280w.webp"
+          media="(min-width:40.06rem)">
+    -->
+
+    <!-- preload standart font -->
+    <link rel="preload" as="font"
+          href="{{.RelPath}}/static/font/inter/Inter-roman.var.woff2?v=3.15"
+          type="font/woff2"
+          crossorigin="anonymous">
+    <link rel="preload" as="font"
+          href="{{.RelPath}}/static/font/inter/Inter-Bold.woff2?v=3.15"
+          type="font/woff2"
+          crossorigin="anonymous">
+
+    <script custom-element="amp-sidebar" src="https://cdn.ampproject.org/v0/amp-sidebar-0.1.js" async=""></script>
+    <script custom-element="amp-bind" src="https://cdn.ampproject.org/v0/amp-bind-0.1.js" async=""></script>
+    <script custom-element="amp-carousel" src="https://cdn.ampproject.org/v0/amp-carousel-0.1.js" async=""></script>
+    <script custom-element="amp-selector" src="https://cdn.ampproject.org/v0/amp-selector-0.1.js" async=""></script>
+    <script async custom-element="amp-user-notification" src="https://cdn.ampproject.org/v0/amp-user-notification-0.1.js"></script>
+    <script async custom-template="amp-mustache" src="https://cdn.ampproject.org/v0/amp-mustache-0.2.js"></script>
+
+    <script async custom-element="amp-form" src="https://cdn.ampproject.org/v0/amp-form-0.1.js"></script>
+    <script async custom-element="amp-list" src="https://cdn.ampproject.org/v0/amp-list-0.1.js"></script>
+
+    <style amp-custom="">
+        {{template "darkmode.inc.min.css" . }}
+        {{template "lightmode.inc.min.css" . }}
+        {{template "main.inc.min.css" . }}
+        {{template "headings.inc.min.css" . }}
+        {{template "buttons.inc.min.css" . }}
+        {{template "commerce.inc.min.css" . }}
+        {{template "table.inc.min.css" . }}
+        {{template "col.inc.min.css" . }}
+        {{template "text.inc.min.css" . }}
+        {{template "margin.inc.min.css" . }}
+        {{template "flexbox.inc.min.css" . }}
+        {{template "padding.inc.min.css" . }}
+        {{template "inter.inc.min.css" . }}
+        {{template "gsearch.inc.min.css" . }}
+    </style>
+
+    <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
+
+    <title>Mediathek</title>
+    <link rel="canonical" href="{{.Self}}">
+</head>
+
+<body>
+<a class="target-anchor"
+   id="top"></a>
+
+<!-- Start Header -->
+{{template "header.inc.gohtml" . }}
+<!-- End Header -->
+
+
+<main id="content" role="main" class="main">
+    <!-- collection of SVG -->
+    {{template "ionicons.inc.gohtml" . }}
+    <svg width="0" height="0" class="hidden">
+        <symbol id="imgpageright">
+            <defs id="defs10" />
+            <path id="path2" fill="none" d="M0 0h24v24H0V0z" />
+            <path id="path4" d="M 8.5,16.778762 13.5,12 8.5,7.0794915 9.194915,6.3940678 15,12 9.1045,17.5 Z" />
+        </symbol>
+    </svg>
+    <svg width="0" height="0" class="hidden">
+        <symbol id="imgpageleft">
+            <defs id="defs10" />
+            <path id="path2" fill="none" d="M0 0h24v24H0V0z" />
+            <path id="path4" d="M 15,16.778762 10,12 15,7.0794915 14.305085,6.3940678 8.5,12 l 5.8955,5.5 z" />
+        </symbol>
+    </svg>
+    <svg width="0" height="0" class="hidden">
+        <symbol id="imgpagefirst">
+            <defs id="defs10" />
+            <path d="M0 0h24v24H0V0z" fill="none" id="path2" />
+            <path d="m 15.739329,16.778762 -5,-4.778762 5,-4.9205085 L 15.097878,6.5 9.2393293,12 15.134829,17.5 Z" id="path4" />
+            <rect
+                    y="6.5"
+                    x="8"
+                    height="11"
+                    width="1"
+                    id="rect1383"
+                    style="fill:#020000;fill-opacity:1;stroke:none;stroke-width:0.5;stroke-opacity:1" />
+        </symbol>
+    </svg>
+    <svg width="0" height="0" class="hidden">
+        <symbol id="imgsearch">
+            <defs id="defs10" />
+            <path id="path2" fill="none" d="M0 0h24v24H0V0z" />
+            <path id="path4" d="M 15,14.251682 14.573347,14.120763 14,13.5 c 0.674387,-0.896631 1.548224,-2.390076 1.53259,-4 C 15.5,6.1440678 12.500036,3.5756919 9.4640454,3.5393187 6.1822034,3.5 3.6151921,5.9994876 3.557296,9.5179773 3.5,13 6.3601695,15.5 9.5210617,15.522963 11.131019,15.534658 12.426737,14.916441 13.566737,13.936441 L 14.104873,14.557458 14.230341,15 19.5,20.184386 20,19.5 Z M 9.5,14.575273 C 6.5,14.5 4.397261,12.497053 4.5325904,9.5719092 4.6747098,6.5 6.4999939,4.4218309 9.4820227,4.4606813 12.5,4.5 14.57614,6.6906036 14.539319,9.5 14.5,12.5 12.5,14.650546 9.5,14.575273 Z" />
+        </symbol>
+    </svg>
+
+
+    {{range $key, $notification := .Notifications}}
+        <amp-user-notification
+                layout="nodisplay"
+                class="amp-active"
+                id="amp-user-{{$notification.Id}}"
+                data-persist-dismissal="false">
+            <div class="h4 md-h4 message">
+                {{$notification.Message}}&nbsp;
+                <button class="gsearch-btn gsearch-btn-seemore caps" on="tap:amp-user-{{$notification.Id}}.dismiss">OK</button>
+            </div>
+        </amp-user-notification>
+    {{end}}
+    <amp-img
+            class="commerce-listing-banner xs-hide sm-hide"
+            src="{{.RelPath}}/static/img/wide-mediathek-hero_1280w.webp"
+            width="2560"
+            height="400"
+            layout="responsive"
+            alt="Mediathek Search"
+            noloading="">
+        <div placeholder="" class="commerce-loader"></div>
+        <amp-img
+                class="commerce-listing-banner xs-hide sm-hide"
+                src="{{.RelPath}}/static/img/wide-mediathek-hero.jpg"
+                srcset="{{.RelPath}}/static/img/wide-mediathek-hero_1280w.jpg 1280w, {{.RelPath}}/static/img/wide-mediathek-hero_640w.jpg 640w"
+                width="2560"
+                height="400"
+                alt="Mediathek Search"
+                layout="responsive"
+                fallback
+                noloading="">
+            <div placeholder="" class="commerce-loader"></div>
+        </amp-img>
+    </amp-img>
+    <!-- BEGIN - virtual states for search interaction -->
+    <amp-state id="SearchResultSearch">
+        <script type="application/json">
+            {{.SearchString}}
+        </script>
+    </amp-state>
+    <amp-state id="SearchResultStart">
+        <script type="application/json">
+       {{.SearchResultStart}}
+        </script>
+    </amp-state>
+    {{$currentSrch := .SearchName}}
+    {{$cseBase := (print .RelPath "/" (.Prefixes.cluster))}}
+    {{$searchString := .SearchString}}
+
+    <!-- END - virtual states for search interaction -->
+    <section class="commerce-listing-content mx-auto flex flex-wrap pb4">
+            <!-- BEGIN - Facets wide -->
+            <div class="col-3 flex flex-column xs-hide sm-hide">
+                <div class="commerce-side-panel pt4 pr4 self-center">
+                    {{range $key, $srch := .Searches}}
+                        <div class="gsearch-w100 gsearch-input gsearch-input-radio inline-block relative m0 p0 mb3">
+                            <a href="{{$user.LinkSubject "cluster" $srch.Key (printf "cluster/%s" $srch.Key) (print "searchtext=" $searchString)}}">
+                            <button class="gsearch-facet{{if eq $currentSrch $srch.Key}}-inv{{end}} caps full-width">
+                                {{$srch.Name}}
+                            </button>
+                            </a>
+                        </div>
+                    {{end}}
+                </div>
+            </div>
+            <!-- END - Facets wide -->
+            <div class="col-12 md-col-9 pt2 pb3 md-px4 md-pt1 md-pb7">
+                <div class="md-commerce-header relative md-flex flex-wrap items-center md-mx0 md-mb2">
+                    <!-- BEGIN - FORM -->
+                    <form method="GET"
+                          id="search"
+                          action="#"
+                          target="_top">
+                        {{if not (eq .Token "")}}<input type="hidden" name="token" value="{{.Token}}"/>{{end}}
+                        <input type="hidden" name="start" value="0" [value]="SearchResultStart"/>
+                        <input type="hidden" name="lastsearch" value="" [value]="SearchResultSearch"/>
+                        <h1 class="h3 mb2 md-mt2 md-mb2 md-ml0 flex-auto px2">
+                            <span class="sm-hide md-hide lg-hide">Mediathek - </span><span class="md-hide lg-hide">{{if not (eq .Title "")}}{{.Title}}<br />{{end}}</span>
+                            <input  id="searchtext"
+                                    type="text"
+                                    aria-label="Search Text"
+                                    name="searchtext"
+                                    placeholder="enter search text"
+                                    value="{{.SearchString}}"
+                            >
+                            <svg
+                                        aria-label="Search Button"
+                                        id="searchbutton"
+                                        version="1.1"
+                                        height="48px"
+                                        width="48px"
+                                        fill="black"
+                                        role="button"
+                                        style="vertical-align: middle;"
+                                        tabindex="1"
+                                        on="tap:AMP.setState({SearchResult:{items: []},SearchResultStart:0}),search.submit"
+                                        viewBox="0 0 24 24">
+                                <use href="#imgsearch"></use>
+                            </svg>
+                        </h1>
+                    </form>
+                    <!-- END - Form -->
+                    <div class="commerce-listing-filters pt2 pb2 mb3 md-mb0">
+                        <!-- BEGIN - Facets small -->
+                        <div class="commerce-select-wrapper inline-block md-mr1 pl2 md-hide lg-hide">
+                            {{range $key, $srch := .Searches}}
+                                    <!-- <div class="gsearch-w100 gsearch-input gsearch-input-radio inline-block relative m0 p0 mb3"> -->
+                                        <a href="{{$user.LinkSubject "cluster" $srch.Key (printf "cluster/%s" $srch.Key) (print "searchtext=" $searchString)}}">
+                                            <button class="gsearch-facet{{if eq $currentSrch $srch.Key}}-inv{{end}} gsearch-btn caps">
+                                                {{$srch.Name}}
+                                            </button>
+                                        </a>
+                                    <!-- </div> -->
+                            {{end}}
+                        </div>
+                        <!-- END - Facets small -->
+                    </div>
+                </div>
+           {{if ne .SearchString ""}}
+                <div>
+                    <h2 style="padding-left:16px;" class="h6">
+                        <!-- <div class="inline">{{.SearchResultTotal}}</div> items -->
+                        [<div class="inline">{{add .SearchResultStart 1}}</div> -
+                        <div class="inline">{{add .SearchResultStart .SearchResultRows}}</div>]
+                    </h2>
+                    <p>&nbsp;</p>
+
+                    <!-- Paging -->
+                    {{template "searchNav.inc.gohtml" . | arg "navPrefix" "top" | arg "tabIndex" 2 }}
+
+                    <p>&nbsp;</p>
+                </div>
+                <!-- --------------------------------
+                    BEGIN - Content
+                -------------------------------- -->
+                <div class="">
+                    {{range $key, $field := .Items}}
+                        <div style="margin-bottom: 2px;" class="md-result-list relative items-center md-mx0 pl2 pb1 overflow-hidden">
+
+                            <div style="font-weight: bold"><a target="blank" class="text-decoration-none" href="{{$field.Link}}">{{html $field.Title}}</a></div><p></p>
+                                <div style="white-space: pre;">[<a target="blank" class="text-decoration-none" href="{{$field.Link}}">{{$field.Domain}}] {{$field.FileFormat}}</a></div>
+                                <div class="highlightbox">
+                                {{html $field.Snippet}}
+                                </div>
+                        </div>
+                    {{end}}
+                </div>
+                <!-- --------------------------------
+                    END - Content
+                -------------------------------- -->
+
+                <br />
+
+                <!-- Paging -->
+                {{template "searchNav.inc.gohtml" . | arg "navPrefix" "bottom" | arg "tabIndex" 5 }}
+           {{else}} <!-- Empty Result Set -->
+               No Results
+           {{end}}
+            </div>
+        </section>
+</main>
+
+<!-- Start Navbar -->
+{{template "navbar.inc.gohtml" . }}
+<!-- End Navbar -->
+
+{{template "footer.inc.gohtml" . }}
+
+</body>
+</html>

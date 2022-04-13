@@ -1,0 +1,135 @@
+<header style="white-space: nowrap;" class="gsearch-headerbar fixed flex justify-start items-center top-0 left-0 right-0 pl2 pr4 pt2 md-pt0">
+    <div class="table header-table">
+        <div class="tr absolute top-0 header-table">
+            <div class="td align-middle pr0" style="width:48px;" role="button" aria-label="Open Sidebar" on="tap:header-sidebar.toggle" tabindex="0">
+                {{if not .Plain}}
+                <svg
+                        version="1.1"
+                        height="48px"
+                        width="48px"
+                        fill="black"
+                        viewBox="0 0 24 24">
+                    <defs
+                            id="defs10" />
+                    <path
+                            id="path2"
+                            fill="none"
+                            d="M0 0h24v24H0V0z" />
+                    <path
+                            id="path4"
+                            d="m 3,17.5 h 18 v -1 H 3 Z m 0,-5 h 18 v -1 H 3 Z m 0,-6 v 1 h 18 v -1 z" />
+                </svg>
+                {{end}}
+            </div>
+            <div class="td center middle full-width">
+                <a aria-label="Search Page" href="{{.RelPath}}/search{{if not (eq .Token "")}}?token={{.Token}}{{end}}" class="text-decoration-none inline-block mx-auto gsearch-headerbar-home-link mb1 md-mb0">
+                    <div class="table full-height">
+                        <div class="td">
+                            <div class="td align-middle"  style="height: 70px;">
+                                <h3 class="heading">
+                                    <div class="header-text">
+                                        {{template "logo.svg"}}
+                                        <span style="margin-left: 15px;" class="xs-hide">{{.InstanceName}}</span>
+                                        <span class="sm-hide xs-hide">{{if not (eq .Title "")}} - {{.Title}}{{end}}</span>
+                                    </div>
+                                </h3>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <div style="width:48px;" class="td align-middle pr0">
+                {{if not .Plain}}
+                {{if not .User.LoggedIn}}
+                    <a aria-label="Login" href="{{.LoginUrl}}?callback={{printf "%s?token=_JWT_&%s" .Self .RawQuery }}" class="text-decoration-none mr2 gsearch-headerbar-fixed-link ">
+                        <svg
+                                viewBox="0 0 24 24"
+                                fill="black"
+                                width="48px"
+                                height="48px"
+                                version="1.1"
+                                id="svg6">
+                            <defs
+                                    id="defs10">
+                                <clipPath
+                                        clipPathUnits="userSpaceOnUse"
+                                        id="clipPath863">
+                                    <g
+                                            id="use865">
+                                        <path
+                                                d="m 14.5,14 h 0.913451 v 6.5 h -13 v -17 h 13 V 10 H 14.5 V 4.5 h -11 v 15 h 11 V 14"
+                                                id="path893"
+                                                style="fill:#000000;fill-opacity:1" />
+                                    </g>
+                                </clipPath>
+                            </defs>
+                            <path
+                                    d="M 24,0 H 0 v 24 h 24 z"
+                                    id="path2"
+                                    style="fill:none" />
+                            <path
+                                    style="stroke-width:1"
+                                    d="M 11.413451,11.5 H 2.9134511 v 1 h 8.4999999 v 4 l 4,-4.5 -4,-4.5 z"
+                                    id="path4-5" />
+                            <g
+                                    id="layer1" />
+                            <path
+                                    id="path882"
+                                    d="M 7.2526277,10 V 3.5 H 20.252628 v 17 H 7.2526277 V 14 h 0.913451 v 5.5 H 19.166079 V 4.5 H 8.1660787 V 10 Z"
+                                    style="fill:#020000;fill-opacity:1;stroke:none;stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
+                        </svg>
+                    </a>
+                {{else}}
+                    {{$url := ""}}
+                    {{if eq .Type "detail"}}
+                        {{$url = printf "%s?logout" (.User.LinkSignatureCache .Doc.Signature) }}
+                    {{else}}
+                        {{$url = printf "%s?logout&%s" .Self .RawQuery }}
+                    {{end}}
+                    <a aria-label="Logout" href="{{$url}}" class="text-decoration-none mr2 gsearch-headerbar-fixed-link ">
+
+                        <div class="gsearch-headerbar-icon-wrapper relative">
+                            <svg
+                                    viewBox="0 0 24 24"
+                                    fill="black"
+                                    width="48px"
+                                    height="48px"
+                                    version="1.1"
+                                    id="svg6">
+                                <defs
+                                        id="defs10">
+                                    <clipPath
+                                            clipPathUnits="userSpaceOnUse"
+                                            id="clipPath863">
+                                        <g
+                                                id="use865">
+                                            <path
+                                                    d="m 14.5,14 h 0.913451 v 6.5 h -13 v -17 h 13 V 10 H 14.5 V 4.5 h -11 v 15 h 11 V 14"
+                                                    id="path893"
+                                                    style="fill:#000000;fill-opacity:1" />
+                                        </g>
+                                    </clipPath>
+                                </defs>
+                                <path
+                                        d="M 24,0 H 0 v 24 h 24 z"
+                                        id="path2"
+                                        style="fill:none" />
+                                <path
+                                        style="stroke-width:1"
+                                        d="M 17.252628,11.5 H 8.7526281 v 1 h 8.4999999 v 4 l 4,-4.5 -4,-4.5 z"
+                                        id="path4-5" />
+                                <g
+                                        id="layer1" />
+                                <path
+                                        id="path882"
+                                        d="M 15.913451,10 V 3.5 H 2.9134511 v 17 H 15.913451 V 14 H 15 v 5.5 H 4.0000001 V 4.5 H 15 V 10 Z"
+                                        style="fill:#020000;fill-opacity:1;stroke:none;stroke-width:0.5px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
+                            </svg>
+                        </div>
+                    </a>
+                {{end}}
+                {{end}}
+            </div>
+        </div>
+    </div>
+</header>

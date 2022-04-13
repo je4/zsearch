@@ -1,0 +1,246 @@
+<!---
+Copyright 2020 Center for Digital Matter HGK FHNW, Basel.
+Copyright 2020 info-age GmbH, Basel.
+Copyright 2017 The AMP Start Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS-IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+<!doctype html>
+<html ⚡="" lang="en">
+{{$user := .BaseStatus.User}}
+{{$this := .}}
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,minimum-scale=1,initial-scale=1">
+    <meta name="Description" content="{{.MetaDescription}}">
+
+    <script async="" src="https://cdn.ampproject.org/v0.js"></script>
+
+    <!-- preload the hero image -->
+    <link rel="preload" as="image"
+          href="{{.RelPath}}/static/img/wide-mediathek-hero_1280w.webp"
+          media="(min-width:40.06rem)">
+
+    <!-- preload standart font -->
+    <link rel="preload" as="font"
+          href="{{.RelPath}}/static/font/inter/Inter-roman.var.woff2?v=3.15"
+          type="font/woff2"
+          crossorigin="anonymous">
+    <link rel="preload" as="font"
+          href="{{.RelPath}}/static/font/inter/Inter-Bold.woff2?v=3.15"
+          type="font/woff2"
+          crossorigin="anonymous">
+
+    {{template "collections.prefetch.inc.gohtml" . }}
+
+    <script async custom-element="amp-truncate-text" src="https://cdn.ampproject.org/v0/amp-truncate-text-0.1.js"></script>
+    <script custom-element="amp-sidebar" src="https://cdn.ampproject.org/v0/amp-sidebar-0.1.js" async=""></script>
+    <script custom-element="amp-bind" src="https://cdn.ampproject.org/v0/amp-bind-0.1.js" async=""></script>
+    <script custom-element="amp-carousel" src="https://cdn.ampproject.org/v0/amp-carousel-0.1.js" async=""></script>
+    <script custom-element="amp-selector" src="https://cdn.ampproject.org/v0/amp-selector-0.1.js" async=""></script>
+    <script async custom-element="amp-user-notification" src="https://cdn.ampproject.org/v0/amp-user-notification-0.1.js"></script>
+    <script async custom-template="amp-mustache" src="https://cdn.ampproject.org/v0/amp-mustache-0.2.js"></script>
+
+    <script async custom-element="amp-form" src="https://cdn.ampproject.org/v0/amp-form-0.1.js"></script>
+    <script async custom-element="amp-list" src="https://cdn.ampproject.org/v0/amp-list-0.1.js"></script>
+
+    <style amp-custom="">
+        {{template "gsearch.inc.min.css" . }}
+        {{template "darkmode.inc.min.css" . }}
+        {{template "lightmode.inc.min.css" . }}
+        {{template "headings.inc.min.css" . }}
+        {{template "buttons.inc.min.css" . }}
+        {{template "commerce.inc.min.css" . }}
+        {{template "table.inc.min.css" . }}
+        {{template "col.inc.min.css" . }}
+        {{template "text.inc.min.css" . }}
+        {{template "margin.inc.min.css" . }}
+        {{template "flexbox.inc.min.css" . }}
+        {{template "padding.inc.min.css" . }}
+        {{template "main.inc.min.css" . }}
+        {{template "inter.inc.min.css" . }}
+    </style>
+
+    <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
+
+    <title>Mediathek</title>
+    <link rel="canonical" href="{{.Self}}">
+</head>
+
+<body>
+<a class="target-anchor"
+   id="top"></a>
+
+<!-- Start Header -->
+{{template "header.inc.gohtml" . }}
+<!-- End Header -->
+
+
+<main id="content" role="main" class="main">
+    <!-- collection of SVG -->
+    {{template "ionicons.inc.gohtml" . }}
+
+    {{range $key, $notification := .Notifications}}
+        <amp-user-notification
+                layout="nodisplay"
+                class="amp-active"
+                id="amp-user-{{$notification.Id}}"
+                data-persist-dismissal="false">
+            <div class="h4 md-h4 message">
+                {{$notification.Message}}&nbsp;
+                <button class="gsearch-btn gsearch-btn-seemore caps" on="tap:amp-user-{{$notification.Id}}.dismiss">OK</button>
+            </div>
+        </amp-user-notification>
+    {{end}}
+    <amp-img
+            class="commerce-listing-banner xs-hide sm-hide"
+            src="{{.RelPath}}/static/img/wide-mediathek-hero_1280w.webp"
+            width="2560"
+            height="400"
+            layout="responsive"
+            alt="Mediathek Search"
+            noloading="">
+        <div placeholder="" class="commerce-loader"></div>
+        <amp-img
+                class="commerce-listing-banner xs-hide sm-hide"
+                src="{{.RelPath}}/static/img/wide-mediathek-hero.jpg"
+                srcset="{{.RelPath}}/static/img/wide-mediathek-hero_1280w.jpg 1280w, {{.RelPath}}/static/img/wide-mediathek-hero_640w.jpg 640w"
+                width="2560"
+                height="400"
+                alt="Mediathek Search"
+                layout="responsive"
+                fallback
+                noloading="">
+            <div placeholder="" class="commerce-loader"></div>
+        </amp-img>
+    </amp-img>
+
+    <section class="commerce-listing-content mx-auto flex flex-wrap pb4">
+        <div class="col-12 md-col-12 pt2 pb3 md-px4 md-pt1 md-pb7">
+            {{$baseurl := .RelPath}}
+            <!-- --------------------------------
+                BEGIN - Content wide
+            -------------------------------- -->
+            <div class="xs-hide sm-hide">
+                {{range $area := .Areas}}
+                    <h3 style="padding-bottom: 12px;">{{title (trimLeft "0123456789_" $area)}}</h3>
+                    {{$items := index $this.Result $area}}
+                    {{range $key, $item := $items}}
+                        <div style="padding-left:16px; /* height:260px; */ overflow:hidden; margin-bottom: 12px;" class="md-result-list relative md-flex flex-wrap items-center md-mx0">
+                                <div style="display:table;">
+                                    <div style="display:table-row; width:100%;">
+                                        <div style="display:table-cell; width:260px; min-width:260px; /* height:260px; */ padding-right:16px; vertical-align: top;">
+                                            {{if $item.Poster}}
+                                                {{$image := $item.Poster}}
+                                                <amp-img
+                                                        aria-label="{{$image.Name}}"
+                                                        src="{{medialink $image.Uri "resize" "size180x180/formatWEBP" false}}"
+                                                        width="{{resizeW $image.Width $image.Height 180 180}}"
+                                                        height="{{resizeH $image.Width $image.Height 180 180}}"
+                                                        layout="responsive"
+                                                        noloading="">
+                                                    <amp-img
+                                                            aria-label="{{$image.Name}}"
+                                                            src="{{medialink $image.Uri "resize" "size180x180/formatJPEG" false}}"
+                                                            width="{{resizeW $image.Width $image.Height 180 180}}"
+                                                            height="{{resizeH $image.Width $image.Height 180 180}}"
+                                                            layout="responsive"
+                                                            fallback
+                                                            noloading="">
+                                                        <div placeholder="" class="commerce-loader"></div>
+                                                    </amp-img>
+                                                </amp-img>
+                                            {{end}}
+                                        </div>
+                                        <div style="display:table-cell; vertical-align: top;">
+                                            <div style="height:100%; overflow:hidden;">
+                                                <a style="text-decoration: none;" href="{{$user.LinkSubject "search" $item.Signature "search"}}">
+                                                <b>{{trimLeft "0123456789_" $item.Title}}</b>
+                                                {{if not (eq $item.Date "")}}<br />{{$item.Date}}{{end}}
+                                                </a>
+                                                {{if len $item.Abstract}}
+                                                    <amp-truncate-text style="padding-top:10px; width:100vh;" layout="fixed-height" height="8em">
+                                                    {{$item.Abstract}}
+                                                    <button class="gsearch-btn gsearch-btn-seemore caps" slot="collapsed">See more</button>
+                                                </amp-truncate-text>
+                                                <!-- <p style="padding-top:10px;">{{$item.Abstract}}</p> -->{{end}}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                        </div>
+                    {{end}}
+                {{end}}
+            </div>
+            <!-- --------------------------------
+                END - Content wide
+            -------------------------------- -->
+            <!-- --------------------------------
+                BEGIN - Content small
+            -------------------------------- -->
+            <div class="md-hide lg-hide">
+                {{range $area, $items := .Result}}
+                    <h3 style="padding-bottom: 12px;">{{title $area}}</h3>
+                    {{range $key, $item := $items}}
+                        <div style="padding-left:16px; padding-bottom: 15px; overflow:hidden; margin-bottom: 2px;" class="md-result-list relative md-flex flex-wrap items-center md-mx0">
+                            <a style="text-decoration: none;" href="{{$user.LinkSubject "search" $item.Signature "search"}}">
+                                <div>
+                                    <b>{{$item.Title}}</b>
+                                    {{if not (eq $item.Date "")}}<br />{{$item.Date}}{{end}}
+                                    {{if $item.Poster}}
+                                        {{$image := $item.Poster}}
+                                    <div style="max-width: 300px; filter: grayscale(0.7) sepia(0.2);">
+                                        <amp-img
+                                                aria-label="{{$image.Name}}"
+                                                src="{{medialink $image.Uri "resize" "size260x260/formatWEBP" false}}"
+                                                width="{{resizeW $image.Width $image.Height 260 260}}"
+                                                height="{{resizeH $image.Width $image.Height 260 260}}"
+                                                layout="responsive"
+                                                noloading="">
+                                            <amp-img
+                                                    aria-label="{{$image.Name}}"
+                                                    src="{{medialink $image.Uri "resize" "size260x260/formatJPEG" false}}"
+                                                    width="{{resizeW $image.Width $image.Height 260 260}}"
+                                                    height="{{resizeH $image.Width $image.Height 260 260}}"
+                                                    layout="responsive"
+                                                    fallback
+                                                    noloading="">
+                                                <div placeholder="" class="commerce-loader"></div>
+                                            </amp-img>
+                                        </amp-img>
+                                    </div>
+                                    {{end}}
+
+                                    {{if len $item.Abstract}}<p style="padding-top:10px;">{{$item.Abstract}}</p>{{end}}
+                                 </div>
+                            </a>
+                        </div>
+                    {{end}}
+                {{end}}
+            </div>
+            <!-- --------------------------------
+                END - Content small
+            -------------------------------- -->
+        </div>
+    </section>
+</main>
+
+<!-- Start Navbar -->
+{{template "navbar.inc.gohtml" . }}
+<!-- End Navbar -->
+
+{{template "footer.inc.gohtml" . }}
+
+</body>
+</html>

@@ -1,0 +1,365 @@
+<!-- Media area -->
+{{if not .ContentOK}}
+    {{if .Doc.HasMedia}}
+    <div class="gsearch-card" style="min-height: 300px;position:relative;">
+        <div class="box-center">
+            <h4 class="h3">insufficient rights for media display</h4>
+            {{if not .User.LoggedIn}}
+                <div><a class="gsearch-btn gsearch-btn-secondary caps" href="{{.LoginUrl}}?callback={{print .Self "?token=_JWT_"}}">Login</a></div>
+            {{end}}
+        </div>
+    </div>
+    {{end}}
+{{else}}
+    {{$contentPublic := .ContentPublic}}
+{{$len := 0}}
+{{$expanded := true}}
+<amp-accordion
+        expand-single-section>
+    {{if .Doc.Media.video}}
+        {{$len = len .Doc.Media.video}}
+        <section{{if $expanded}} expanded{{end}} [data-expand]="mediasection==1">
+            {{$expanded = false}}
+            <h4 class="hidden">Video ({{$len}})</h4>
+            <div>
+                <amp-state id="video">
+                    <script type="application/json">
+                    {
+                        "videos": [
+                        {{range $key, $video := .Doc.Media.video}}
+                        {{$web := mediachild $video.Uri "$$web"}}
+                        {{if $key}},{{end}}"{{medialink $web "master" "" (not $contentPublic)}}"
+                        {{end}}
+                        ],
+                        "iframes": [
+                        {{range $key, $video := .Doc.Media.video}}
+                        {{if $key}},{{end}}"{{medialink $video.Uri "iframe" "" (not $contentPublic)}}"
+                        {{end}}
+                        ],
+                        "posters": [
+                        {{range $key, $video := .Doc.Media.video}}
+                            {{$poster := printf "%s$$timeshot$$3" $video.Uri}}
+                            {{if $key}},{{end}}"{{medialink $poster "resize" "size1280x720/formatJPEG" (not $contentPublic)}}"
+                        {{end}}
+                        ],
+                        "selectedVideo": 0
+                    }
+                    </script>
+                </amp-state>
+                {{$video := index .Doc.Media.video 0}}
+                {{$src := mediachild $video.Uri "$$web"}}
+                {{$isMedia := (eq (substr 0 12 $video.Uri) "mediaserver:")}}
+                {{$poster := printf "%s$$timeshot$$3" $video.Uri}}
+                <amp-video
+                        src="{{medialink $src "master" "" (not $contentPublic)}}"
+                        [src]="video.videos[video.selectedVideo]"
+                        {{if $isMedia}}poster="{{medialink $poster "resize" "size1280x720/formatJPEG" (not $contentPublic)}}"
+                        [poster]="video.posters[video.selectedVideo]"{{end}}
+                        artwork=""
+                        width="1280"
+                        height="720"
+                        layout="responsive"
+                        controls
+                        rotate-to-fullscreen
+                        dock>
+                </amp-video><br />
+                <a class="text-decoration-none"
+                        href="{{medialink $video.Uri "iframe" "" (not $contentPublic)}}"
+                        [href]="video.iframes[video.selectedVideo]"
+                        target="_blank"
+                        rel="noreferrer"
+                ><h3 class="h6">Open in new window</h3></a>
+                {{if gt $len 1}}
+                <amp-selector class="center" [selected]="video.selectedVideo" on="select:AMP.setState({video: {selectedVideo: event.targetOption}})">
+                    <ul class="list-reset inline-block">
+                        {{range $key, $video := .Doc.Media.video}}
+                            <li class="inline-block">
+                                <div option="{{$key}}" class="gsearch-btn gsearch-btn-selectlist caps">{{add $key 1}}</div>
+                            </li>
+                        {{end}}
+                    </ul>
+                </amp-selector>
+                {{end}}
+            </div>
+        </section>
+    {{end}}
+
+    {{if .Doc.Media.audio}}
+        {{$len = len .Doc.Media.audio}}
+        <section{{if $expanded}} expanded{{end}} [data-expand]="mediasection==2">
+            {{$expanded = false}}
+            <h4 class="hidden">Audio ({{$len}})</h4>
+            <div>
+                <amp-state id="audio">
+                    <script type="application/json">
+                    {
+                        "audios": [
+                        {{range $key, $audio := .Doc.Media.audio}}
+                        {{$web := mediachild $audio.Uri "$$web$$1"}}
+                        {{if $key}},{{end}}"{{medialink $web "master" "" (not $contentPublic)}}"
+                        {{end}}
+                        ],
+                        "postersJPEG": [
+                        {{range $key, $audio := .Doc.Media.audio}}
+                        {{$poster := printf "%s$$poster" $audio.Uri}}
+                        {{if $key}},{{end}}"{{medialink $poster "resize" "size1280x150/stretch/formatJPEG" (not $contentPublic)}}"
+                        {{end}}
+                        ],
+                        "postersWEBP": [
+                        {{range $key, $audio := .Doc.Media.audio}}
+                        {{$poster := printf "%s$$poster" $audio.Uri}}
+                        {{if $key}},{{end}}"{{medialink $poster "resize" "size1280x150/stretch/formatWEBP" (not $contentPublic)}}"
+                        {{end}}
+                        ],
+                        "selectedAudio": 0
+                    }
+                    </script>
+                </amp-state>
+                {{$audio := index .Doc.Media.audio 0}}
+                {{$src := printf "%s$$web$$1" $audio.Uri}}
+                {{$poster := printf "%s$$poster" $audio.Uri}}
+                <amp-img
+                         src="{{medialink $poster "resize" "size1280x150/stretch/formatWEBP" (not $contentPublic)}}"
+                         [src]="audio.postersJPEG[audio.selectedAudio]"
+                         width="1280px"
+                         height="150px">
+                    <amp-img
+                             src="{{medialink $poster "resize" "size1280x150/stretch/formatJPEG" (not $contentPublic)}}"
+                             [src]="audio.postersWEBP[audio.selectedAudio]"
+                             fallback
+                             width="1280px"
+                             height="150px">
+                    </amp-img>
+                </amp-img>
+                <amp-audio
+                        src="{{medialink $src "master" "" (not $contentPublic)}}"
+                        [src]="audio.audios[audio.selectedAudio]"
+                        width="auto"
+                        height="100">
+                </amp-audio>
+                {{if gt $len 1}}
+                    <amp-selector class="center" [selected]="audio.selectedAudio" on="select:AMP.setState({audio: {selectedAudio: event.targetOption}})">
+                        <ul class="list-reset inline-block">
+                            {{range $key, $audio := .Doc.Media.audio}}
+                                <li class="inline-block">
+                                    <div option="{{$key}}" class="gsearch-btn gsearch-btn-selectlist caps">{{add $key 1}}</div>
+                                </li>
+                            {{end}}
+                        </ul>
+                    </amp-selector>
+                {{end}}
+            </div>
+        </section>
+    {{end}}
+
+    {{if .Doc.Media.image}}
+        {{$len = len .Doc.Media.image}}
+        <section{{if $expanded}} expanded{{end}} [data-expand]="mediasection==3">
+            {{$expanded = false}}
+            <h4 class="hidden">Image ({{$len}})</h4>
+            <div>
+                {{range $key, $image := .Doc.Media.image}}
+                <!-- Thumbnail -->
+                <amp-img
+                        id="img-{{$key}}"
+                        width="250"
+                        height="250"
+                        layout="nodisplay"
+                        src="{{medialink $image.Uri "resize" "size250x250/crop/formatWEBP/autorotate" (not $contentPublic)}}">
+                    <amp-img
+                            width="250"
+                            height="250"
+                            fallback
+                            src="{{medialink $image.Uri "resize" "size250x250/crop/formatJPEG/autorotate" (not $contentPublic)}}">
+                    </amp-img>
+                </amp-img>
+                {{end}}
+                <amp-carousel lightbox
+                              width="1280"
+                              height="720"
+                              layout="responsive"
+                              type="slides">
+                    {{range $key, $image := .Doc.Media.image}}
+                        <!-- Image -->
+                        <amp-img
+                                aria-label="{{$image.Name}}"
+                                src="{{medialink $image.Uri "resize" "size1280x720/formatWEBP/autorotate" (not $contentPublic)}}"
+                                width="{{ $image.Width }}"
+                                height="{{ $image.Height }}"
+                                layout="responsive"
+                                tabindex="{{$key}}"
+                                lightbox-thumbnail-id="img-{{$key}}"
+                                noloading="">
+                            <amp-img
+                                    aria-label="{{$image.Name}}"
+                                    src="{{medialink $image.Uri "resize" "size1280x720/formatJPEG/autorotate" (not $contentPublic)}}"
+                                    width="{{ $image.Width }}"
+                                    height="{{ $image.Height }}"
+                                    layout="responsive"
+                                    tabindex="{{$key}}"
+                                    lightbox-thumbnail-id="img-{{$key}}"
+                                    fallback
+                                    noloading="">
+                                <div placeholder="" class="commerce-loader"></div>
+                            </amp-img>
+                            <div placeholder="" class="commerce-loader"></div>
+                        </amp-img>
+                    {{end}}
+                </amp-carousel>
+            </div>
+        </section>
+    {{end}}
+
+    {{if .Doc.Media.pdf}}
+        {{$len = len .Doc.Media.pdf}}
+        <section{{if $expanded}} expanded{{end}} [data-expand]="mediasection==4">
+        {{$expanded = false}}
+                <h4 class="hidden">PDF</h4>
+            <div>
+            <amp-state id="pdf">
+                <script type="application/json">
+                    {
+                        "pdfs": [
+                        {{range $key, $pdf := .Doc.Media.pdf}}
+                            {{if $key}},{{end}}"{{medialink $pdf.Uri "iframe" "" (not $contentPublic)}}"
+                        {{end}}
+                        ],
+                        "selectedPdf": 0
+                    }
+                </script>
+            </amp-state>
+                <div>
+                    <amp-iframe
+                            {{$pdf := index .Doc.Media.pdf 0}}
+                            {{$poster := printf "%s$$poster" $pdf.Uri}}
+                            src="{{medialink $pdf.Uri "iframe" "" (not $contentPublic)}}"
+                            [src]="pdf.pdfs[pdf.selectedPdf]"
+                            sandbox="allow-scripts allow-same-origin allow-downloads allow-presentation"
+                            allowfullscreen
+                            width="1280"
+                            height="1000"
+                            rel="noreferrer"
+                            layout="responsive">
+                        <amp-img layout="fill" src="{{medialink $poster "resize" "size640x500/crop/formatJPEG" (not $contentPublic)}}" placeholder></amp-img>
+                    </amp-iframe>
+                </div>
+                {{if gt $len 1}}
+                <amp-selector class="center" [selected]="pdf.selectedPdf" on="select:AMP.setState({pdf: {selectedPdf: event.targetOption}})">
+                    <ul class="list-reset inline-block">
+                    {{range $key, $pdf := .Doc.Media.pdf}}
+                            <li class="inline-block">
+                                <div option="{{$key}}" class="gsearch-btn gsearch-btn-selectlist caps">{{add $key 1}}</div>
+                            </li>
+                    {{end}}
+                    </ul>
+                </amp-selector>
+                {{end}}
+            </div>
+            </section>
+    {{end}}
+</amp-accordion>
+
+<!-- BEGIN Media Type Selector -->
+<!-- <amp-selector class="media-selector"
+              aria-label="Media Selection"
+              layout="container">
+-->
+        <div style="text-align: center;">
+    {{if .Doc.Media.video}}
+        <svg xmlns="http://www.w3.org/2000/svg"
+             aria-label="Show Videos"
+             height="48px"
+             viewBox="0 0 24 24"
+             width="48px"
+             role="button"
+             tabindex="1"
+             on="tap:AMP.setState({mediasection: 1})">
+            <path
+                    id="path2"
+                    fill="none"
+                    d="M0 0h24v24H0V0z" />
+            <path
+                    id="path4"
+                    d="m 15.5,16.5 h -11 v -9 h 11 m 1,-1 h -13 v 11 h 13 v -4 l 4,3.5 V 7 l -4,3.5 z" />
+        </svg>
+        <!-- <i class="material-icons-outlined md-48"
+           option="1"
+           on="tap:AMP.setState({mediasection: 1})">videocam</i>
+        -->
+    {{end}}
+
+    {{if .Doc.Media.audio}}
+        <svg xmlns="http://www.w3.org/2000/svg"
+             aria-label="Show Audio"
+             height="48px"
+             viewBox="0 0 24 24"
+             width="48px"
+             role="button"
+             tabindex="2"
+             on="tap:AMP.setState({mediasection: 2})">
+            <path
+                    id="path4644"
+                    fill="none"
+                    d="M0 0h24v24H0V0z" />
+            <path
+                    id="path4646"
+                    d="m 7.5,22 h 1 v 1 h -1 z M 12,12.491525 C 13.659985,12.484491 14.477458,11.65994 14.491525,10 l 0.05085,-6 c 0.01407,-1.6599404 -0.869661,-2.5805085 -2.529661,-2.5805085 -1.66,0 -2.4626212,0.8823766 -2.4661018,2.5423729 L 9.5338983,10.025424 C 9.5308065,11.5 10,12.5 12,12.491525 Z M 10.580508,4 C 10.591057,3 11,2.5 12.012712,2.5169492 13.000007,2.5334729 13.485201,3 13.483051,4.0127119 L 13.470339,10 C 13.468216,11 13,11.5 11.974576,11.521186 10.999978,11.541323 10.506669,11 10.516949,10.025424 Z M 11.5,22 h 1 v 1 h -1 z m 4,0 h 1 v 1 h -1 z m 3,-12 h -1 c 0,3 -2.74,5.1 -5.5,5.1 C 9.24,15.1 6.5,13 6.5,10 h -1 c 0,3.41 2.72,5.51 6,6 v 4 h 1 v -4 c 3.28,-0.49 6,-2.59 6,-6 z" />
+        </svg>
+        <!-- <i class="material-icons-outlined md-48"
+           option="4"
+           on="tap:AMP.setState({mediasection: 2})">settings-voice-black</i>
+        -->
+    {{end}}
+
+    {{if .Doc.Media.image}}
+        <svg xmlns="http://www.w3.org/2000/svg"
+             aria-label="Show Images"
+             height="48px"
+             viewBox="0 0 24 24"
+             width="48px"
+             role="button"
+             tabindex="3"
+             on="tap:AMP.setState({mediasection: 3})">
+            <path
+                    id="path4566"
+                    fill="none"
+                    d="M0 0h24v24H0V0z" />
+            <path
+                    id="path4568"
+                    d="m 1.5,4.5 v 15 c 0,0 17.103241,0.01865 21,0 0,0 0.0049,-11.7881094 0,-15 z m 20,14 h -19 v -13 h 19 z M 14.5,11 11,15.51 8.5,12.5 5,17 h 14 z" />
+        </svg>
+        <!-- <i class="material-icons-outlined md-48"
+           option="2"
+           on="tap:AMP.setState({mediasection: 3})">panorama</i>
+        -->
+    {{end}}
+
+    {{if .Doc.Media.pdf}}
+        <svg xmlns="http://www.w3.org/2000/svg"
+             aria-label="Show PDF"
+             height="48px"
+             viewBox="0 0 24 24"
+             width="48px"
+             role="button"
+             tabindex="4"
+             on="tap:AMP.setState({mediasection: 4})">
+            <path
+                    id="path4620"
+                    fill="none"
+                    d="M0 0h24v24H0V0z" />
+            <path
+                    id="path4622"
+                    d="m 22.5,4.5 h -21 v 16 h 21 z m -20,15 v -14 h 9 v 14 z m 19,0 h -9 v -14 h 9 z M 14,10 h 6 v 1 h -6 z m 0,2.5 h 6 v 1 h -6 z m 0,2.5 h 6 v 1 h -6 z" />
+        </svg>
+        <!-- <i class="material-icons-outlined md-48"
+           option="3"
+           on="tap:AMP.setState({mediasection: 4})">chrome_reader_mode</i>
+        -->
+    {{end}}
+    </div>
+<!-- </amp-selector> -->
+{{end}}
+<!-- END Media Type Selector -->
+
+
+</p>

@@ -1,0 +1,195 @@
+/* @media (prefers-color-scheme: dark) { */
+    html {
+        font-family: Inter,sans-serif;
+        font-weight: 300;
+    }
+
+    body {
+        background: #121212;
+        color: white;
+        color: rgba(255,255,255,0.87)
+    }
+
+    b,strong {
+        color: white;
+        color: rgba(255,255,255,1)
+    }
+
+    .highlight {
+        color: white;
+        /* background-color: #222222; */
+    }
+
+    .highlightbox {
+        color: #6a6a6a;
+        padding-left: 10px;
+        padding-right: 10px;
+        margin-top: 5px;
+        margin-left: 20px;
+        margin-right: 20px;
+        /* border-left: 1px solid #666666;
+        border-right: 1px solid #666666; */
+        font-style: italic;
+    }
+
+    .collectionsposter {
+        filter: grayscale(0.7) sepia(0.2);
+    }
+
+    .commerce-listing-banner {
+        width: 100%;
+        filter: grayscale(0.5) sepia(0.2);
+    }
+
+    .amp-mode-mouse  {
+        background-color: #121212;
+        color: white;
+        color: rgba(255,255,255,0.87)
+    }
+
+    .h1,.h2,.h3,.h4,.h5,.h6,.h7,h1,h2,h3,h4,h5,h6,h7 {
+        color: white;
+        color: rgba(255,255,255,1);
+        font-family: Inter,sans-serif;
+        font-weight: 400;
+    }
+
+    button,input,optgroup,select,textarea {
+        font-weight: 200;
+    }
+
+    input {
+        background-color: rgb(59, 59, 59);
+        color: white;
+        color: rgba(255,255,255,0.87)
+    }
+
+    .gsearch-btn-selectlist {
+        background-color: #121212;
+        color: white;
+        color: rgba(255,255,255,0.87)
+    }
+
+    .gsearch-headerbar {
+        color: white;
+        color: rgba(255,255,255,0.87);
+        background-color: #121212;
+        box-shadow: none;
+        border-bottom: 1px solid #f3f3f3;
+        height: 5em;
+    }
+
+    .gsearch-sidebar {
+        color: rgba(255,255,255,0.87);
+        background-color: #121212;
+    }
+
+    .gsc-input {
+        color: black;
+    }
+
+    .amp-mode-mouse .gsearch-nav-link:after {
+        background-color: #ffff;
+    }
+
+
+    .gsearch-btn {
+        border-color: white;
+        border-color: rgba(255,255,255,0.87);
+        font-weight: 400;
+        background-color: black;
+        color: white;
+        color: rgba(255,255,255,0.87)
+    }
+
+    .gsearch-btn:visited {
+        color: black;
+    }
+
+    .gsearch-facet {
+        border-color: white;
+        border-color: rgba(255,255,255,0.87);
+        background-color: #121212;
+        color: white;
+        color: rgba(255,255,255,0.87)
+    }
+
+    .gsearch-facet-inv {
+        border-color: white;
+        border-color: rgba(255,255,255,0.87);
+        background-color: white;
+        background-color: rgba(255,255,255,0.87);
+        color: #121212;
+    }
+
+    .gsearch-facet:hover {
+        background-color: white;
+        background-color: rgba(255,255,255,0.87);
+        color: #121212;
+    }
+
+    .gsearch-facet-inv:hover {
+        background-color: #121212;
+        color: white;
+        color: rgba(255,255,255,0.87)
+    }
+
+    svg {
+        -webkit-filter: invert(100%); /* safari 6.0 - 9.0 */
+        filter: invert(100%);
+    }
+
+    .md-result-list {
+        border-bottom-color: lightgrey;
+        border-bottom-color: rgba(255,255,255,0.4)
+    }
+
+    .md-commerce-header {
+    }
+
+    .amp-carousel-button {
+        background-color: inherit;
+    }
+
+    /* ******** Elevation ****** */
+
+    .elevation00dp {
+        background-color: rgba(255,255,255,0);
+    }
+
+    .elevation01dp {
+        background-color: rgba(255,255,255,0.05);
+    }
+
+    .elevation02dp {
+        background-color: rgba(255,255,255,0.07);
+    }
+
+    .elevation03dp {
+        background-color: rgba(255,255,255,0.08);
+    }
+
+    .elevation04dp {
+        background-color: rgba(255,255,255,0.09);
+    }
+
+    .elevation06dp {
+        background-color: rgba(255,255,255,0.11);
+    }
+
+    .elevation08dp {
+        background-color: rgba(255,255,255,0.12);
+    }
+
+    .elevation12dp {
+        background-color: rgba(255,255,255,0.14);
+    }
+
+    .elevation16dp {
+        background-color: rgba(255,255,255,0.15);
+    }
+
+    .elevation24dp {
+        background-color: rgba(255,255,255,0.16);
+    }
+/* } */
