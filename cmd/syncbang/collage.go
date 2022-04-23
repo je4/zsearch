@@ -122,7 +122,7 @@ func collage(logger *logging.Logger, exportPath string, ms mediaserver.Mediaserv
 			row++
 		}
 		if (row+1)*HEIGHT > intDy {
-			logger.Infof("collage %v images of %f", key, len(images))
+			logger.Infof("collage %v images of %v", key, len(images))
 			break
 		}
 	}
