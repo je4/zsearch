@@ -1,6 +1,6 @@
 module github.com/je4/zsearch/v2
 
-go 1.17
+go 1.18
 
 replace github.com/je4/zsearch/v2 => ./
 
@@ -38,6 +38,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/vanng822/go-solr v0.10.0
 	go.mongodb.org/mongo-driver v1.7.3
+	golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8
 	golang.org/x/net v0.0.0-20211101193420-4a448f8816b3
 	google.golang.org/api v0.60.0
 )

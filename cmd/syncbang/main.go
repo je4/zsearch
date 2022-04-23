@@ -32,13 +32,14 @@ import (
 	"github.com/je4/zsync/pkg/zotero"
 	"github.com/pkg/errors"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 )
 
-const OnlyPCB = false
+const Test = false
 
 func main() {
 	cfgfile := flag.String("cfg", "./syncbang.toml", "locations of config file")
@@ -144,7 +145,7 @@ func main() {
 		return
 	}
 	/*
-		if err := correction(applicationDB, "./cmd/syncbang/bangbang 26_3_gemacht_.csv"); err != nil {
+		if err := correction(applicationDB, "c:/temp/bangbang26_3V2.csv"); err != nil {
 			fmt.Sprintf("%v", err)
 		}
 
@@ -209,96 +210,96 @@ func main() {
 
 	var items = []*search.SourceData{}
 
-	if !OnlyPCB {
-
-		if err := app.IterateFormsAll(func(form *apply.Form) error {
-			if form.Id > 30 {
-				//return nil
-			}
-			// todo: use fair service
-			src, err := search.NewSourceData(form)
-			if err != nil {
-				return errors.Wrap(err, "cannot create sourcedata from iid item")
-			}
-			logger.Infof("creating work %v", src.GetSignature())
-			if err := zsClient.SignatureCreate(src); err != nil {
-				return errors.Wrapf(err, "cannot create work entity")
-			}
-			counter++
-			items = append(items, src)
+	if err := app.IterateFormsAll(func(form *apply.Form) error {
+		if Test && form.Id > 20 {
 			return nil
-		},
-		); err != nil {
-			logger.Panicf("error iterating works: %v", err)
 		}
-
-		if counter > 0 {
-			zsClient.ClearCache()
-			if err := zsClient.BuildSitemap(); err != nil {
-				logger.Panic(err)
-			}
+		// todo: use fair service
+		src, err := search.NewSourceData(form)
+		if err != nil {
+			return errors.Wrap(err, "cannot create sourcedata from iid item")
 		}
-	}
-
-	group, err := zot.LoadGroupLocal(1624911)
-	if err != nil {
-		logger.Panicf("cannot load groups: %v", err)
-	}
-
-	since := time.Date(1970, 01, 01, 0, 0, 0, 0, time.Local)
-	// starting update
-	if err := group.IterateItemsAllLocal(
-		&since,
-		func(item *zotero.Item) error {
-			counter++
-			logger.Infof("#%v item: %v.%v", counter, item.Group.Id, item.Key)
-			if item.Deleted || item.Trashed {
-				return nil
-			}
-			if item.Data.ParentItem != "" {
-				return nil
-			}
-			if strings.TrimSpace(item.Data.Title) == "" && len(item.Data.Creators) == 0 {
-				return nil
-			}
-			_type, err := item.GetType()
-			if err != nil {
-				return errors.Wrapf(err, "cannot get item type")
-			}
-			if _type == "attachment" {
-				return nil
-			}
-			i, err := search.NewSourceData(search.NewZoteroItem(*item, ms))
-			if err != nil {
-				return errors.Wrap(err, "cannot create source item")
-			}
-			acls := i.GetACL()
-			contentACL, ok := acls["content"]
-			if !ok {
-				logger.Infof("--- no content ACL for #%s", i.GetSignatureOriginal())
-				return nil
-			}
-			aclOK := false
-			for _, aclStr := range contentACL {
-				if aclStr == "global/guest" {
-					aclOK = true
-					break
-				}
-			}
-			if !aclOK {
-				logger.Infof("--- no public access to content of #%s", i.GetSignatureOriginal())
-				return nil
-			}
-			items = append(items, i)
-
-			counter++
-			return nil
-		},
+		logger.Infof("work %v", src.GetSignature())
+		if err := zsClient.SignatureCreate(src); err != nil {
+			return errors.Wrapf(err, "cannot create work entity")
+		}
+		counter++
+		items = append(items, src)
+		return nil
+	},
 	); err != nil {
-		logger.Errorf("error getting items: %v", err)
+		logger.Panicf("error iterating works: %v", err)
 	}
 
-	var cnts = []*sdmlcontent.Content{}
+	if counter > 0 {
+		zsClient.ClearCache()
+		if err := zsClient.BuildSitemap(); err != nil {
+			logger.Panic(err)
+		}
+	}
+
+	if !Test {
+		group, err := zot.LoadGroupLocal(1624911)
+		if err != nil {
+			logger.Panicf("cannot load groups: %v", err)
+		}
+
+		since := time.Date(1970, 01, 01, 0, 0, 0, 0, time.Local)
+		// starting update
+		if err := group.IterateItemsAllLocal(
+			&since,
+			func(item *zotero.Item) error {
+
+				//return nil // dont do PCB
+
+				counter++
+				logger.Infof("#%v item: %v.%v", counter, item.Group.Id, item.Key)
+				if item.Deleted || item.Trashed {
+					return nil
+				}
+				if item.Data.ParentItem != "" {
+					return nil
+				}
+				if strings.TrimSpace(item.Data.Title) == "" && len(item.Data.Creators) == 0 {
+					return nil
+				}
+				_type, err := item.GetType()
+				if err != nil {
+					return errors.Wrapf(err, "cannot get item type")
+				}
+				if _type == "attachment" {
+					return nil
+				}
+				i, err := search.NewSourceData(search.NewZoteroItem(*item, ms))
+				if err != nil {
+					return errors.Wrap(err, "cannot create source item")
+				}
+				acls := i.GetACL()
+				contentACL, ok := acls["content"]
+				if !ok {
+					logger.Infof("--- no content ACL for #%s", i.GetSignatureOriginal())
+					return nil
+				}
+				aclOK := false
+				for _, aclStr := range contentACL {
+					if aclStr == "global/guest" {
+						aclOK = true
+						break
+					}
+				}
+				if !aclOK {
+					logger.Infof("--- no public access to content of #%s", i.GetSignatureOriginal())
+					return nil
+				}
+				items = append(items, i)
+
+				counter++
+				return nil
+			},
+		); err != nil {
+			logger.Errorf("error getting items: %v", err)
+		}
+	}
 	var persons = map[string][]string{}
 	var name = regexp.MustCompile("(^[^, ]+) ([^, ]+)$")
 	sqlstr := "SELECT COUNT(*) FROM locked WHERE formid=?"
@@ -358,7 +359,31 @@ func main() {
 				logger.Panic(err)
 			}
 		}
-		cnt := &sdmlcontent.Content{Persons: []sdmlcontent.Person{}, Medias: map[string]sdmlcontent.Media{}}
+	}
+
+	if err := writeCSV(config.ExportPath, items); err != nil {
+		logger.Panic(err)
+	}
+	if err := writePersons(config.ExportPath, items); err != nil {
+		logger.Panic(err)
+	}
+
+	if err := collage(logger, config.ExportPath, ms, items); err != nil {
+		logger.Panic(err)
+	}
+
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("Transcode videos now")
+	reader.ReadString('\n')
+
+	if err := writeData(logger, config.Full, config.ListTemplate, config.DetailTemplate, config.TableTemplate, config.ExportPath, ms, items, false); err != nil {
+		logger.Panic(err)
+	}
+
+	// salon digital
+	var cnts = []*sdmlcontent.Content{}
+	for _, item := range items {
+		cnt := &sdmlcontent.Content{Persons: []sdmlcontent.Person{}, Medias: map[string][]sdmlcontent.Media{}}
 		cnt.Title = item.GetTitle()
 		cnt.Year = item.GetDate()
 		for _, p := range item.GetPersons() {
@@ -368,17 +393,87 @@ func main() {
 			}
 			persons[p.Role] = append(persons[p.Role], p.Name)
 		}
-		/*
-			for t, ms := range item.GetMedia() {
-				cnt.Medias[t] =
-				for _, m := range ms {
-					cnt.Medias[]
+		derivatePath := filepath.ToSlash(filepath.Join("werke", item.SignatureOriginal, "derivate"))
+		for t, mss := range item.GetMedia() {
+			cnt.Medias[t] = []sdmlcontent.Media{}
+			for _, m := range mss {
+				var thumb, image string
+				switch m.Type {
+				case "video":
+					thumb, err = mediaUrl(
+						logger,
+						config.ExportPath,
+						ms,
+						derivatePath,
+						"jpg",
+						m.Uri+"$$timeshot$$3/resize/formatjpeg/size240x240")
+					image, err = mediaUrl(
+						logger,
+						config.ExportPath,
+						ms,
+						derivatePath,
+						"jpg",
+						m.Uri+"$$poster/resize/formatjpeg/size1024x768")
+				case "audio":
+					thumb, err = mediaUrl(
+						logger,
+						config.ExportPath,
+						ms,
+						derivatePath,
+						"jpg",
+						m.Uri+"$$poster/resize/formatjpeg/size240x240")
+					image, err = mediaUrl(
+						logger,
+						config.ExportPath,
+						ms,
+						derivatePath,
+						"jpg",
+						m.Uri+"$$poster/resize/formatjpeg/size1024x768")
+				case "pdf":
+					thumb, err = mediaUrl(
+						logger,
+						config.ExportPath,
+						ms,
+						derivatePath,
+						"jpg",
+						m.Uri+"$$poster/resize/formatjpeg/size240x240")
+					image, err = mediaUrl(
+						logger,
+						config.ExportPath,
+						ms,
+						derivatePath,
+						"jpg",
+						m.Uri+"$$poster/resize/formatjpeg/size1024x768")
+				case "image":
+					thumb, err = mediaUrl(
+						logger,
+						config.ExportPath,
+						ms,
+						derivatePath,
+						"jpg",
+						m.Uri+"/resize/formatjpeg/size240x240")
+					image, err = mediaUrl(
+						logger,
+						config.ExportPath,
+						ms,
+						derivatePath,
+						"jpg",
+						m.Uri+"/resize/formatjpeg/size1024x768")
 				}
+				if err != nil {
+					logger.Panic(err)
+				}
+				cnt.Medias[t] = append(cnt.Medias[t], sdmlcontent.Media{
+					Type:      m.Type,
+					Thumbnail: filepath.ToSlash(filepath.Join(derivatePath, thumb)),
+					Media:     filepath.ToSlash(filepath.Join(derivatePath, image)),
+				})
 			}
-		*/
+		}
 		cnts = append(cnts, cnt)
+
 	}
-	jfile, err := os.OpenFile("c:/temp/salon.json", os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0666)
+	jfile, err := os.OpenFile(filepath.Join(config.ExportPath, "salon.json"), os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0666)
 	if err != nil {
 		logger.Panic(err)
 	}
@@ -386,20 +481,4 @@ func main() {
 	jenc.SetIndent("", "  ")
 	jenc.Encode(cnts)
 	jfile.Close()
-
-	if err := writeCSV("c:/temp", items); err != nil {
-		logger.Panic(err)
-	}
-	if err := writePersons("c:/temp", items); err != nil {
-		logger.Panic(err)
-	}
-
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("Transcode videos now")
-	reader.ReadString('\n')
-
-	if err := writeData(logger, config.ListTemplate, config.DetailTemplate, config.TableTemplate, config.ExportPath, ms, items, false); err != nil {
-		logger.Panic(err)
-	}
-
 }

@@ -39,6 +39,7 @@ type Config struct {
 	ListTemplate   string                          `toml:"listtemplate"`
 	DetailTemplate string                          `toml:"detailtemplate"`
 	TableTemplate  string                          `toml:"tabletemplate"`
+	Full           bool                            `toml:"fullexport"`
 }
 
 func LoadConfig(filepath string) Config {

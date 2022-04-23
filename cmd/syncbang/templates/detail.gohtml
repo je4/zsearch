@@ -1,4 +1,4 @@
-<!doctype html>
+{{$data := . }}<!doctype html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
@@ -120,12 +120,13 @@
                                             data-bs-imageurl="derivate/{{mediaUrl (list $media.Uri "resize/formatjpeg/size800x600" | join "/") $derivatePath "jpg"}}"
                                             data-bs-imagetitle="{{trimPrefix "mediaserver:bangbang/" $media.Uri}}"
                                     />
-
+                                    {{-if $data.Full}}
                                     <div class="card-body">
                                         <p class="card-text">
                                             <a href="master/{{mediaUrl (list $media.Uri "/master" | join "") $masterPath ""}}" target="_blank">{{trimPrefix "mediaserver:bangbang/" $media.Uri}}</a>
                                         </p>
                                     </div>
+                                    {{-end}}
                                 </div>
                             </div>
                         {{end}}
@@ -141,12 +142,13 @@
                             <div class="col" style="max-width: 300px;">
                                 <div class="card shadow-sm">
                                     <img style="width: 282px; height:240px; object-fit: cover;" src="derivate/{{mediaUrl (list $media.Uri "$$poster/resize/formatjpeg/size240x240" | join "") $derivatePath "jpg"}}" loading="lazy" />
-
+                            {{-if $data.Full}}
                                     <div class="card-body">
                                         <p class="card-text">
                                             <a href="master/{{mediaUrl (list $media.Uri "/master" | join "") $masterPath ""}}" target="_blank">{{trimPrefix "mediaserver:bangbang/" $media.Uri}}</a>
                                         </p>
                                     </div>
+                            {{-end}}
                                 </div>
                             </div>
                         {{end}}
@@ -189,8 +191,10 @@
                                         <img src="derivate/{{mediaUrl (list $media.Uri "$$timeshot$$" $shot "/resize/formatjpeg/size320x132" | join "") $derivatePath "jpg"}}" class="img-thumbnail" alt="Videoshot {{$shot}}">
                                     {{end}}
                                     </div>
+                                    {{-if $data.Full}}
                                     <br />
                                     <a href="master/{{mediaUrl (list $media.Uri "/master" | join "") $masterPath ""}}" target="_blank">Master Media file - {{trimPrefix "mediaserver:bangbang/" $media.Uri}}</a>
+                                    {{-end}}
                                 </div>
                             </div>
                         </div>
@@ -226,8 +230,10 @@
                                                 >
                                             </p>
                                         </video>
+                                        {{-if $data.Full}}
                                         <br />
                                         <a href="master/{{mediaUrl (list $media.Uri "/master" | join "") $masterPath ""}}" target="_blank">Master Media file - {{trimPrefix "mediaserver:bangbang/" $media.Uri}}</a>
+                                        {{-end}}
                                     </div>
                                 </div>
                             </div>

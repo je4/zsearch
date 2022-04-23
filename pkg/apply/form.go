@@ -103,10 +103,10 @@ func extractPerson(pString, defaultRole string) []search.Person {
 	}
 	ps := strings.Split(pString, ";")
 	for _, p := range ps {
-		elems := pRoleRegex.FindAllString(p, 0)
+		elems := pRoleRegex.FindStringSubmatch(p)
 		if elems != nil {
-			name := strings.TrimSpace(elems[0])
-			es := strings.Split(elems[1], ";")
+			name := strings.TrimSpace(elems[1])
+			es := strings.Split(elems[2], ";")
 			for _, e := range es {
 				ret = append(ret, search.Person{Name: name, Role: fmt.Sprintf("%s:%s", defaultRole, strings.TrimSpace(e))})
 			}

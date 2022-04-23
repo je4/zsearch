@@ -82,7 +82,7 @@ func mediaUrl(logger *logging.Logger, exportPath string, ms mediaserver.Mediaser
 	return filename, nil
 }
 
-func writeData(logger *logging.Logger, listTemplatePath, detailTemplatePath, tableTemplatePath, exportPath string, ms mediaserver.Mediaserver, data []*search.SourceData, indexOnly bool) error {
+func writeData(logger *logging.Logger, full bool, listTemplatePath, detailTemplatePath, tableTemplatePath, exportPath string, ms mediaserver.Mediaserver, data []*search.SourceData, indexOnly bool) error {
 	funcMap := sprig.FuncMap()
 	funcMap["mediaUrl"] = func(mediaserverUrl, folder, extension string) (url string, err error) {
 		return mediaUrl(logger, exportPath, ms, folder, extension, mediaserverUrl)
@@ -146,8 +146,10 @@ func writeData(logger *logging.Logger, listTemplatePath, detailTemplatePath, tab
 			}
 			defer file.Close()
 			if err := detailTemplate.Execute(file, struct {
+				Full bool
 				Item *search.SourceData
 			}{
+				Full: full,
 				Item: item,
 			}); err != nil {
 				return errors.Wrapf(err, "cannot execute template %s", detailTemplatePath)
@@ -171,6 +173,9 @@ func writeData(logger *logging.Logger, listTemplatePath, detailTemplatePath, tab
 	}
 	return nil
 }
+
+var pGroupRegex = regexp.MustCompile("([^[]+)\\[([^\\]]+)\\]")
+
 func writePersons(exportPath string, data []*search.SourceData) error {
 	// csv generation
 	var persons = map[string][]string{}
@@ -200,7 +205,7 @@ func writePersons(exportPath string, data []*search.SourceData) error {
 			appendPerson(p.Role, p.Name)
 		}
 	}
-	fields := []string{"role", "name"}
+	fields := []string{"role", "subrole", "name"}
 
 	fullpath := filepath.Join(exportPath, "bangbang_names.csv")
 	file, err := os.OpenFile(fullpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
@@ -212,7 +217,13 @@ func writePersons(exportPath string, data []*search.SourceData) error {
 	cw.Write(fields)
 	for role, names := range persons {
 		for _, name := range names {
-			if err := cw.Write([]string{role, name}); err != nil {
+			roles := strings.Split(role, ":")
+			r := roles[0]
+			subr := ""
+			if len(roles) > 1 {
+				subr = roles[1]
+			}
+			if err := cw.Write([]string{r, subr, name}); err != nil {
 				return errors.Wrapf(err, "cannot write to %s", "bangbang_names.csv")
 			}
 		}
