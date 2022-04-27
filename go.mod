@@ -14,6 +14,7 @@ require (
 	github.com/BurntSushi/toml v1.0.0
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
+	github.com/blevesearch/bleve/v2 v2.3.2
 	github.com/bluele/gcache v0.0.2
 	github.com/channelmeter/iso8601duration v0.0.0-20150204201828-8da3af7a2a61
 	github.com/dgraph-io/badger/v3 v3.2103.2
@@ -46,8 +47,24 @@ require (
 require (
 	cloud.google.com/go v0.97.0 // indirect
 	emperror.dev/errors v0.8.0 // indirect
+	github.com/RoaringBitmap/roaring v0.9.4 // indirect
 	github.com/acomagu/bufpipe v1.0.3 // indirect
+	github.com/bits-and-blooms/bitset v1.2.0 // indirect
 	github.com/blend/go-sdk v1.20211025.3 // indirect
+	github.com/blevesearch/bleve_index_api v1.0.1 // indirect
+	github.com/blevesearch/go-porterstemmer v1.0.3 // indirect
+	github.com/blevesearch/gtreap v0.1.1 // indirect
+	github.com/blevesearch/mmap-go v1.0.3 // indirect
+	github.com/blevesearch/scorch_segment_api/v2 v2.1.0 // indirect
+	github.com/blevesearch/segment v0.9.0 // indirect
+	github.com/blevesearch/snowballstem v0.9.0 // indirect
+	github.com/blevesearch/upsidedown_store_api v1.0.1 // indirect
+	github.com/blevesearch/vellum v1.0.7 // indirect
+	github.com/blevesearch/zapx/v11 v11.3.3 // indirect
+	github.com/blevesearch/zapx/v12 v12.3.3 // indirect
+	github.com/blevesearch/zapx/v13 v13.3.3 // indirect
+	github.com/blevesearch/zapx/v14 v14.3.3 // indirect
+	github.com/blevesearch/zapx/v15 v15.3.3 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/dgraph-io/ristretto v0.1.0 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
@@ -77,12 +94,14 @@ require (
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
+	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/pkg/sftp v1.13.4 // indirect
 	github.com/rs/xid v1.3.0 // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/snabb/diagio v1.0.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.1 // indirect
+	go.etcd.io/bbolt v1.3.5 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect

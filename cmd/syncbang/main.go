@@ -22,9 +22,13 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/blevesearch/bleve/v2"
+	"github.com/je4/FairService/v2/pkg/fair"
+	"github.com/je4/FairService/v2/pkg/fairclient"
 	sdmlcontent "github.com/je4/salon-digital/v2/pkg/content"
 	"github.com/je4/utils/v2/pkg/ssh"
 	"github.com/je4/zsearch/v2/pkg/apply"
+	"github.com/je4/zsearch/v2/pkg/fairservice"
 	"github.com/je4/zsearch/v2/pkg/mediaserver"
 	"github.com/je4/zsearch/v2/pkg/search"
 	"github.com/je4/zsearch/v2/pkg/zsearchclient"
@@ -40,8 +44,12 @@ import (
 )
 
 const Test = false
+const doFair = false
+const doBleve = false
+const doZSearch = false
 
 func main() {
+	var err error
 	cfgfile := flag.String("cfg", "./syncbang.toml", "locations of config file")
 	flag.Parse()
 	config := LoadConfig(*cfgfile)
@@ -98,23 +106,25 @@ func main() {
 		time.Sleep(2 * time.Second)
 	}
 
-	zsClient, err := zsearchclient.NewZSearchClient(
-		config.ZSearchService.ServiceName,
-		config.ZSearchService.Address,
-		config.ZSearchService.JwtKey,
-		config.ZSearchService.JwtAlg,
-		config.ZSearchService.CertSkipVerify,
-		30*time.Second,
-		logger)
-	if err != nil {
-		logger.Panicf("cannot create zsearch zsearchclient: %v", err)
-		return
+	var zsClient *zsearchclient.ZSearchClient
+	if doZSearch {
+		zsClient, err = zsearchclient.NewZSearchClient(
+			config.ZSearchService.ServiceName,
+			config.ZSearchService.Address,
+			config.ZSearchService.JwtKey,
+			config.ZSearchService.JwtAlg,
+			config.ZSearchService.CertSkipVerify,
+			30*time.Second,
+			logger)
+		if err != nil {
+			logger.Panicf("cannot create zsearch zsearchclient: %v", err)
+			return
+		}
+		if err := zsClient.Ping(); err != nil {
+			logger.Panicf("cannot ping zsearch zsearchclient: %v", err)
+			return
+		}
 	}
-	if err := zsClient.Ping(); err != nil {
-		logger.Panicf("cannot ping zsearch zsearchclient: %v", err)
-		return
-	}
-
 	mediadb, err := sql.Open(config.Mediaserver.DB.ServerType, config.Mediaserver.DB.DSN)
 	if err != nil {
 		logger.Panic(err)
@@ -190,6 +200,32 @@ func main() {
 		return
 	}
 
+	var fservice *fairclient.FairClient
+	if doFair {
+		fservice, err = fairclient.NewFairService(
+			config.FairService.ServiceName,
+			config.FairService.Address,
+			config.FairService.CertSkipVerify,
+			config.FairService.JwtKey,
+			config.FairService.JwtAlg,
+			30*time.Second,
+		)
+		if err != nil {
+			logger.Panicf("cannot instantiate fair service: %v", err)
+		}
+		if err := fservice.Ping(); err != nil {
+			logger.Panicf("cannot ping fair service: %v", err)
+		}
+	}
+
+	var index bleve.Index
+	if doBleve {
+		path := filepath.Join(config.ExportPath, "bangbang.bleve")
+		os.RemoveAll(path)
+		mapping := bleve.NewIndexMapping()
+		index, err = bleve.New(path, mapping)
+	}
+
 	app, err := apply.NewApply(logger, applicationDB, config.ApplicationDB.Schema, config.FilePath, ms, "bangbang")
 	if err != nil {
 		logger.Panic(err)
@@ -200,8 +236,10 @@ func main() {
 	var counter int64 = 0
 
 	/*
-		if _, err := zsClient.SignaturesClear("bangbang"); err != nil {
-			logger.Panicf("cannot clear signatures with prefix 'bangbang': %v", err)
+		if doZSearch {
+				if _, err := zsClient.SignaturesClear("bangbang"); err != nil {
+					logger.Panicf("cannot clear signatures with prefix 'bangbang': %v", err)
+				}
 		}
 	*/
 
@@ -209,19 +247,80 @@ func main() {
 	// starting update
 
 	var items = []*search.SourceData{}
+	var formItems = []*apply.Form{}
+
+	srcPrefix := "bangbang"
+	if doFair {
+		src := &fair.Source{
+			ID:          0,
+			Name:        srcPrefix,
+			DetailURL:   "https://mediathek.hgk.fhnw.ch/amp/detail/{signature}/plain",
+			Description: "BangBang",
+			OAIDomain:   "dataverse.hgk.fhnw.ch",
+			Partition:   "mediathek",
+		}
+		if err := fservice.SetSource(src); err != nil {
+			logger.Panicf("cannot set source %#v: %v", src, err)
+		}
+		if err := fservice.StartUpdate(srcPrefix); err != nil {
+			logger.Panicf("cannot start fairservice update: %v", err)
+		}
+	}
 
 	if err := app.IterateFormsAll(func(form *apply.Form) error {
 		if Test && form.Id > 20 {
 			return nil
 		}
+
+		formItems = append(formItems, form)
+
 		// todo: use fair service
 		src, err := search.NewSourceData(form)
 		if err != nil {
 			return errors.Wrap(err, "cannot create sourcedata from iid item")
 		}
 		logger.Infof("work %v", src.GetSignature())
-		if err := zsClient.SignatureCreate(src); err != nil {
-			return errors.Wrapf(err, "cannot create work entity")
+		if doFair {
+			fItem := fairservice.SourceToFairItem(src)
+			var fairItem *fair.ItemData
+			fairItem, err = fservice.Create(fItem)
+			if err != nil {
+				return errors.Wrap(err, "cannot create fair entity")
+			}
+			// add new potential identifiers
+			var identifiers = make(map[string]string)
+			for _, ident := range fairItem.Identifier {
+				parts := strings.SplitN(ident, ":", 2)
+				identifiers[parts[0]] = parts[1]
+			}
+			src.AddIdentifiers(identifiers)
+			rawOriginal, err := json.Marshal(src)
+			if err != nil {
+				return errors.Wrapf(err, "cannot marshal zotero item")
+			}
+			if err := fservice.WriteOriginalData(fairItem, rawOriginal); err != nil {
+				return errors.Wrapf(err, "cannot write original data to fair service")
+			}
+			archiveName := fmt.Sprintf("%s", src.GetSignature())
+			if err := fservice.AddArchive(archiveName, src.GetAbstract()); err != nil {
+				return errors.Wrapf(err, "cannot create archive %s", archiveName)
+			}
+			if err := fservice.AddArchiveItem(archiveName, fairItem.UUID); err != nil {
+				return errors.Wrapf(err, "cannot add item %s to archive %s", src.GetSignature(), archiveName)
+			}
+		}
+		if doBleve {
+			index.Index(src.Signature, src)
+			data, err := json.Marshal(src)
+			if err != nil {
+				return errors.Wrapf(err, "cannot marshal data")
+			}
+			index.SetInternal([]byte(src.Signature), data)
+		}
+		if doZSearch {
+			if err := zsClient.SignatureCreate(src); err != nil {
+				return errors.Wrapf(err, "cannot create work entity")
+			}
 		}
 		counter++
 		items = append(items, src)
@@ -230,11 +329,21 @@ func main() {
 	); err != nil {
 		logger.Panicf("error iterating works: %v", err)
 	}
+	if doBleve {
+		index.Close()
+	}
+	if doFair {
+		if err := fservice.EndUpdate(srcPrefix); err != nil {
+			logger.Panicf("cannot end fairservice update: %v", err)
+		}
+	}
 
 	if counter > 0 {
-		zsClient.ClearCache()
-		if err := zsClient.BuildSitemap(); err != nil {
-			logger.Panic(err)
+		if doZSearch {
+			zsClient.ClearCache()
+			if err := zsClient.BuildSitemap(); err != nil {
+				logger.Panic(err)
+			}
 		}
 	}
 
@@ -361,10 +470,10 @@ func main() {
 		}
 	}
 
-	if err := writeCSV(config.ExportPath, items); err != nil {
+	if err := writeCSV(config.ExportPath, formItems); err != nil {
 		logger.Panic(err)
 	}
-	if err := writePersons(config.ExportPath, items); err != nil {
+	if err := writePersons(config.ExportPath, formItems); err != nil {
 		logger.Panic(err)
 	}
 
@@ -413,7 +522,7 @@ func main() {
 						ms,
 						derivatePath,
 						"jpg",
-						m.Uri+"$$poster/resize/formatjpeg/size1024x768")
+						m.Uri+"$$timeshot$$3/resize/formatjpeg/size1024x768")
 				case "audio":
 					thumb, err = mediaUrl(
 						logger,

@@ -122,18 +122,20 @@ func (form *Form) GetPersons() []search.Person {
 	persons = append(persons, extractPerson(form.Data["performers"], "performer")...)
 	persons = append(persons, extractPerson(form.Data["eventcurator"], "eventcurator")...)
 	persons = append(persons, extractPerson(form.Data["camera"], "camera")...)
-	persons = append(persons, search.Person{
-		Name: fmt.Sprintf("%s, %s", form.Data["nachname"], form.Data["vorname"]),
-		Role: "contact",
-	})
+	/*
+		persons = append(persons, search.Person{
+			Name: fmt.Sprintf("%s, %s", form.Data["nachname"], form.Data["vorname"]),
+			Role: "contact",
+		})
+	*/
 	return persons
 }
 
 func (form *Form) GetACL() map[string][]string {
 
 	var acls = map[string][]string{
-		"meta":    {"global/admin", "hgk/bangbang"},
-		"content": {"global/admin", "hgk/bangbang"},
+		"meta":    {"global/admin", "global/guest"},
+		"content": {"global/admin", "hgk/bangbang", "hgk/mediathek"},
 	}
 	return acls
 }
@@ -326,6 +328,34 @@ func (form *Form) GetReferences() []search.Reference {
 }
 
 func (form *Form) GetMeta() *search.Metalist {
+	var extra = search.Metalist{}
+	var meta = (*search.Metalist)(&form.Data)
+	if meta != nil {
+		for key, val := range *meta {
+			switch key {
+			case "descr":
+			case "titel":
+			case "artists":
+			case "year":
+			case "web":
+			case "additional":
+			case "adresse":
+			case "email":
+			case "rechtebangbang":
+			case "rechtemediathek":
+			case "tel":
+			case "vorname":
+			case "nachname":
+			default:
+				extra[key] = val
+			}
+		}
+	}
+	return &extra
+
+}
+
+func (form *Form) GetAllMeta() *search.Metalist {
 	return (*search.Metalist)(&form.Data)
 }
 
@@ -341,6 +371,13 @@ func (form *Form) GetExtra() *search.Metalist {
 			case "year":
 			case "web":
 			case "additional":
+			case "adresse":
+			case "email":
+			case "rechtebangbang":
+			case "rechtemediathek":
+			case "tel":
+			case "vorname":
+			case "nachname":
 			default:
 				extra[key] = val
 			}

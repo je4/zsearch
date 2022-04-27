@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"github.com/Masterminds/sprig"
+	"github.com/je4/zsearch/v2/pkg/apply"
 	"github.com/je4/zsearch/v2/pkg/mediaserver"
 	"github.com/je4/zsearch/v2/pkg/search"
 	"github.com/op/go-logging"
@@ -176,7 +177,7 @@ func writeData(logger *logging.Logger, full bool, listTemplatePath, detailTempla
 
 var pGroupRegex = regexp.MustCompile("([^[]+)\\[([^\\]]+)\\]")
 
-func writePersons(exportPath string, data []*search.SourceData) error {
+func writePersons(exportPath string, data []*apply.Form) error {
 	// csv generation
 	var persons = map[string][]string{}
 	var appendPerson = func(role string, names ...string) {
@@ -198,10 +199,7 @@ func writePersons(exportPath string, data []*search.SourceData) error {
 	}
 
 	for _, item := range data {
-		if strings.HasPrefix(item.SignatureOriginal, "zotero") {
-			continue
-		}
-		for _, p := range item.Persons {
+		for _, p := range item.GetPersons() {
 			appendPerson(p.Role, p.Name)
 		}
 	}
@@ -230,7 +228,7 @@ func writePersons(exportPath string, data []*search.SourceData) error {
 	}
 	return nil
 }
-func writeCSV(exportPath string, data []*search.SourceData) error {
+func writeCSV(exportPath string, data []*apply.Form) error {
 
 	// csv generation
 	fields := []string{"artists",
@@ -287,37 +285,40 @@ func writeCSV(exportPath string, data []*search.SourceData) error {
 
 	cw.Write(append([]string{"id", "delete", "update"}, fields...))
 	for _, item := range data {
-		record := []string{item.SignatureOriginal, "", ""}
+		content := item.GetAllMeta()
+		record := []string{fmt.Sprintf("%d", item.Id), "", ""}
 		for _, fld := range fields {
-			var value string
-			switch fld {
-			case "titel":
-				value = item.GetTitle()
-			case "artists":
-				persons := item.GetPersons()
-				for _, person := range persons {
-					if person.Role != "castMember" {
-						value += fmt.Sprintf(" %s;", person.Name)
+			var value = (*content)[fld]
+			/*
+				switch fld {
+				case "titel":
+					value = item.GetTitle()
+				case "artists":
+					persons := item.GetPersons()
+					for _, person := range persons {
+						if person.Role != "castMember" {
+							value += fmt.Sprintf(" %s;", person.Name)
+						}
 					}
-				}
-				value = strings.Trim(value, " ;")
-			case "camera":
-				persons := item.GetPersons()
-				for _, person := range persons {
-					if person.Role == "castMember" {
-						value += fmt.Sprintf(" %s;", person.Name)
+					value = strings.Trim(value, " ;")
+				case "camera":
+					persons := item.GetPersons()
+					for _, person := range persons {
+						if person.Role == "castMember" {
+							value += fmt.Sprintf(" %s;", person.Name)
+						}
 					}
+					value = strings.Trim(value, " ;")
+				case "descr":
+					value = item.GetAbstract()
+				case "year":
+					value = item.GetDate()
+				case "medium":
+					value = "Video"
+				default:
+					value = (*content)[fld]
 				}
-				value = strings.Trim(value, " ;")
-			case "descr":
-				value = item.GetAbstract()
-			case "year":
-				value = item.GetDate()
-			case "medium":
-				value = "Video"
-			default:
-				value = (*item.Meta)[fld]
-			}
+			*/
 			record = append(record, value)
 
 		}
