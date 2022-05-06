@@ -304,6 +304,9 @@ func (form *Form) GetNotes() []search.Note {
 	if strings.TrimSpace(form.Data["additional"]) != "" {
 		notes = append(notes, search.Note{Title: "Additional", Note: template.HTML(form.Data["additional"])})
 	}
+	if strings.TrimSpace(form.Data["remark"]) != "" {
+		notes = append(notes, search.Note{Title: "Remark", Note: template.HTML(form.Data["remark"])})
+	}
 	for _, errStr := range form.Errors {
 		notes = append(notes, search.Note{Note: template.HTML(errStr), Title: "Error"})
 	}

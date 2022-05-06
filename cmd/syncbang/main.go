@@ -44,9 +44,9 @@ import (
 )
 
 const Test = false
-const doFair = false
-const doBleve = false
-const doZSearch = false
+const doFair = true
+const doBleve = true
+const doZSearch = true
 
 func main() {
 	var err error
@@ -155,7 +155,7 @@ func main() {
 		return
 	}
 	/*
-		if err := correction(applicationDB, "c:/temp/bangbang26_3V2.csv"); err != nil {
+		if err := correction(applicationDB, "c:/temp/Kopie von bangbang_JE20220427_TL_abgleich_3.csv"); err != nil {
 			fmt.Sprintf("%v", err)
 		}
 
@@ -477,15 +477,15 @@ func main() {
 		logger.Panic(err)
 	}
 
-	if err := collage(logger, config.ExportPath, ms, items); err != nil {
-		logger.Panic(err)
-	}
-
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Print("Transcode videos now")
 	reader.ReadString('\n')
 
 	if err := writeData(logger, config.Full, config.ListTemplate, config.DetailTemplate, config.TableTemplate, config.ExportPath, ms, items, false); err != nil {
+		logger.Panic(err)
+	}
+
+	if err := collage(logger, config.ExportPath, ms, items); err != nil {
 		logger.Panic(err)
 	}
 
