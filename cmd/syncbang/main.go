@@ -43,10 +43,14 @@ import (
 	"time"
 )
 
-const Test = false
+const doPCB = true
 const doFair = true
 const doBleve = true
 const doZSearch = true
+const doWait = false
+const doCollage = true
+const doCollageOnly = false
+const doFullData = true
 
 func main() {
 	var err error
@@ -124,6 +128,14 @@ func main() {
 			logger.Panicf("cannot ping zsearch zsearchclient: %v", err)
 			return
 		}
+		sPrefix := "bangbang-"
+		num, err := zsClient.SignaturesClear(sPrefix)
+		logger.Infof("%v items deleted from INK", num)
+		//					num, err := mte.Delete(cfg)
+		if err != nil {
+			logger.Panicf("cannot delete items with signature prefix %s: %v", sPrefix, err)
+		}
+
 	}
 	mediadb, err := sql.Open(config.Mediaserver.DB.ServerType, config.Mediaserver.DB.DSN)
 	if err != nil {
@@ -218,6 +230,44 @@ func main() {
 		}
 	}
 
+	if doCollageOnly {
+		path := filepath.Join(config.ExportPath, "bangbang.bleve")
+		index, err := bleve.Open(path)
+		if err != nil {
+			logger.Panicf("cannot load bleve index %s: %v", path, err)
+		}
+		defer index.Close()
+		bQuery := bleve.NewMatchAllQuery()
+		bSearch := bleve.NewSearchRequest(bQuery)
+		var works = []*search.SourceData{}
+		bSearch.Size = 100
+		for {
+			searchResult, err := index.Search(bSearch)
+			if err != nil {
+				logger.Panicf("cannot load works from index: %v", err)
+			}
+			for _, val := range searchResult.Hits {
+				raw, err := index.GetInternal([]byte(val.ID))
+				if err != nil {
+					logger.Panicf("cannot get document #%s from index: %v", val.ID, err)
+				}
+				var src = &search.SourceData{}
+				if err := json.Unmarshal(raw, src); err != nil {
+					logger.Panicf("cannot unmarshal document #%s: %v", val.ID, err)
+				}
+				works = append(works, src)
+			}
+			if len(searchResult.Hits) < 100 {
+				break
+			}
+			bSearch.From += 100
+		}
+		if err := collage(logger, config.ExportPath, ms, works); err != nil {
+			logger.Panic(err)
+		}
+		return
+	}
+
 	var index bleve.Index
 	if doBleve {
 		path := filepath.Join(config.ExportPath, "bangbang.bleve")
@@ -268,10 +318,6 @@ func main() {
 	}
 
 	if err := app.IterateFormsAll(func(form *apply.Form) error {
-		if Test && form.Id > 20 {
-			return nil
-		}
-
 		formItems = append(formItems, form)
 
 		// todo: use fair service
@@ -329,9 +375,6 @@ func main() {
 	); err != nil {
 		logger.Panicf("error iterating works: %v", err)
 	}
-	if doBleve {
-		index.Close()
-	}
 	if doFair {
 		if err := fservice.EndUpdate(srcPrefix); err != nil {
 			logger.Panicf("cannot end fairservice update: %v", err)
@@ -347,7 +390,7 @@ func main() {
 		}
 	}
 
-	if !Test {
+	if doPCB {
 		group, err := zot.LoadGroupLocal(1624911)
 		if err != nil {
 			logger.Panicf("cannot load groups: %v", err)
@@ -401,6 +444,14 @@ func main() {
 					return nil
 				}
 				items = append(items, i)
+				if doBleve {
+					index.Index(i.Signature, i)
+					data, err := json.Marshal(i)
+					if err != nil {
+						return errors.Wrapf(err, "cannot marshal data")
+					}
+					index.SetInternal([]byte(i.Signature), data)
+				}
 
 				counter++
 				return nil
@@ -409,6 +460,10 @@ func main() {
 			logger.Errorf("error getting items: %v", err)
 		}
 	}
+	if doBleve {
+		index.Close()
+	}
+
 	var persons = map[string][]string{}
 	var name = regexp.MustCompile("(^[^, ]+) ([^, ]+)$")
 	sqlstr := "SELECT COUNT(*) FROM locked WHERE formid=?"
@@ -477,16 +532,20 @@ func main() {
 		logger.Panic(err)
 	}
 
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("Transcode videos now")
-	reader.ReadString('\n')
+	if doWait {
+		reader := bufio.NewReader(os.Stdin)
+		fmt.Print("Transcode videos now")
+		reader.ReadString('\n')
+	}
 
 	if err := writeData(logger, config.Full, config.ListTemplate, config.DetailTemplate, config.TableTemplate, config.ExportPath, ms, items, false); err != nil {
 		logger.Panic(err)
 	}
 
-	if err := collage(logger, config.ExportPath, ms, items); err != nil {
-		logger.Panic(err)
+	if doCollage {
+		if err := collage(logger, config.ExportPath, ms, items); err != nil {
+			logger.Panic(err)
+		}
 	}
 
 	// salon digital

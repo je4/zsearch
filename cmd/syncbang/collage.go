@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/je4/zsearch/v2/pkg/mediaserver"
 	"github.com/je4/zsearch/v2/pkg/search"
 	"github.com/op/go-logging"
@@ -14,7 +15,7 @@ import (
 	"time"
 )
 
-const HEIGHT = 100
+const HEIGHT = 150
 
 func collage(logger *logging.Logger, exportPath string, ms mediaserver.Mediaserver, data []*search.SourceData) error {
 	var err error
@@ -97,9 +98,9 @@ func collage(logger *logging.Logger, exportPath string, ms mediaserver.Mediaserv
 	}
 	rand.Seed(time.Now().UnixNano())
 	rand.Shuffle(len(images), func(i, j int) { images[i], images[j] = images[j], images[i] })
-	dx := 84.1 * 118.110236220472
+	dx := 118.9 * 118.110236220472 * 1.8 * 1.1
 	intDx := int(dx)
-	dy := 118.9 * 118.110236220472
+	dy := 84.1 * 118.110236220472 * 1.8
 	intDy := int(dy)
 	coll := image.NewRGBA(image.Rectangle{
 		Min: image.Point{},
@@ -108,6 +109,7 @@ func collage(logger *logging.Logger, exportPath string, ms mediaserver.Mediaserv
 
 	row := 0
 	posX := 0
+	positions := map[string][]image.Rectangle{}
 	for key, img := range images {
 		logger.Infof("collage image #%v of %v", key, len(images))
 		draw.Copy(coll,
@@ -116,6 +118,13 @@ func collage(logger *logging.Logger, exportPath string, ms mediaserver.Mediaserv
 			img.img.Bounds(),
 			draw.Over,
 			nil)
+		if _, ok := positions[img.signature]; !ok {
+			positions[img.signature] = []image.Rectangle{}
+		}
+		positions[img.signature] = append(positions[img.signature], image.Rectangle{
+			Min: image.Point{X: posX, Y: row * HEIGHT},
+			Max: image.Point{X: posX + img.img.Bounds().Dx(), Y: row*HEIGHT + img.img.Bounds().Dy()},
+		})
 		posX += img.img.Bounds().Max.X
 		if posX > intDx {
 			posX = 0
@@ -133,6 +142,17 @@ func collage(logger *logging.Logger, exportPath string, ms mediaserver.Mediaserv
 	if err := png.Encode(fp, coll); err != nil {
 		fp.Close()
 		return errors.Wrapf(err, "cannot encode collage png")
+	}
+	fp.Close()
+
+	fp, err = os.Create(filepath.Join(exportPath, "collage.json"))
+	if err != nil {
+		return errors.Wrapf(err, "cannot create collage json file")
+	}
+	jsonW := json.NewEncoder(fp)
+	if err := jsonW.Encode(positions); err != nil {
+		fp.Close()
+		return errors.Wrapf(err, "cannot store json")
 	}
 	fp.Close()
 

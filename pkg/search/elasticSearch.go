@@ -468,17 +468,18 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]map[string][]string, []
 				case "category":
 					filters = append(filters, elasticPrefixQuery(fld, val).FieldValue())
 				case "persons.name":
+					filters = append(filters, elasticNestedQuery("persons",
+						elasticQuery().withTermQuery(elasticTermQuery("persons.name.keyword", val, 0))).FieldValue())
 					/*
-						filters = append(filters, elasticNestedQuery("persons",
-							elasticQuery().withTermQuery(elasticTermQuery("persons.name.keyword", val, 0))).FieldValue())
+						filters = append(filters,
+							elasticNestedQuery("persons", elasticQuery().withBooleanQuery(elasticBooleanQuery(0).withMust(
+								elasticSimpleQueryString(val).
+									withFields([]string{"persons.name.stem"}).
+									withOperatorOR().
+									withAnalyzer("digma_stemmer").
+									FieldValue()))).FieldValue())
+
 					*/
-					filters = append(filters,
-						elasticNestedQuery("persons", elasticQuery().withBooleanQuery(elasticBooleanQuery(0).withMust(
-							elasticSimpleQueryString(val).
-								withFields([]string{"persons.name.stem"}).
-								withOperatorOR().
-								withAnalyzer("digma_stemmer").
-								FieldValue()))).FieldValue())
 				default:
 					filters = append(filters, elasticTermQuery(fld, val, 0).FieldValue())
 				}
