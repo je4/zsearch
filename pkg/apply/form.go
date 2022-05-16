@@ -133,9 +133,12 @@ func (form *Form) GetPersons() []search.Person {
 
 func (form *Form) GetACL() map[string][]string {
 
-	var acls = map[string][]string{
-		"meta":    {"global/admin", "global/guest"},
-		"content": {"global/admin", "hgk/bangbang", "hgk/mediathek"},
+	var acls = map[string][]string{}
+	acls["meta"] = []string{"global/admin", "global/guest"}
+	if form.Data["rechtemediathek"] != "ok" {
+		acls["content"] = []string{"global/admin"}
+	} else {
+		acls["content"] = []string{"global/admin", "hgk/bangbang", "hgk/mediathek"}
 	}
 	return acls
 }
