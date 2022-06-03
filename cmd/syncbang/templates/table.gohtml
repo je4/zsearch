@@ -86,7 +86,7 @@
                             <tr>
                                 <td>
                                     {{if $item.Poster}}
-                                        <img style="width: 50px; height:50px; object-fit: cover;" src="thumb/{{mediaUrl (list $item.Poster.Uri "resize/formatpng/size50x50" | join "/") "thumb" "png"}}" loading="lazy" />
+                                        <img style="width: 50px; height:50px; object-fit: cover;" src="thumb/{{mediaUrl (list $item.Poster.Uri "resize/autorotate/formatpng/size50x50" | join "/") "thumb" "png"}}" loading="lazy" />
                                     {{else}}
                                         <img src="media/placeholder.svg" style="width: 50px; height:50px;" loading="lazy" />
                                     {{end}}

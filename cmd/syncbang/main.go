@@ -43,11 +43,13 @@ import (
 	"time"
 )
 
+//const doDataUpdateOnly = "c:/temp/bangbang_20220515.csv"
+const doDataUpdateOnly = ""
 const doPCB = true
 const doFair = true
 const doBleve = true
 const doZSearch = true
-const doWait = false
+const doWait = true
 const doCollage = true
 const doCollageOnly = false
 const doFullData = true
@@ -110,33 +112,6 @@ func main() {
 		time.Sleep(2 * time.Second)
 	}
 
-	var zsClient *zsearchclient.ZSearchClient
-	if doZSearch {
-		zsClient, err = zsearchclient.NewZSearchClient(
-			config.ZSearchService.ServiceName,
-			config.ZSearchService.Address,
-			config.ZSearchService.JwtKey,
-			config.ZSearchService.JwtAlg,
-			config.ZSearchService.CertSkipVerify,
-			30*time.Second,
-			logger)
-		if err != nil {
-			logger.Panicf("cannot create zsearch zsearchclient: %v", err)
-			return
-		}
-		if err := zsClient.Ping(); err != nil {
-			logger.Panicf("cannot ping zsearch zsearchclient: %v", err)
-			return
-		}
-		sPrefix := "bangbang-"
-		num, err := zsClient.SignaturesClear(sPrefix)
-		logger.Infof("%v items deleted from INK", num)
-		//					num, err := mte.Delete(cfg)
-		if err != nil {
-			logger.Panicf("cannot delete items with signature prefix %s: %v", sPrefix, err)
-		}
-
-	}
 	mediadb, err := sql.Open(config.Mediaserver.DB.ServerType, config.Mediaserver.DB.DSN)
 	if err != nil {
 		logger.Panic(err)
@@ -166,13 +141,40 @@ func main() {
 		logger.Panic(err)
 		return
 	}
-	/*
-		if err := correction(applicationDB, "c:/temp/Kopie von bangbang_JE20220427_TL_abgleich_3.csv"); err != nil {
+	if doDataUpdateOnly != "" {
+		if err := correction(applicationDB, doDataUpdateOnly); err != nil {
 			fmt.Sprintf("%v", err)
 		}
 
 		return
-	*/
+	}
+	var zsClient *zsearchclient.ZSearchClient
+	if doZSearch {
+		zsClient, err = zsearchclient.NewZSearchClient(
+			config.ZSearchService.ServiceName,
+			config.ZSearchService.Address,
+			config.ZSearchService.JwtKey,
+			config.ZSearchService.JwtAlg,
+			config.ZSearchService.CertSkipVerify,
+			30*time.Second,
+			logger)
+		if err != nil {
+			logger.Panicf("cannot create zsearch zsearchclient: %v", err)
+			return
+		}
+		if err := zsClient.Ping(); err != nil {
+			logger.Panicf("cannot ping zsearch zsearchclient: %v", err)
+			return
+		}
+		sPrefix := "bangbang-"
+		num, err := zsClient.SignaturesClear(sPrefix)
+		logger.Infof("%v items deleted from INK", num)
+		//					num, err := mte.Delete(cfg)
+		if err != nil {
+			logger.Panicf("cannot delete items with signature prefix %s: %v", sPrefix, err)
+		}
+
+	}
 
 	// get database connection handle
 	zoteroDB, err := sql.Open(config.Zotero.DB.ServerType, config.Zotero.DB.DSN)
@@ -619,14 +621,14 @@ func main() {
 						ms,
 						derivatePath,
 						"jpg",
-						m.Uri+"/resize/formatjpeg/size240x240")
+						m.Uri+"/resize/autorotate/formatjpeg/size240x240")
 					image, err = mediaUrl(
 						logger,
 						config.ExportPath,
 						ms,
 						derivatePath,
 						"jpg",
-						m.Uri+"/resize/formatjpeg/size1024x768")
+						m.Uri+"/resize/autorotate/formatjpeg/size1024x768")
 				}
 				if err != nil {
 					logger.Panic(err)
@@ -649,4 +651,6 @@ func main() {
 	jenc.SetIndent("", "  ")
 	jenc.Encode(cnts)
 	jfile.Close()
+
+	doStats(items)
 }

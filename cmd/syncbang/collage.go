@@ -110,7 +110,10 @@ func collage(logger *logging.Logger, exportPath string, ms mediaserver.Mediaserv
 	row := 0
 	posX := 0
 	positions := map[string][]image.Rectangle{}
-	for key, img := range images {
+	for i := 0; i < len(images); i++ {
+		key := i
+		img := images[key]
+		//	for key, img := range images {
 		logger.Infof("collage image #%v of %v", key, len(images))
 		draw.Copy(coll,
 			image.Point{X: posX, Y: row * HEIGHT},
@@ -129,6 +132,8 @@ func collage(logger *logging.Logger, exportPath string, ms mediaserver.Mediaserv
 		if posX > intDx {
 			posX = 0
 			row++
+			// repeat cropped image
+			i--
 		}
 		if (row+1)*HEIGHT > intDy {
 			logger.Infof("collage %v images of %v", key, len(images))

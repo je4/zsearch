@@ -72,7 +72,7 @@
                         <div class="card shadow-sm">
                             <a href="werke/{{$item.SignatureOriginal}}/index.html" target="_blank">
                             {{if $item.Poster}}
-                                <img style="width: 282px; height:240px; object-fit: cover;" src="thumb/{{mediaUrl (list $item.Poster.Uri "resize/formatjpeg/size240x240" | join "/") "thumb" "jpg"}}" loading="lazy" />
+                                <img style="width: 282px; height:240px; object-fit: cover;" src="thumb/{{mediaUrl (list $item.Poster.Uri "resize/autorotate/formatjpeg/size240x240" | join "/") "thumb" "jpg"}}" loading="lazy" />
                             {{else}}
                                 <img src="media/placeholder.svg" style="width: 282px; height:240px;" loading="lazy" />
                             {{end}}

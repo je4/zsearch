@@ -210,8 +210,12 @@ func writePersons(exportPath string, data []*apply.Form) error {
 	if err != nil {
 		return errors.Wrapf(err, "cannot open %s", fullpath)
 	}
-	defer file.Close()
+
 	cw := csv.NewWriter(file)
+	defer func() {
+		cw.Flush()
+		file.Close()
+	}()
 	cw.Write(fields)
 	for role, names := range persons {
 		for _, name := range names {
@@ -262,9 +266,12 @@ func writeCSV(exportPath string, data []*apply.Form) error {
 	if err != nil {
 		return errors.Wrapf(err, "cannot open %s", fullpath)
 	}
-	defer file.Close()
 
 	cw := csv.NewWriter(file)
+	defer func() {
+		cw.Flush()
+		file.Close()
+	}()
 	/*
 			var artists, camera string
 		for _, p := range i.GetPersons() {
@@ -324,6 +331,5 @@ func writeCSV(exportPath string, data []*apply.Form) error {
 		}
 		cw.Write(record)
 	}
-
 	return nil
 }

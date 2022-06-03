@@ -113,11 +113,11 @@
                                 <div class="card shadow-sm">
                                     <img
                                             style=""
-                                            src="derivate/{{mediaUrl (list $media.Uri "resize/formatjpeg/size240x240" | join "/") $derivatePath "jpg"}}"
+                                            src="derivate/{{mediaUrl (list $media.Uri "resize/autorotate/formatjpeg/size240x240" | join "/") $derivatePath "jpg"}}"
                                             loading="lazy"
                                             data-bs-toggle="modal"
                                             data-bs-target="#imageModal"
-                                            data-bs-imageurl="derivate/{{mediaUrl (list $media.Uri "resize/formatjpeg/size800x600" | join "/") $derivatePath "jpg"}}"
+                                            data-bs-imageurl="derivate/{{mediaUrl (list $media.Uri "resize/autorotate/formatjpeg/size800x600" | join "/") $derivatePath "jpg"}}"
                                             data-bs-imagetitle="{{trimPrefix "mediaserver:bangbang/" $media.Uri}}"
                                     />
                                     {{if $data.Full}}
@@ -141,7 +141,7 @@
                         {{range $media := $medias}}
                             <div class="col" style="max-width: 300px;">
                                 <div class="card shadow-sm">
-                                    <img style="width: 282px; height:240px; object-fit: cover;" src="derivate/{{mediaUrl (list $media.Uri "$$poster/resize/formatjpeg/size240x240" | join "") $derivatePath "jpg"}}" loading="lazy" />
+                                    <img style="width: 282px; height:240px; object-fit: cover;" src="derivate/{{mediaUrl (list $media.Uri "$$poster/resize/autorotate/formatjpeg/size240x240" | join "") $derivatePath "jpg"}}" loading="lazy" />
                                     <div class="card-body">
                                         <p class="card-text">
                                             <a href="master/{{mediaUrl (list $media.Uri "/master" | join "") $masterPath ""}}" target="_blank">{{trimPrefix "mediaserver:bangbang/" $media.Uri}}</a>
@@ -169,7 +169,7 @@
                                         preload="auto"
                                         width="640"
                                         height="264"
-                                        poster="derivate/{{mediaUrl (list $media.Uri "$$timeshot$$3/resize/formatjpeg/size640x264" | join "") $derivatePath "jpg"}}"
+                                        poster="derivate/{{mediaUrl (list $media.Uri "$$timeshot$$3/resize/autorotate/formatjpeg/size640x264" | join "") $derivatePath "jpg"}}"
                                         data-setup="{}"
                                     >
                                         <source src="derivate/{{mediaUrl (list $media.Uri "$$web/master" | join "") $derivatePath "mp4"}}" type="video/mp4" />
@@ -186,7 +186,7 @@
                                         Auszug mit automatisch generierten Videoshots:
                                         <br />
                                     {{range $shot := list "3" "8" "12" "17" "22"}}
-                                        <img src="derivate/{{mediaUrl (list $media.Uri "$$timeshot$$" $shot "/resize/formatjpeg/size320x132" | join "") $derivatePath "jpg"}}" class="img-thumbnail" alt="Videoshot {{$shot}}">
+                                        <img src="derivate/{{mediaUrl (list $media.Uri "$$timeshot$$" $shot "/resize/autorotate/formatjpeg/size320x132" | join "") $derivatePath "jpg"}}" class="img-thumbnail" alt="Videoshot {{$shot}}">
                                     {{end}}
                                     </div>
                                     {{if $data.Full}}
@@ -216,7 +216,7 @@
                                                 preload="auto"
                                                 width="640"
                                                 height="264"
-                                                poster="derivate/{{mediaUrl (list $media.Uri "$$poster/resize/formatjpeg/size640x264/stretch" | join "") $derivatePath "jpg"}}"
+                                                poster="derivate/{{mediaUrl (list $media.Uri "$$poster/resize/autorotate/formatjpeg/size640x264/stretch" | join "") $derivatePath "jpg"}}"
                                                 data-setup="{}"
                                         >
                                             <source src="derivate/{{mediaUrl (list $media.Uri "$$web$$1/master" | join "") $derivatePath "m4a"}}" type="audio/mp4" />
