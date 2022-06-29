@@ -448,6 +448,11 @@ func main() {
 				items = append(items, i)
 				if doBleve {
 					index.Index(i.Signature, i)
+					for key, medias := range i.Media {
+						for idx, _ := range medias {
+							i.Media[key][idx].Fulltext = ""
+						}
+					}
 					data, err := json.Marshal(i)
 					if err != nil {
 						return errors.Wrapf(err, "cannot marshal data")

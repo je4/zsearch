@@ -74,8 +74,7 @@ func (form *Form) GetUrl() string {
 }
 
 func (form *Form) GetPlace() string {
-	return "Basel"
-
+	return form.Data["eventplace"]
 }
 
 func (form *Form) GetDate() string {
@@ -189,6 +188,7 @@ func (form *Form) GetMedia() map[string]search.MediaList {
 			if metadata, err := form.apply.mediaserver.GetMetadata(form.apply.mediaserverCollection, signature); err != nil {
 				form.apply.logger.Errorf("cannot get metadata for signature %s: %v", err)
 			} else {
+				fulltext, _ := form.apply.mediaserver.GetFulltext(form.apply.mediaserverCollection, signature)
 				media := search.Media{
 					Name:        fmt.Sprintf("#%v.%v", form.Id, file.Id),
 					Mimetype:    metadata.Mimetype,
@@ -198,7 +198,7 @@ func (form *Form) GetMedia() map[string]search.MediaList {
 					Height:      metadata.Height,
 					Orientation: getOrientation(metadata),
 					Duration:    metadata.Duration,
-					Fulltext:    "",
+					Fulltext:    fulltext,
 				}
 
 				if _, ok := medias[media.Type]; !ok {

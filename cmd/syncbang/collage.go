@@ -66,7 +66,7 @@ func collage(logger *logging.Logger, exportPath string, ms mediaserver.Mediaserv
 						ms,
 						derivatePath,
 						"jpg",
-						m.Uri+"/resize/formatjpeg/size240x240")
+						m.Uri+"/resize/autorotate/formatjpeg/size240x240")
 				}
 				if err != nil {
 					logger.Error(err)
