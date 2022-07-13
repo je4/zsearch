@@ -1,0 +1,50 @@
+logfile = "" # log file location
+loglevel = "DEBUG" # CRITICAL|ERROR|WARNING|NOTICE|INFO|DEBUG
+exportpath = "c:/temp/testcatcoll"
+width = 12639
+height = 8989
+cheight = 100
+
+[filter]
+    catalog = ["iidarchiv", "diplom", "HGKThesen", "ACT", "HGKResearch", "Institut_Kunst"]
+
+[mediaserver]
+    url = "https://ba14ns21403-sec1.fhnw.ch/mediasrv"
+    [mediaserver.database]
+        servertype = "mysql"
+        # dsn = "mediaserver:kn6Iy4mLuzH7HWPo@tcp(v000306.adm.ds.fhnw.ch:3306)/mediaserver?charset=utf8"
+        dsn = "mediaserver:kn6Iy4mLuzH7HWPo@tcp(localhost:3306)/mediaserver?charset=utf8"
+        connection_max = 5000
+        schema = "mediaserver"
+
+[elasticsearch]
+    endpoint = ["http://localhost:9200"]
+    index = "test"
+
+[_tunnel.ba14ns21403]
+    user = "root"
+    privatekey = "C:/daten/keys/putty_ed25519.priv.openssh"
+    [_tunnel.ba14ns21403.endpoint]
+        port = 22
+        host = "ba14ns21403.fhnw.ch"
+    # postgres
+    [_tunnel.ba14ns21403.forward.postgres.local]
+        port = 5433
+        host = "localhost"
+    [_tunnel.ba14ns21403.forward.postgres.remote]
+        port = 5432
+        host = "v000306.adm.ds.fhnw.ch"
+    # elasticsearch
+    [_tunnel.ba14ns21403.forward.elasticsearch.local]
+        port = 9200
+        host = "localhost"
+    [_tunnel.ba14ns21403.forward.elasticsearch.remote]
+        port = 9200
+        host = "asara269.adm.ds.fhnw.ch"
+    # mysql
+    [_tunnel.ba14ns21403.forward.mysql.local]
+        port = 3306
+        host = "localhost"
+    [_tunnel.ba14ns21403.forward.mysql.remote]
+        port = 3306
+        host = "v000306.adm.ds.fhnw.ch"

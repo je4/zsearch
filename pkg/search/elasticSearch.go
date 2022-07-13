@@ -326,17 +326,18 @@ func (mte *MTElasticSearch) Scroll(cfg *ScrollConfig, callback func(data *Source
 
 	matchqueries := []*tElasticFieldValue{}
 	if len(cfg.FiltersFields) > 0 {
+		filters2 := []*tElasticFieldValue{}
 		for fld, vals := range cfg.FiltersFields {
 			for _, val := range vals {
 				switch fld {
 				case "category":
-					filters = append(filters, elasticPrefixQuery(fld, val).FieldValue())
+					filters2 = append(filters2, elasticPrefixQuery(fld, val).FieldValue())
 				case "persons.name":
 					/*
 						filters = append(filters, elasticNestedQuery("persons",
 							elasticQuery().withTermQuery(elasticTermQuery("persons.name.keyword", val, 0))).FieldValue())
 					*/
-					filters = append(filters,
+					filters2 = append(filters2,
 						elasticNestedQuery("persons", elasticQuery().withBooleanQuery(elasticBooleanQuery(0).withMust(
 							elasticSimpleQueryString(val).
 								withFields([]string{"persons.name.stem"}).
@@ -344,9 +345,12 @@ func (mte *MTElasticSearch) Scroll(cfg *ScrollConfig, callback func(data *Source
 								withAnalyzer("digma_stemmer").
 								FieldValue()))).FieldValue())
 				default:
-					filters = append(filters, elasticTermQuery(fld, val, 0).FieldValue())
+					filters2 = append(filters2, elasticTermQuery(fld, val, 0).FieldValue())
 				}
 			}
+		}
+		if len(filters2) > 0 {
+			filters = append(filters, elasticQuery().withBooleanQuery(elasticBooleanQuery(1.0).withShould(1, filters2...)).FieldValue())
 		}
 	}
 
@@ -398,7 +402,7 @@ func (mte *MTElasticSearch) Scroll(cfg *ScrollConfig, callback func(data *Source
 		mte.es.Search.WithIndex(mte.index),
 		mte.es.Search.WithBody(buf),
 		mte.es.Search.WithSize(5000),
-		mte.es.Search.WithScroll(1*time.Minute),
+		mte.es.Search.WithScroll(12*time.Hour),
 	)
 	if err != nil {
 		return errors.Wrapf(err, "cannot query %v", string(jsonstr))
