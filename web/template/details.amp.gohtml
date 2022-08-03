@@ -197,7 +197,8 @@ limitations under the License.
                     <ul>
                     {{$user := .BaseStatus.User}}
                     {{range $type, $ref := .Doc.References}}
-                        <li><a href="{{$user.LinkSignature $ref.Signature}}">{{$ref.Title}}</a></li>
+
+                        <li><a href="{{if eq $ref.Type "url"}}{{$ref.Signature}}{{else}}{{$user.LinkSignature $ref.Signature}}{{end}}">{{$ref.Title}}</a></li>
                     {{end}}
                     </ul>
                 </section>

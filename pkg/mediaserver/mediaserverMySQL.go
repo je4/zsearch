@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/go-sql-driver/mysql"
 	"github.com/golang-jwt/jwt"
 	"github.com/op/go-logging"
 	"github.com/pkg/errors"
@@ -157,27 +156,38 @@ func (ms *MediaserverMySQL) GetOriginalUrn(collection, signature string) (string
 	return urn.String, nil
 }
 
-func (ms *MediaserverMySQL) CreateMasterUrl(collection, signature, url string) error {
+func (ms *MediaserverMySQL) CreateMasterUrl(collection, signature, url string, public bool) error {
 	coll, err := ms.GetCollectionByName(collection)
 	if err != nil {
 		return errors.Wrap(err, "cannot get collection")
 	}
-	sqlstr := fmt.Sprintf("INSERT INTO %s.master(collectionid,signature,urn) VALUES(?, ?, ?)", ms.dbSchema)
-	params := []interface{}{coll.CollectionId, signature, url}
-	_, err = ms.db.Exec(sqlstr, params...)
-	if err != nil {
-		myerr, ok := err.(*mysql.MySQLError)
-		// no mysql error
-		if !ok {
+	sqlstr := fmt.Sprintf("SELECT masterid, public FROM %s.master WHERE collectionid=? AND signature=?", ms.dbSchema)
+	params := []interface{}{coll.CollectionId, signature}
+	var pub bool
+	var masterid int64
+	if err := ms.db.QueryRow(sqlstr, params...).Scan(&masterid, &pub); err != nil {
+		sqlstr = fmt.Sprintf("INSERT INTO %s.master(collectionid,signature,urn, public) VALUES(?, ?, ?, ?)", ms.dbSchema)
+		params = []interface{}{coll.CollectionId, signature, url, public}
+		_, err = ms.db.Exec(sqlstr, params...)
+		if err != nil {
+			ms.logger.Errorf("master #%s/%s error on creation", collection, signature)
 			return errors.Wrapf(err, "cannot create master: %s - %v", sqlstr, params)
-		}
-		// mysql error 1062: duplicate entry
-		if myerr.Number != 1062 {
-			return errors.Wrapf(myerr, "cannot create master: %s - %v", sqlstr, params)
 		} else {
-			ms.logger.Infof("master #%s/%s already in database", collection, signature)
+			ms.logger.Infof("master #%s/%s created", collection, signature)
+		}
+	} else {
+		ms.logger.Infof("master #%s/%s already in database", collection, signature)
+		if public != pub {
+			ms.logger.Infof("update master access %v - #%s/%s", public, collection, signature)
+			sqlstr = fmt.Sprintf("UPDATE %s.master SET public=? WHERE masterid=? OR parentid=?", ms.dbSchema)
+			params = []interface{}{public, masterid, masterid}
+			_, err = ms.db.Exec(sqlstr, params...)
+			if err != nil {
+				return errors.Wrapf(err, "update access: %s - %v", sqlstr, params)
+			}
 		}
 	}
+
 	return nil
 }
 

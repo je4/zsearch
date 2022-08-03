@@ -344,7 +344,7 @@ func (item *ZoteroItem) GetMedia() map[string]MediaList {
 				continue
 			}
 			url := fmt.Sprintf("%s/%s", item.Group.Zot.Fs.Protocol(), filepath)
-			if err := item.ms.CreateMasterUrl(collection, signature, url); err != nil {
+			if err := item.ms.CreateMasterUrl(collection, signature, url, true); err != nil {
 				item.Group.Zot.Logger.Errorf("cannot create mediaserver entry for item #%s.%s %s/%s",
 					item.Group.Id,
 					item.Key,

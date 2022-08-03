@@ -137,7 +137,11 @@ func (form *Form) GetACL() map[string][]string {
 	if form.Data["rechtemediathek"] != "ok" {
 		acls["content"] = []string{"global/admin"}
 	} else {
-		acls["content"] = []string{"global/admin", "hgk/bangbang", "hgk/mediathek"}
+		if strings.TrimSpace(form.Data["visibility"]) == "1" {
+			acls["content"] = []string{"global/admin", "global/guest"}
+		} else {
+			acls["content"] = []string{"global/admin", "hgk/bangbang", "hgk/mediathek"}
+		}
 	}
 	return acls
 }
@@ -174,6 +178,8 @@ func (form *Form) GetMedia() map[string]search.MediaList {
 
 	medias := make(map[string]search.MediaList)
 
+	public := strings.TrimSpace(form.Data["visibility"]) == "1"
+
 	for _, file := range form.Files {
 		if true {
 
@@ -182,7 +188,8 @@ func (form *Form) GetMedia() map[string]search.MediaList {
 			if err := form.apply.mediaserver.CreateMasterUrl(
 				form.apply.mediaserverCollection,
 				signature,
-				fmt.Sprintf("https://mediathek.hgk.fhnw.ch/apply/bangbang/%s", strings.TrimPrefix(file.Filename, "/"))); err != nil {
+				fmt.Sprintf("https://mediathek.hgk.fhnw.ch/apply/bangbang/%s", strings.TrimPrefix(file.Filename, "/")),
+				public); err != nil {
 
 			}
 			if metadata, err := form.apply.mediaserver.GetMetadata(form.apply.mediaserverCollection, signature); err != nil {
@@ -329,7 +336,13 @@ func (form *Form) GetLicense() string {
 }
 
 func (form *Form) GetReferences() []search.Reference {
-	var references []search.Reference
+	var references = []search.Reference{
+		search.Reference{
+			Type:      "url",
+			Title:     "BANG BANG Page",
+			Signature: fmt.Sprintf("https://mediathek.hgk.fhnw.ch/bangbang/detail/%s", form.GetSignature()),
+		},
+	}
 	return references
 }
 
