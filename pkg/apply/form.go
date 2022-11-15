@@ -5,6 +5,7 @@ import (
 	"github.com/gosimple/slug"
 	"github.com/je4/zsearch/v2/pkg/search"
 	"github.com/vanng822/go-solr/solr"
+	"golang.org/x/exp/slices"
 	"html/template"
 	"path"
 	"regexp"
@@ -94,13 +95,17 @@ func (form *Form) GetPublisher() string {
 }
 
 var pRoleRegex = regexp.MustCompile("([^(]+)\\(([^)]+)\\)")
+var bracketRegexp = regexp.MustCompile("\\(([^\\)]+)\\)")
 
 func extractPerson(pString, defaultRole string) []search.Person {
 	ret := []search.Person{}
 	if strings.TrimSpace(pString) == "" {
 		return ret
 	}
-	ps := strings.Split(pString, ";")
+	pString2 := bracketRegexp.ReplaceAllStringFunc(pString, func(s string) string {
+		return strings.Replace(s, ";", ",", -1)
+	})
+	ps := strings.Split(pString2, ";")
 	for _, p := range ps {
 		elems := pRoleRegex.FindStringSubmatch(p)
 		if elems != nil {
@@ -137,11 +142,14 @@ func (form *Form) GetACL() map[string][]string {
 	if form.Data["rechtemediathek"] != "ok" {
 		acls["content"] = []string{"global/admin"}
 	} else {
-		if strings.TrimSpace(form.Data["visibility"]) == "1" {
-			acls["content"] = []string{"global/admin", "global/guest"}
-		} else {
-			acls["content"] = []string{"global/admin", "hgk/bangbang", "hgk/mediathek"}
-		}
+		acls["content"] = []string{"global/admin", "global/guest"}
+		/*
+			if strings.TrimSpace(form.Data["visibility"]) == "1" {
+				acls["content"] = []string{"global/admin", "global/guest"}
+			} else {
+				acls["content"] = []string{"global/admin", "hgk/bangbang", "hgk/mediathek"}
+			}
+		*/
 	}
 	return acls
 }
@@ -165,6 +173,9 @@ func (form *Form) GetTags() []string {
 	var tags = []string{}
 	tags = search.AppendIfMissing(tags, fmt.Sprintf("%v", form.GetDate()))
 	tags = search.AppendIfMissing(tags, form.Data["medium"])
+	if strings.HasPrefix(strings.ToLower(form.GetTitle()), "bangbang:") {
+		tags = search.AppendIfMissing(tags, "BangBang Production")
+	}
 	return tags
 }
 
@@ -178,7 +189,12 @@ func (form *Form) GetMedia() map[string]search.MediaList {
 
 	medias := make(map[string]search.MediaList)
 
-	public := strings.TrimSpace(form.Data["visibility"]) == "1"
+	public := false
+	//	public := strings.TrimSpace(form.Data["visibility"]) == "1"
+
+	if cACL, ok := form.GetACL()["content"]; ok {
+		public = slices.Contains(cACL, "global/guest")
+	}
 
 	for _, file := range form.Files {
 		if true {

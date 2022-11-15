@@ -22,6 +22,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/araddon/dateparse"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/je4/FairService/v2/pkg/fair"
 	"github.com/je4/FairService/v2/pkg/fairclient"
 	"github.com/je4/utils/v2/pkg/ssh"
@@ -42,7 +43,7 @@ func main() {
 	sinceFlag := flag.String("since", "1970-01-01T00:00:00", "time of last sync")
 	updateAll := flag.Bool("updateAll", false, "timestamps should be ignored")
 	syncgroupid := flag.Int64("group", 0, "id of zotero group to sync")
-	clear := flag.Bool("clear", false, "clear dat")
+	clear := flag.Bool("clear", false, "clear data")
 	syncfair := flag.Bool("fair", false, "sync to fair service")
 	synczotero := flag.Bool("zotero", false, "sync zotero cloud")
 	flag.Parse()
@@ -257,7 +258,8 @@ func main() {
 				}
 			}
 			if err := group.Sync(); err != nil {
-				logger.Errorf("cannot sync group #%v: %v", group.Id, err)
+				logger.Errorf("cannot sync group #%v: %v%+v", group.Id, err, GetErrorStacktrace(err)) // top two frames
+
 				return
 			}
 			version, ok := (*groupVersions)[groupId]

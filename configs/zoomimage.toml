@@ -1,12 +1,13 @@
 logfile = "" # log file location
 loglevel = "DEBUG" # CRITICAL|ERROR|WARNING|NOTICE|INFO|DEBUG
 exportpath = "c:/temp/testcatcoll"
-width = 12639
-height = 8989
+width = 28000
+height = 20000
 cheight = 100
 
 [filter]
-    catalog = ["iidarchiv", "diplom", "HGKThesen", "ACT", "HGKResearch", "Institut_Kunst"]
+    #catalog = ["iidarchiv", "diplom", "HGKThesen", "ACT", "HGKResearch", "Institut_Kunst"]
+    catalog = ["iidarchiv", "iid", "Institut_IIG", "Institut_IMD", "hgkfotos"]
 
 [mediaserver]
     url = "https://ba14ns21403-sec1.fhnw.ch/mediasrv"

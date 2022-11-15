@@ -2,11 +2,12 @@ package main
 
 import (
 	"database/sql"
+	"emperror.dev/emperror"
 	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/goph/emperror"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/je4/utils/v2/pkg/ssh"
 	"github.com/je4/zsearch/v2/pkg/mediaserver"
 	"github.com/je4/zsearch/v2/pkg/search"
@@ -109,11 +110,13 @@ func main() {
 		return
 	}
 
+	//	"category:\"zotero2!!Institut Mode-Design Web\" catalog:\"iid\" catalog:\"Institut_IIG\" catalog:\"Institut_IMD\" catalog:\"hgkfotos\"",
+	//	config.Filters
 	scrollConfig := &search.ScrollConfig{
 		Fields:         nil,
 		QStr:           "",
 		FiltersFields:  config.Filters,
-		Groups:         []string{"global/user"},
+		Groups:         []string{"global/user", "global/admin"},
 		ContentVisible: false,
 		IsAdmin:        true,
 	}
@@ -141,6 +144,10 @@ func main() {
 				logger.Infof("Loading %s", media.Uri)
 				switch mType {
 				case "image":
+					if media.Mimetype == "image/x-canon-cr2" {
+						logger.Warning("ignoring mime type image/x-canon-cr2")
+						return nil
+					}
 				case "video":
 					signature += "$$timeshot$$3"
 				case "audio":

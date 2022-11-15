@@ -220,7 +220,23 @@ func (ms *MediaserverMySQL) GetUrl(collection, signature, function string) (stri
 	}
 	return url, nil
 }
+func (ms *MediaserverMySQL) IsPublic(collection, signature string) (bool, error) {
+	coll, err := ms.GetCollectionByName(collection)
+	if err != nil {
+		return false, errors.Wrapf(err, "cannot find collection %s", collection)
+	}
+	if coll.JWTKey == "" {
+		return true, nil
+	}
 
+	sqlstr := fmt.Sprintf("SELECT `public` FROM %s.master WHERE collectionid=? AND signature=?", ms.dbSchema)
+	params := []interface{}{coll.CollectionId, signature}
+	var public int
+	if err := ms.db.QueryRow(sqlstr, params...).Scan(&public); err != nil {
+		return false, errors.Wrapf(err, "cannot query database %s [%v]", sqlstr, params)
+	}
+	return public == 1, nil
+}
 func (ms *MediaserverMySQL) GetMetadata(collection, signature string) (*Metadata, error) {
 
 	url, err := ms.GetUrl(collection, signature, "metadata")

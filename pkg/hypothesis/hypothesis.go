@@ -1,10 +1,9 @@
 package hypothesis
 
 import (
+	"emperror.dev/emperror"
 	"encoding/base64"
 	"fmt"
-	"github.com/go-resty/resty/v2"
-	"github.com/goph/emperror"
 	"github.com/op/go-logging"
 )
 

@@ -2,7 +2,7 @@ module github.com/je4/zsearch/v2
 
 go 1.18
 
-replace github.com/je4/zsearch/v2 => ./
+replace go.info-age.net/zsearch/v2 => ./
 
 replace github.com/je4/salon-digital/v2 => ../salon-digital/
 
@@ -11,6 +11,8 @@ replace github.com/je4/salon-digital/v2 => ../salon-digital/
 //replace github.com/je4/utils/v2 => ../utils/
 
 require (
+	emperror.dev/emperror v0.33.0
+	emperror.dev/errors v0.8.0
 	github.com/BurntSushi/toml v1.1.0
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
@@ -19,10 +21,8 @@ require (
 	github.com/channelmeter/iso8601duration v0.0.0-20150204201828-8da3af7a2a61
 	github.com/dgraph-io/badger/v3 v3.2103.2
 	github.com/drgrib/maps v0.0.0-20220318162102-37b53c75ae89
-	github.com/go-resty/resty/v2 v2.6.0
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/golang/snappy v0.0.4
-	github.com/goph/emperror v0.17.2
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/securecookie v1.1.1
@@ -39,6 +39,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/vanng822/go-solr v0.10.0
 	go.mongodb.org/mongo-driver v1.9.1
+	golang.org/x/exp v0.0.0-20220907003533-145caa8ea1d0
 	golang.org/x/image v0.0.0-20220413100746-70e8d0d3baa9
 	golang.org/x/net v0.0.0-20220517181318-183a9ca12b87
 	google.golang.org/api v0.80.0
@@ -46,7 +47,6 @@ require (
 
 require (
 	cloud.google.com/go/compute v1.6.1 // indirect
-	emperror.dev/errors v0.8.0 // indirect
 	github.com/RoaringBitmap/roaring v1.0.0 // indirect
 	github.com/acomagu/bufpipe v1.0.3 // indirect
 	github.com/bits-and-blooms/bitset v1.2.2 // indirect
@@ -77,6 +77,7 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/googleapis/gax-go/v2 v2.4.0 // indirect
+	github.com/goph/emperror v0.17.2 // indirect
 	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
@@ -106,7 +107,7 @@ require (
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
 	golang.org/x/crypto v0.0.0-20220518034528-6f7dac969898 // indirect
-	golang.org/x/sys v0.0.0-20220517195934-5e4e11fc645e // indirect
+	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect

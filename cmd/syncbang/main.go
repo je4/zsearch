@@ -43,7 +43,7 @@ import (
 	"time"
 )
 
-//const doDataUpdateOnly = "c:/temp/bangbang_20220515.csv"
+// const doDataUpdateOnly = "c:/temp/Update_Index_20220908.csv"
 const doDataUpdateOnly = ""
 const doPCB = true
 const doFair = true
@@ -487,7 +487,8 @@ func main() {
 				logger.Panic(err)
 			}
 		}
-		if locked == 0 && formid > 0 {
+		// do not do that....
+		if locked == 0 && formid > 0 && false {
 			if artists, ok := (*item.Meta)["artists"]; ok {
 				matches := name.FindStringSubmatch(strings.TrimSpace(artists))
 				if matches != nil {
