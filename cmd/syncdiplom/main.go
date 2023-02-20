@@ -190,6 +190,12 @@ func main() {
 
 	var counter int64 = 0
 	for _, groupid := range groups {
+		/*
+			if groupid != 12017 {
+				continue
+			}
+
+		*/
 		now := time.Now()
 		//since := time.Date(1970, 01, 01, 0, 0, 0, 0, time.Local)
 		if first {

@@ -170,7 +170,7 @@ func (form *Form) GetCategories() []string {
 }
 
 func (form *Form) GetTags() []string {
-	var tags = []string{}
+	var tags = []string{"vwg:declare"}
 	tags = search.AppendIfMissing(tags, fmt.Sprintf("%v", form.GetDate()))
 	tags = search.AppendIfMissing(tags, form.Data["medium"])
 	if strings.HasPrefix(strings.ToLower(form.GetTitle()), "bangbang:") {

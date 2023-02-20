@@ -43,13 +43,13 @@ import (
 	"time"
 )
 
-// const doDataUpdateOnly = "c:/temp/Update_Index_20220908.csv"
+// const doDataUpdateOnly = "c:/temp/Update_20230220.csv"
 const doDataUpdateOnly = ""
 const doPCB = true
 const doFair = true
 const doBleve = true
 const doZSearch = true
-const doWait = false
+const doWait = true
 const doCollage = true
 const doCollageOnly = false
 const doFullData = true
