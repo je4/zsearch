@@ -19,7 +19,7 @@ package main
 import (
 	"context"
 	"flag"
-	badger "github.com/dgraph-io/badger/v3"
+	badger "github.com/dgraph-io/badger/v4"
 	"github.com/je4/utils/v2/pkg/ssh"
 	"github.com/je4/zsearch/v2/pkg/search"
 	"google.golang.org/api/customsearch/v1"

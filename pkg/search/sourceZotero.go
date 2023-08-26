@@ -3,7 +3,7 @@ package search
 import (
 	"fmt"
 	"github.com/je4/zsearch/v2/pkg/mediaserver"
-	"github.com/je4/zsync/pkg/zotero"
+	"github.com/je4/zsync/v2/pkg/zotero"
 	"github.com/vanng822/go-solr/solr"
 	"html/template"
 	"reflect"
