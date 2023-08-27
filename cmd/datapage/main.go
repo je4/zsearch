@@ -189,7 +189,7 @@ func main() {
 	}
 	defer db.Close()
 
-	mtElasticWrapper, err := search.NewMTElasticSearch(config.ElasticSearch.Endpoint, config.ElasticSearch.Index, log)
+	mtElasticWrapper, err := search.NewMTElasticSearch(config.ElasticSearch.Endpoint, config.ElasticSearch.Index, config.ElasticSearch.ApiKey, log)
 	if err != nil {
 		log.Panicf("cannot initialize solr search wrapper: %v", err)
 		return

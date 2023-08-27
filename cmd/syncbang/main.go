@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/blevesearch/bleve/v2"
 	"github.com/je4/FairService/v2/pkg/fair"
 	"github.com/je4/FairService/v2/pkg/fairclient"
 	sdmlcontent "github.com/je4/salon-digital/v2/pkg/content"

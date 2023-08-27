@@ -5,12 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	elasticsearch "github.com/opensearch-project/opensearch-go"
-	esapi "github.com/opensearch-project/opensearch-go/opensearchapi"
-	"io"
-
+	elasticsearch8 "github.com/elastic/go-elasticsearch/v8"
 	"github.com/op/go-logging"
+	esapi7 "github.com/opensearch-project/opensearch-go/opensearchapi"
 	"github.com/pkg/errors"
+	"io"
 	"log"
 	"regexp"
 	"strings"
@@ -158,13 +157,14 @@ func elasticScroll(query *tElasticQuery) *tElasticScroll {
 }
 
 type MTElasticSearch struct {
-	es    *elasticsearch.Client
+	es    *elasticsearch8.Client
 	index string
 	log   *logging.Logger
 }
 
-func NewMTElasticSearch(urls []string, index string, log *logging.Logger) (*MTElasticSearch, error) {
-	es, err := elasticsearch.NewClient(elasticsearch.Config{
+func NewMTElasticSearch(urls []string, index string, apikey string, log *logging.Logger) (*MTElasticSearch, error) {
+	es, err := elasticsearch8.NewClient(elasticsearch8.Config{
+		APIKey:    apikey,
 		Addresses: urls,
 	})
 	if err != nil {
@@ -188,7 +188,7 @@ func (mte *MTElasticSearch) UpdateTimestamp(source *SourceData, timestamp time.T
 	if err != nil {
 		return errors.Wrapf(err, "cannot marshal json")
 	}
-	req := esapi.IndexRequest{
+	req := esapi7.IndexRequest{
 		Index:      mte.index,
 		DocumentID: source.GetSignature(),
 		Body:       bytes.NewBuffer(jsonStr),
@@ -251,7 +251,7 @@ func (mte *MTElasticSearch) StatsByACL(catalog []string) (int64, FacetCountResul
 	filters := []*tElasticFieldValue{}
 	if len(catalog) > 0 {
 		for _, c := range catalog {
-			filters = append(filters, elasticTermsQuery("catalog", 0, c).FieldValue())
+			filters = append(filters, elasticTermsQuery("catalog.keyword", 0, c).FieldValue())
 		}
 	}
 	bq := elasticBooleanQuery(0)
@@ -261,9 +261,9 @@ func (mte *MTElasticSearch) StatsByACL(catalog []string) (int64, FacetCountResul
 	query.withBooleanQuery(bq)
 
 	aggregations := elasticSearchAggregations()
-	aggregations.AddAggregation("acl.meta", elasticSearchAggregation(nil).withTerms("acl.meta", 0, nil))
-	aggregations.AddAggregation("acl.content", elasticSearchAggregation(nil).withTerms("acl.content", 0, nil))
-	aggregations.AddAggregation("mediatype", elasticSearchAggregation(nil).withTerms("mediatype", 0, nil))
+	aggregations.AddAggregation("acl.meta", elasticSearchAggregation(nil).withTerms("acl.meta.keyword", 0, nil))
+	aggregations.AddAggregation("acl.content", elasticSearchAggregation(nil).withTerms("acl.content.keyword", 0, nil))
+	aggregations.AddAggregation("mediatype", elasticSearchAggregation(nil).withTerms("mediatype.keyword", 0, nil))
 
 	fq := elasticSearch(query, aggregations, nil, nil, 0, 0).withTrackTotalHits()
 
@@ -454,14 +454,14 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]map[string][]string, []
 	filters := []*tElasticFieldValue{}
 	if cfg.IsAdmin == false {
 		if len(cfg.Groups) > 0 {
-			filters = append(filters, elasticTermsQuery("acl.meta", 0, cfg.Groups...).FieldValue())
+			filters = append(filters, elasticTermsQuery("acl.meta.keyword", 0, cfg.Groups...).FieldValue())
 		}
 	}
 	if cfg.ContentVisible {
 		if len(cfg.Groups) > 0 && !cfg.IsAdmin {
-			filters = append(filters, elasticTermsQuery("acl.content", 0, cfg.Groups...).FieldValue())
+			filters = append(filters, elasticTermsQuery("acl.content.keyword", 0, cfg.Groups...).FieldValue())
 		}
-		filters = append(filters, elasticExistsQuery("mediatype").FieldValue())
+		filters = append(filters, elasticExistsQuery("mediatype.keyword").FieldValue())
 	}
 
 	matchqueries := []*tElasticFieldValue{}
@@ -470,7 +470,7 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]map[string][]string, []
 			for _, val := range vals {
 				switch fld {
 				case "category":
-					filters = append(filters, elasticPrefixQuery(fld, val).FieldValue())
+					filters = append(filters, elasticPrefixQuery(fld+".keyword", val).FieldValue())
 				case "persons.name":
 					filters = append(filters, elasticNestedQuery("persons",
 						elasticQuery().withTermQuery(elasticTermQuery("persons.name.keyword", val, 0))).FieldValue())
@@ -485,7 +485,7 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]map[string][]string, []
 
 					*/
 				default:
-					filters = append(filters, elasticTermQuery(fld, val, 0).FieldValue())
+					filters = append(filters, elasticTermQuery(fld+".keyword", val, 0).FieldValue())
 				}
 			}
 		}
@@ -496,24 +496,24 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]map[string][]string, []
 		matchqueries = append(matchqueries,
 			elasticNestedQuery("media.pdf", elasticQuery().withBooleanQuery(elasticBooleanQuery(0).withMust(
 				elasticSimpleQueryString(appendStar(qstr)).
-					withFields([]string{"media.pdf.fulltext.stem^1"}).
+					withFields([]string{"media.pdf.fulltext^1"}).
 					withOperatorOR().
-					withAnalyzer("digma_stemmer").
+					//					withAnalyzer("digma_stemmer").
 					withAnalyzeWildcard().
 					FieldValue()))).FieldValue())
 		matchqueries = append(matchqueries,
 			elasticNestedQuery("persons", elasticQuery().withBooleanQuery(elasticBooleanQuery(0).withMust(
 				elasticSimpleQueryString(appendStar(qstr)).
-					withFields([]string{"persons.name.stem^5"}).
+					withFields([]string{"persons.name^5"}).
 					withOperatorOR().
-					withAnalyzer("digma_stemmer").
+					//					withAnalyzer("digma_stemmer").
 					withAnalyzeWildcard().
 					FieldValue()))).FieldValue())
 		matchqueries = append(matchqueries,
 			elasticSimpleQueryString(appendStar(qstr)).
-				withFields([]string{"title.stem^4", "abstract.stem^3", "notes.stem^3"}).
+				withFields([]string{"title^4", "abstract^3", "notes^3"}).
 				withOperatorOR().
-				withAnalyzer("digma_stemmer").
+				//				withAnalyzer("digma_stemmer").
 				withAnalyzeWildcard().
 				FieldValue())
 	}
@@ -538,7 +538,7 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]map[string][]string, []
 	if cfg.Facets != nil {
 		aggregations = elasticSearchAggregations()
 		for field, vals := range cfg.Facets {
-			aggregations.AddAggregation(field, elasticSearchAggregation(nil).withTerms(field, vals.Limit, nil))
+			aggregations.AddAggregation(field, elasticSearchAggregation(nil).withTerms(field+".keyword", vals.Limit, nil))
 			values := []string{}
 			for val, selected := range vals.Selected {
 				if selected {
@@ -546,7 +546,7 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]map[string][]string, []
 				}
 			}
 			if len(values) > 0 {
-				pfterms = append(pfterms, elasticTermsQuery(field, 0, values...).FieldValue())
+				pfterms = append(pfterms, elasticTermsQuery(field+".keyword", 0, values...).FieldValue())
 			}
 		}
 	}

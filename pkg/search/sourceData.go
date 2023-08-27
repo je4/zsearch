@@ -8,6 +8,18 @@ import (
 	"time"
 )
 
+type SourceStatistic struct {
+	MediaMimeType map[string][]string `json:"mediaMimeType"`
+	MediaWidth    map[string][]int64  `json:"mediaWidth"`
+	MediaHeight   map[string][]int64  `json:"mediaHeight"`
+	MediaDuration map[string][]int64  `json:"mediaDuration"`
+	MediaUri      map[string][]string `json:"mediaUri"`
+	MediaType     []string            `json:"mediaType"`
+	MediaCount    map[string]int64    `json:"mediaCount"`
+	Person        []string            `json:"person"`
+	Role          []string            `json:"role"`
+}
+
 type SourceData struct {
 	Signature         string               `json:"signature"`
 	SignatureOriginal string               `json:"signatureoriginal"`
@@ -28,11 +40,11 @@ type SourceData struct {
 	Url               string               `json:"url"`
 	Abstract          string               `json:"abstract"`
 	References        []Reference          `json:"references"`
-	Meta              *Metalist            `json:"meta"`
-	Extra             *Metalist            `json:"extra"`
-	Vars              *Varlist             `json:"vars"`
+	Meta              *Metalist            `json:"meta,omitempty"`
+	Extra             *Metalist            `json:"extra,omitempty"`
+	Vars              *Varlist             `json:"vars,omitempty"`
 	Type              string               `json:"type"`
-	Queries           []Query              `json:"queries"`
+	Queries           []Query              `json:"queries,omitempty"`
 	ContentStr        string               `json:"-"`
 	ContentMime       string               `json:"-"`
 	HasMedia          bool                 `json:"hasmedia"`
@@ -42,6 +54,7 @@ type SourceData struct {
 	Publlisher        string               `json:"publisher"`
 	Rights            string               `json:"rights"`
 	License           string               `json:"license"`
+	Statistics        *SourceStatistic     `json:"statistics,omitempty"`
 }
 
 func NewSourceData(src Source) (*SourceData, error) {
@@ -84,6 +97,51 @@ func NewSourceData(src Source) (*SourceData, error) {
 		sd.Mediatype = append(sd.Mediatype, mt)
 	}
 	return sd, nil
+}
+
+func (sd *SourceData) SetStatistics() {
+	stats := &SourceStatistic{
+		MediaType:     []string{},
+		MediaMimeType: map[string][]string{},
+		MediaWidth:    map[string][]int64{},
+		MediaHeight:   map[string][]int64{},
+		MediaDuration: map[string][]int64{},
+		MediaCount:    map[string]int64{},
+		MediaUri:      map[string][]string{},
+		Person:        []string{},
+		Role:          []string{},
+	}
+	for _, person := range sd.Persons {
+		stats.Person = append(stats.Person, person.Name)
+		stats.Role = append(stats.Role, person.Role)
+	}
+	for mType, medias := range sd.Media {
+		if _, ok := stats.MediaDuration[mType]; !ok {
+			stats.MediaDuration[mType] = []int64{}
+		}
+		if _, ok := stats.MediaWidth[mType]; !ok {
+			stats.MediaWidth[mType] = []int64{}
+		}
+		if _, ok := stats.MediaHeight[mType]; !ok {
+			stats.MediaHeight[mType] = []int64{}
+		}
+		if _, ok := stats.MediaMimeType[mType]; !ok {
+			stats.MediaMimeType[mType] = []string{}
+		}
+		if _, ok := stats.MediaUri[mType]; !ok {
+			stats.MediaUri[mType] = []string{}
+		}
+		stats.MediaCount[mType] = int64(len(medias))
+		for _, media := range medias {
+			stats.MediaType = append(stats.MediaType, media.Type)
+			stats.MediaDuration[mType] = append(stats.MediaDuration[mType], media.Duration)
+			stats.MediaWidth[mType] = append(stats.MediaWidth[mType], media.Width)
+			stats.MediaHeight[mType] = append(stats.MediaHeight[mType], media.Height)
+			stats.MediaUri[mType] = append(stats.MediaUri[mType], media.Uri)
+			stats.MediaMimeType[mType] = append(stats.MediaMimeType[mType], media.Mimetype)
+		}
+	}
+	sd.Statistics = stats
 }
 
 func (sd *SourceData) AddIdentifiers(identifiers map[string]string) {
