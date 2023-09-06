@@ -1,0 +1,14 @@
+servicename = "ZSearch"
+logfile = "" # log file location
+loglevel = "DEBUG" # CRITICAL|ERROR|WARNING|NOTICE|INFO|DEBUG
+accesslog = "" # http access log file
+#mediadsn = "mediaserver:kn6Iy4mLuzH7HWPo@tcp(v000306.adm.ds.fhnw.ch:3306)/mediaserver?charset=utf8"
+mediadsn = "mediaserver:kn6Iy4mLuzH7HWPo@tcp(localhost:3306)/mediaserver?charset=utf8"
+
+[target]
+elasticindex = "fhnw_mediaserver" # elastic search index to fill
+#elasticindexcreate = "./configdata/schema.v8.json" # deletes and creates elastic index with given schema
+#elasticindexcreate = "/mnt/c/daten/go/dev/alma2elastic/elastic/schema_core_non-dynamic.json" # deletes and creates elastic index with given schema
+elasticendpoint = "https://elastic.med.campusderkuenste.ch/" # endpoint for elastic search
+elasticapikey = "YkttNk5vb0JVcWJ2SHE1SnZlb006Tmx6YnBiYllSTFNuVGtGUEVwcWVpdw=="
+elasticv8 = true # use elastic search client version 8

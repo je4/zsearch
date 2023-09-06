@@ -485,7 +485,7 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]map[string][]string, []
 
 					*/
 				default:
-					filters = append(filters, elasticTermQuery(fld+".keyword", val, 0).FieldValue())
+					filters = append(filters, elasticTermQuery(fld /* +".keyword" */, val, 0).FieldValue())
 				}
 			}
 		}
@@ -546,7 +546,7 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]map[string][]string, []
 				}
 			}
 			if len(values) > 0 {
-				pfterms = append(pfterms, elasticTermsQuery(field+".keyword", 0, values...).FieldValue())
+				pfterms = append(pfterms, elasticTermsQuery(field /* +".keyword" */, 0, values...).FieldValue())
 			}
 		}
 	}

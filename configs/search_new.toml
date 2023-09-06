@@ -2,9 +2,9 @@ servicename = "ZSearch"
 logfile = "" # log file location
 loglevel = "DEBUG" # CRITICAL|ERROR|WARNING|NOTICE|INFO|DEBUG
 accesslog = "" # http access log file
-addr = "localhost:443"
+addr = "localhost:8443"
 #addrext = "https://mediathek.hgk.fhnw.ch/amp/"
-addrext = "https://localhost:443/"
+addrext = "https://localhost:8443/"
 certpem = "auto"
 #certpem = "cert/server.crt" # tls zsearchclient certificate file in PEM format
 #keypem = "cert/server.key" # tls zsearchclient key file in PEM format
@@ -101,12 +101,12 @@ elasticv8 = true # use elastic search client version 8
 
 [searchfields]
     # __Q__ will be replaced by search term
-    author = "persons.name"
+    author = "persons.name.keyword"
     tag = "tags.keyword"
-    cat = "category"
-    catalog = "catalog"
-    source = "source"
-    date = "date"
+    cat = "category" #"category.keyword"
+    catalog = "catalog.keyword"
+    source = "source.keyword"
+    date = "date.keyword"
 
 [access]
     admin = "localhost/admin"

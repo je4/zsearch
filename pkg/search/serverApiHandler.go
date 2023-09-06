@@ -67,6 +67,7 @@ func (s *Server) apiHandlerSignatureCreate(w http.ResponseWriter, req *http.Requ
 		}
 		return
 	}
+	data.SetStatistics()
 	if err := s.mts.se.UpdateTimestamp(data, time.Now()); err != nil {
 		msg := fmt.Sprintf("cannot update item: %v", err)
 		s.log.Errorf(msg)
