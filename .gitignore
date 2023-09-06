@@ -6,6 +6,7 @@ configs/syncdiplom.toml
 configs/syncfair.toml
 configs/syncbang.toml
 configs/copymediaserver.toml
+configs/*.toml
 *.pem
 web/static/ionicons/*
 web/static/videojs/
