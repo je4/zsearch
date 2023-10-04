@@ -10,14 +10,14 @@ require (
 	github.com/BurntSushi/toml v1.3.2
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
-	github.com/blevesearch/bleve/v2 v2.3.9
+	github.com/blevesearch/bleve/v2 v2.3.10
 	github.com/bluele/gcache v0.0.2
 	github.com/channelmeter/iso8601duration v0.0.0-20150204201828-8da3af7a2a61
 	github.com/dgraph-io/badger/v4 v4.2.0
 	github.com/drgrib/maps v0.0.0-20220318162102-37b53c75ae89
-	github.com/elastic/go-elasticsearch/v8 v8.9.0
+	github.com/elastic/go-elasticsearch/v8 v8.10.0
 	github.com/go-sql-driver/mysql v1.7.1
-	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/golang/snappy v0.0.4
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
@@ -29,7 +29,7 @@ require (
 	github.com/je4/elasticdsl/v2 v2.0.1
 	github.com/je4/salon-digital/v2 v2.0.2
 	github.com/je4/sitemap/v2 v2.0.2
-	github.com/je4/utils/v2 v2.0.9
+	github.com/je4/utils/v2 v2.0.10
 	github.com/je4/zsync/v2 v2.0.1
 	github.com/juliangruber/go-intersect v1.1.0
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
@@ -40,7 +40,7 @@ require (
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	golang.org/x/image v0.12.0
 	golang.org/x/net v0.15.0
-	google.golang.org/api v0.139.0
+	google.golang.org/api v0.143.0
 )
 
 require (
@@ -50,11 +50,11 @@ require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
-	github.com/ProtonMail/go-crypto v0.0.0-20230828082145-3c4c8a2d2371 // indirect
+	github.com/ProtonMail/go-crypto v0.0.0-20230923063757-afb1ddc0824c // indirect
 	github.com/RoaringBitmap/roaring v1.5.0 // indirect
 	github.com/acomagu/bufpipe v1.0.4 // indirect
 	github.com/armon/go-radix v1.0.0 // indirect
-	github.com/bits-and-blooms/bitset v1.8.0 // indirect
+	github.com/bits-and-blooms/bitset v1.9.0 // indirect
 	github.com/blend/go-sdk v1.20220411.3 // indirect
 	github.com/blevesearch/bleve_index_api v1.0.6 // indirect
 	github.com/blevesearch/geo v0.1.18 // indirect
@@ -74,6 +74,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cloudflare/circl v1.3.3 // indirect
+	github.com/cyphar/filepath-securejoin v0.2.4 // indirect
 	github.com/dgraph-io/ristretto v0.1.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/elastic/elastic-transport-go/v8 v8.3.0 // indirect
@@ -84,9 +85,10 @@ require (
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/felixge/httpsnoop v1.0.3 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
-	github.com/go-git/go-billy/v5 v5.4.1 // indirect
-	github.com/go-git/go-git/v5 v5.8.1 // indirect
+	github.com/go-git/go-billy/v5 v5.5.0 // indirect
+	github.com/go-git/go-git/v5 v5.9.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang/geo v0.0.0-20230421003525-6adc56603217 // indirect
 	github.com/golang/glog v1.1.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
@@ -94,18 +96,18 @@ require (
 	github.com/google/flatbuffers v23.5.26+incompatible // indirect
 	github.com/google/s2a-go v0.1.7 // indirect
 	github.com/google/uuid v1.3.1 // indirect
-	github.com/googleapis/enterprise-certificate-proxy v0.2.5 // indirect
+	github.com/googleapis/enterprise-certificate-proxy v0.3.1 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.0 // indirect
 	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/huandu/xstrings v1.4.0 // indirect
 	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
-	github.com/jcchavezs/porto v0.4.0 // indirect
+	github.com/jcchavezs/porto v0.5.1 // indirect
 	github.com/je4/HandleCreator/v2 v2.0.3 // indirect
 	github.com/joeshaw/multierror v0.0.0-20140124173710-69b34d4ec901 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
-	github.com/klauspost/compress v1.16.7 // indirect
+	github.com/klauspost/compress v1.17.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
 	github.com/kr/fs v0.1.0 // indirect
 	github.com/lib/pq v1.10.9 // indirect
@@ -120,14 +122,13 @@ require (
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
 	github.com/pkg/sftp v1.13.6 // indirect
-	github.com/prometheus/procfs v0.11.1 // indirect
+	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/rs/xid v1.5.0 // indirect
 	github.com/santhosh-tekuri/jsonschema v1.2.4 // indirect
 	github.com/sergi/go-diff v1.3.1 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
-	github.com/skeema/knownhosts v1.2.0 // indirect
+	github.com/skeema/knownhosts v1.2.1 // indirect
 	github.com/snabb/diagio v1.0.4 // indirect
-	github.com/steveyen/gtreap v0.1.0 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	go.elastic.co/apm v1.15.0 // indirect
 	go.elastic.co/apm/module/apmelasticsearch v1.15.0 // indirect
@@ -144,8 +145,8 @@ require (
 	golang.org/x/text v0.13.0 // indirect
 	golang.org/x/tools v0.13.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20230822172742-b8732ec3820d // indirect
-	google.golang.org/grpc v1.58.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20231002182017-d307bd883b97 // indirect
+	google.golang.org/grpc v1.58.2 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/resty.v1 v1.12.0 // indirect

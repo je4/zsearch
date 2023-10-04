@@ -4,7 +4,7 @@ package search
 import (
 	"crypto/md5"
 	"fmt"
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/golang/snappy"
 	"github.com/gorilla/mux"
 	"github.com/op/go-logging"
