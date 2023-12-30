@@ -3,7 +3,10 @@ package search
 import (
 	"fmt"
 	isoduration "github.com/channelmeter/iso8601duration"
+	"github.com/je4/zsearch/v2/pkg/translate"
 	"github.com/vanng822/go-solr/solr"
+	"golang.org/x/text/language"
+	"slices"
 	"strings"
 	"time"
 )
@@ -21,40 +24,40 @@ type SourceStatistic struct {
 }
 
 type SourceData struct {
-	Signature         string               `json:"signature"`
-	SignatureOriginal string               `json:"signatureoriginal"`
-	Source            string               `json:"source"`
-	Title             string               `json:"title"`
-	Series            string               `json:"series"`
-	Place             string               `json:"place"`
-	Date              string               `json:"date"`
-	CollectionTitle   string               `json:"collectiontitle"`
-	Persons           []Person             `json:"persons"`
-	ACL               map[string][]string  `json:"acl"`
-	Catalog           []string             `json:"catalog"`
-	Category          []string             `json:"category"`
-	Tags              []string             `json:"tags"`
-	Media             map[string]MediaList `json:"media"`
-	Poster            *Media               `json:"poster"`
-	Notes             []Note               `json:"notes"`
-	Url               string               `json:"url"`
-	Abstract          string               `json:"abstract"`
-	References        []Reference          `json:"references"`
-	Meta              *Metalist            `json:"meta,omitempty"`
-	Extra             *Metalist            `json:"extra,omitempty"`
-	Vars              *Varlist             `json:"vars,omitempty"`
-	Type              string               `json:"type"`
-	Queries           []Query              `json:"queries,omitempty"`
-	ContentStr        string               `json:"-"`
-	ContentMime       string               `json:"-"`
-	HasMedia          bool                 `json:"hasmedia"`
-	Mediatype         []string             `json:"mediatype"`
-	DateAdded         time.Time            `json:"dateadded"`
-	Timestamp         time.Time            `json:"timestamp"`
-	Publlisher        string               `json:"publisher"`
-	Rights            string               `json:"rights"`
-	License           string               `json:"license"`
-	Statistics        *SourceStatistic     `json:"statistics,omitempty"`
+	Signature         string                     `json:"signature"`
+	SignatureOriginal string                     `json:"signatureoriginal"`
+	Source            string                     `json:"source"`
+	Title             *translate.MultiLangString `json:"title"`
+	Series            string                     `json:"series"`
+	Place             string                     `json:"place"`
+	Date              string                     `json:"date"`
+	CollectionTitle   string                     `json:"collectiontitle"`
+	Persons           []Person                   `json:"persons"`
+	ACL               map[string][]string        `json:"acl"`
+	Catalog           []string                   `json:"catalog"`
+	Category          []string                   `json:"category"`
+	Tags              []string                   `json:"tags"`
+	Media             map[string]MediaList       `json:"media"`
+	Poster            *Media                     `json:"poster"`
+	Notes             []Note                     `json:"notes"`
+	Url               string                     `json:"url"`
+	Abstract          *translate.MultiLangString `json:"abstract"`
+	References        []Reference                `json:"references"`
+	Meta              *Metalist                  `json:"meta,omitempty"`
+	Extra             *Metalist                  `json:"extra,omitempty"`
+	Vars              *Varlist                   `json:"vars,omitempty"`
+	Type              string                     `json:"type"`
+	Queries           []Query                    `json:"queries,omitempty"`
+	ContentStr        string                     `json:"-"`
+	ContentMime       string                     `json:"-"`
+	HasMedia          bool                       `json:"hasmedia"`
+	Mediatype         []string                   `json:"mediatype"`
+	DateAdded         time.Time                  `json:"dateadded"`
+	Timestamp         time.Time                  `json:"timestamp"`
+	Publisher         string                     `json:"publisher"`
+	Rights            string                     `json:"rights"`
+	License           string                     `json:"license"`
+	Statistics        *SourceStatistic           `json:"statistics,omitempty"`
 }
 
 func NewSourceData(src Source) (*SourceData, error) {
@@ -88,7 +91,7 @@ func NewSourceData(src Source) (*SourceData, error) {
 		ContentStr:        src.GetContentString(),
 		ContentMime:       src.GetContentMime(),
 		DateAdded:         src.GetDateAdded(),
-		Publlisher:        src.GetPublisher(),
+		Publisher:         src.GetPublisher(),
 		Mediatype:         []string{},
 		Timestamp:         time.Now(),
 	}
@@ -96,7 +99,25 @@ func NewSourceData(src Source) (*SourceData, error) {
 	for mt, _ := range sd.Media {
 		sd.Mediatype = append(sd.Mediatype, mt)
 	}
+	categories := []string{}
+	for _, cat := range sd.Category {
+		parts := strings.Split(cat, "!!")
+		for i := 0; i < len(parts); i++ {
+			categories = append(categories, strings.Join(parts[:i+1], "!!"))
+		}
+	}
+	slices.Sort(categories)
+	sd.Category = slices.Compact(categories)
 	return sd, nil
+}
+
+func (sd *SourceData) Translate(tr translate.Translator, langs []language.Tag) {
+	if err := tr.Translate(sd.Title, langs); err != nil {
+		fmt.Printf("cannot translate title: %v\n", err)
+	}
+	if err := tr.Translate(sd.Abstract, langs); err != nil {
+		fmt.Printf("cannot translate abstract: %v\n", err)
+	}
 }
 
 func (sd *SourceData) SetStatistics() {
@@ -173,7 +194,7 @@ func (sd *SourceData) Name() string {
 	return sd.Name()
 }
 
-func (sd *SourceData) GetTitle() string {
+func (sd *SourceData) GetTitle() *translate.MultiLangString {
 	return sd.Title
 }
 
@@ -229,7 +250,7 @@ func (sd *SourceData) GetUrl() string {
 	return sd.Url
 }
 
-func (sd *SourceData) GetAbstract() string {
+func (sd *SourceData) GetAbstract() *translate.MultiLangString {
 	return sd.Abstract
 }
 
@@ -274,7 +295,7 @@ func (sd *SourceData) GetDateAdded() time.Time {
 }
 
 func (sd *SourceData) GetPublisher() string {
-	return sd.Publlisher
+	return sd.Publisher
 }
 
 func (sd *SourceData) GetJsonLD(self string, mediaserver func(uri string, params ...string) (string, error)) (result interface{}) {
@@ -360,7 +381,7 @@ func (sd *SourceData) GetJsonLD(self string, mediaserver func(uri string, params
 		vData.set("name", sd.Title)
 		vData.set("uploadDate", sd.DateAdded.Format("2006-01-02T15:04:05Z"))
 
-		description = sd.Abstract
+		description = sd.Abstract.String()
 		// director / actor / ...
 		for _, p := range sd.Persons {
 			vData.add("author", p.Name)
@@ -424,7 +445,7 @@ func (sd *SourceData) GetOpenGraph(app_id, self string, mediaserver func(uri str
 	namespace = "https://ogp.me/ns#"
 
 	//ogdata.set("fb:app_id", app_id)
-	ogdata.set("og:title", TrimLength(sd.Title, 60, "..."))
+	ogdata.set("og:title", TrimLength(sd.Title.String(), 60, "..."))
 	ogdata.set("og:type", "website")
 	ogdata.set("og:url", self)
 	switch sd.Type {
@@ -460,7 +481,7 @@ func (sd *SourceData) GetOpenGraph(app_id, self string, mediaserver func(uri str
 			ogdata.set("og:video:secure_url", self)
 		}
 	}
-	ogdata.set("og:description", TrimLength(sd.Abstract, 160, "..."))
+	ogdata.set("og:description", TrimLength(sd.Abstract.String(), 160, "..."))
 	if sd.Poster != nil {
 		if imgUrl, err := mediaserver(sd.Poster.Uri, "resize", fmt.Sprintf("size%vx%v/autorotate", Min(1200, sd.Poster.Width), Min(630, sd.Poster.Height)), "formatJPEG"); err == nil {
 			ogdata.set("og:image", imgUrl)

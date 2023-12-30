@@ -1,6 +1,6 @@
 module github.com/je4/zsearch/v2
 
-go 1.21.0
+go 1.21
 
 //replace dario.cat/mergo v1.0.0 => github.com/imdario/mergo v1.0.0
 
@@ -12,6 +12,7 @@ require (
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
 	github.com/blevesearch/bleve/v2 v2.3.10
 	github.com/bluele/gcache v0.0.2
+	github.com/bounoable/deepl v0.5.3
 	github.com/channelmeter/iso8601duration v0.0.0-20150204201828-8da3af7a2a61
 	github.com/dgraph-io/badger/v4 v4.2.0
 	github.com/drgrib/maps v0.0.0-20220318162102-37b53c75ae89
@@ -40,6 +41,7 @@ require (
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	golang.org/x/image v0.12.0
 	golang.org/x/net v0.15.0
+	golang.org/x/text v0.13.0
 	google.golang.org/api v0.143.0
 )
 
@@ -142,7 +144,6 @@ require (
 	golang.org/x/mod v0.12.0 // indirect
 	golang.org/x/oauth2 v0.12.0 // indirect
 	golang.org/x/sys v0.12.0 // indirect
-	golang.org/x/text v0.13.0 // indirect
 	golang.org/x/tools v0.13.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231002182017-d307bd883b97 // indirect

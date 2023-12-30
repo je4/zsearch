@@ -1164,7 +1164,7 @@ func (s *Server) GetClaimUser(claims map[string]interface{}) (*User, error) {
 	return u, nil
 }
 
-//var rexp = regexp.MustCompile(`([a-zA-Z0-9]+:([^ "]+|"[^"]+"))|([^ "]+)|"([^"]+)"`)
+// var rexp = regexp.MustCompile(`([a-zA-Z0-9]+:([^ "]+|"[^"]+"))|([^ "]+)|"([^"]+)"`)
 var rexp = regexp.MustCompile(`([a-zA-Z0-9]+:([^ "]+|"[^"]+"))`)
 
 func (s *Server) string2QList(search string, filterOrg map[string][]string) (map[string][]string, map[string][]string, string) {
@@ -1269,7 +1269,7 @@ func (s *Server) doc2result(
 		item := SearchResultItem{
 			Id:         doc.Signature,
 			Type:       doc.Type,
-			Title:      doc.Title,
+			Title:      doc.Title.String(),
 			Text:       "",
 			Collection: doc.CollectionTitle,
 			Authors:    []string{},

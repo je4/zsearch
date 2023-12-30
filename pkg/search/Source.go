@@ -21,6 +21,7 @@ import (
 	"compress/gzip"
 	"encoding/base64"
 	"encoding/json"
+	"github.com/je4/zsearch/v2/pkg/translate"
 	"github.com/pkg/errors"
 	"github.com/vanng822/go-solr/solr"
 	"html/template"
@@ -190,7 +191,7 @@ type Source interface {
 	GetSignature() string
 	GetSignatureOriginal() string
 	//Name() string
-	GetTitle() string
+	GetTitle() *translate.MultiLangString
 	GetSeries() string
 	GetPlace() string
 	GetDate() string
@@ -204,7 +205,7 @@ type Source interface {
 	GetPoster() *Media
 	GetNotes() []Note
 	GetUrl() string
-	GetAbstract() string
+	GetAbstract() *translate.MultiLangString
 	GetRights() string
 	GetLicense() string
 	GetReferences() []Reference

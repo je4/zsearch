@@ -158,7 +158,7 @@ func (s *Server) getDetailStatus(signature, path, rawQuery, tokenstring, remoteH
 				}
 				sect := intersect.Simple(status.User.Groups, acl_meta)
 				if ok && len([]interface{}{sect}) > 0 {
-					status.Doc.References[key].Title = doc.Title
+					status.Doc.References[key].Title = doc.Title.String()
 				} else {
 					status.Doc.References[key].Title = doc.Signature
 					// remove reference if no rights
@@ -202,8 +202,8 @@ func (s *Server) getDetailStatus(signature, path, rawQuery, tokenstring, remoteH
 			metadescription += p.Name
 		}
 	}
-	if doc.Abstract != "" {
-		metadescription += "\nAbstract: " + doc.Abstract
+	if doc.Abstract.String() != "" {
+		metadescription += "\nAbstract: " + doc.Abstract.String()
 	}
 	status.MetaDescription = strings.ReplaceAll(metadescription, "\"", "'")
 	if len(status.MetaDescription) >= 160 {

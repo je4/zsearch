@@ -72,7 +72,7 @@ func SourceToFairItem(src search.Source) *fair.ItemData {
 			Person: []myfair.Person{},
 			Title: []myfair.Title{
 				{
-					Data: src.GetTitle(),
+					Data: src.GetTitle().String(),
 					Type: "",
 				},
 			},

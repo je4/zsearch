@@ -302,7 +302,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 					}
 					filterField[fld] = append(filterField[fld], vals...)
 				}
-				status.Title = doc.Title
+				status.Title = doc.Title.String()
 			}
 			if facetstring, ok := (*doc.Meta)["Extra"]; ok {
 				if fl := facetDefRegexp.FindStringSubmatch(facetstring); fl != nil {

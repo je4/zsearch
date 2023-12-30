@@ -400,7 +400,7 @@ func main() {
 					switch archiveStrategy[group.Id] {
 					case "single":
 						archiveName := fmt.Sprintf("%s", i.GetSignature())
-						if err := fservice.AddArchive(archiveName, i.GetAbstract()); err != nil {
+						if err := fservice.AddArchive(archiveName, i.GetAbstract().String()); err != nil {
 							return errors.Wrapf(err, "cannot create archive %s", archiveName)
 						}
 						if err := fservice.AddArchiveItem(archiveName, fairItem.UUID); err != nil {

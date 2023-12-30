@@ -319,79 +319,6 @@ func main() {
 		}
 	}
 
-	if err := app.IterateFormsAll(func(form *apply.Form) error {
-		formItems = append(formItems, form)
-
-		// todo: use fair service
-		src, err := search.NewSourceData(form)
-		if err != nil {
-			return errors.Wrap(err, "cannot create sourcedata from iid item")
-		}
-		logger.Infof("work %v", src.GetSignature())
-		if doFair {
-			fItem := fairservice.SourceToFairItem(src)
-			var fairItem *fair.ItemData
-			fairItem, err = fservice.Create(fItem)
-			if err != nil {
-				return errors.Wrap(err, "cannot create fair entity")
-			}
-			// add new potential identifiers
-			var identifiers = make(map[string]string)
-			for _, ident := range fairItem.Identifier {
-				parts := strings.SplitN(ident, ":", 2)
-				identifiers[parts[0]] = parts[1]
-			}
-			src.AddIdentifiers(identifiers)
-			rawOriginal, err := json.Marshal(src)
-			if err != nil {
-				return errors.Wrapf(err, "cannot marshal zotero item")
-			}
-			if err := fservice.WriteOriginalData(fairItem, rawOriginal); err != nil {
-				return errors.Wrapf(err, "cannot write original data to fair service")
-			}
-			archiveName := fmt.Sprintf("%s", src.GetSignature())
-			if err := fservice.AddArchive(archiveName, src.GetAbstract()); err != nil {
-				return errors.Wrapf(err, "cannot create archive %s", archiveName)
-			}
-			if err := fservice.AddArchiveItem(archiveName, fairItem.UUID); err != nil {
-				return errors.Wrapf(err, "cannot add item %s to archive %s", src.GetSignature(), archiveName)
-			}
-		}
-		if doBleve {
-			index.Index(src.Signature, src)
-			data, err := json.Marshal(src)
-			if err != nil {
-				return errors.Wrapf(err, "cannot marshal data")
-			}
-			index.SetInternal([]byte(src.Signature), data)
-		}
-		if doZSearch {
-			if err := zsClient.SignatureCreate(src); err != nil {
-				return errors.Wrapf(err, "cannot create work entity")
-			}
-		}
-		counter++
-		items = append(items, src)
-		return nil
-	},
-	); err != nil {
-		logger.Panicf("error iterating works: %v", err)
-	}
-	if doFair {
-		if err := fservice.EndUpdate(srcPrefix); err != nil {
-			logger.Panicf("cannot end fairservice update: %v", err)
-		}
-	}
-
-	if counter > 0 {
-		if doZSearch {
-			zsClient.ClearCache()
-			if err := zsClient.BuildSitemap(); err != nil {
-				logger.Panic(err)
-			}
-		}
-	}
-
 	if doPCB {
 		group, err := zot.LoadGroupLocal(1624911)
 		if err != nil {
@@ -467,6 +394,80 @@ func main() {
 			logger.Errorf("error getting items: %v", err)
 		}
 	}
+
+	if err := app.IterateFormsAll(func(form *apply.Form) error {
+		formItems = append(formItems, form)
+
+		// todo: use fair service
+		src, err := search.NewSourceData(form)
+		if err != nil {
+			return errors.Wrap(err, "cannot create sourcedata from iid item")
+		}
+		logger.Infof("work %v", src.GetSignature())
+		if doFair {
+			fItem := fairservice.SourceToFairItem(src)
+			var fairItem *fair.ItemData
+			fairItem, err = fservice.Create(fItem)
+			if err != nil {
+				return errors.Wrap(err, "cannot create fair entity")
+			}
+			// add new potential identifiers
+			var identifiers = make(map[string]string)
+			for _, ident := range fairItem.Identifier {
+				parts := strings.SplitN(ident, ":", 2)
+				identifiers[parts[0]] = parts[1]
+			}
+			src.AddIdentifiers(identifiers)
+			rawOriginal, err := json.Marshal(src)
+			if err != nil {
+				return errors.Wrapf(err, "cannot marshal zotero item")
+			}
+			if err := fservice.WriteOriginalData(fairItem, rawOriginal); err != nil {
+				return errors.Wrapf(err, "cannot write original data to fair service")
+			}
+			archiveName := fmt.Sprintf("%s", src.GetSignature())
+			if err := fservice.AddArchive(archiveName, src.GetAbstract().String()); err != nil {
+				return errors.Wrapf(err, "cannot create archive %s", archiveName)
+			}
+			if err := fservice.AddArchiveItem(archiveName, fairItem.UUID); err != nil {
+				return errors.Wrapf(err, "cannot add item %s to archive %s", src.GetSignature(), archiveName)
+			}
+		}
+		if doBleve {
+			index.Index(src.Signature, src)
+			data, err := json.Marshal(src)
+			if err != nil {
+				return errors.Wrapf(err, "cannot marshal data")
+			}
+			index.SetInternal([]byte(src.Signature), data)
+		}
+		if doZSearch {
+			if err := zsClient.SignatureCreate(src); err != nil {
+				return errors.Wrapf(err, "cannot create work entity")
+			}
+		}
+		counter++
+		items = append(items, src)
+		return nil
+	},
+	); err != nil {
+		logger.Panicf("error iterating works: %v", err)
+	}
+	if doFair {
+		if err := fservice.EndUpdate(srcPrefix); err != nil {
+			logger.Panicf("cannot end fairservice update: %v", err)
+		}
+	}
+
+	if counter > 0 {
+		if doZSearch {
+			zsClient.ClearCache()
+			if err := zsClient.BuildSitemap(); err != nil {
+				logger.Panic(err)
+			}
+		}
+	}
+
 	if doBleve {
 		index.Close()
 	}
@@ -560,7 +561,7 @@ func main() {
 	var cnts = []*sdmlcontent.Content{}
 	for _, item := range items {
 		cnt := &sdmlcontent.Content{Persons: []sdmlcontent.Person{}, Medias: map[string][]sdmlcontent.Media{}}
-		cnt.Title = item.GetTitle()
+		cnt.Title = item.GetTitle().String()
 		cnt.Year = item.GetDate()
 		for _, p := range item.GetPersons() {
 			cnt.Persons = append(cnt.Persons, sdmlcontent.Person{Name: p.Name, Role: p.Role})

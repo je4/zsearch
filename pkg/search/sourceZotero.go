@@ -3,8 +3,10 @@ package search
 import (
 	"fmt"
 	"github.com/je4/zsearch/v2/pkg/mediaserver"
+	"github.com/je4/zsearch/v2/pkg/translate"
 	"github.com/je4/zsync/v2/pkg/zotero"
 	"github.com/vanng822/go-solr/solr"
+	"golang.org/x/text/language"
 	"html/template"
 	"reflect"
 	"regexp"
@@ -80,8 +82,10 @@ func (item *ZoteroItem) GetSignatureOriginal() string {
 	return fmt.Sprintf("%v.%v", item.Group.Id, item.Key)
 }
 
-func (item *ZoteroItem) GetTitle() string {
-	return item.Data.Title
+func (item *ZoteroItem) GetTitle() *translate.MultiLangString {
+	mlStr := &translate.MultiLangString{}
+	mlStr.Set(item.Data.Title, language.Und, false)
+	return mlStr
 }
 
 func (item *ZoteroItem) GetSeries() string {
@@ -487,8 +491,10 @@ func (item *ZoteroItem) GetNotes() []Note {
 	return notes
 }
 
-func (item *ZoteroItem) GetAbstract() string {
-	return zotero.TextNoMeta(item.Data.AbstractNote + "\n" + item.Data.Extra)
+func (item *ZoteroItem) GetAbstract() *translate.MultiLangString {
+	mlStr := &translate.MultiLangString{}
+	mlStr.Set(zotero.TextNoMeta(item.Data.AbstractNote+"\n"+item.Data.Extra), language.Und, false)
+	return mlStr
 }
 
 func (item *ZoteroItem) GetRights() string {
