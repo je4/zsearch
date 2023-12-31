@@ -36,6 +36,7 @@ import (
 	"github.com/htfy96/reformism"
 	"github.com/je4/utils/v2/pkg/JWTInterceptor"
 	"github.com/je4/zsearch/v2/pkg/amp"
+	"github.com/je4/zsearch/v2/pkg/translate"
 	"github.com/je4/zsearch/v2/web"
 	"github.com/op/go-logging"
 	"github.com/pkg/errors"
@@ -199,25 +200,25 @@ type SearchResult struct {
 }
 
 type SearchResultItem struct {
-	Id            string              `json:"Id"`
-	Type          string              `json:"type"`
-	Title         string              `json:"title"`
-	Text          string              `json:"text"`
-	Collection    string              `json:"collection"`
-	Authors       []string            `json:"authors"`
-	AuthorText    string              `json:"authortext"`
-	Link          string              `json:"link"`
-	FirstItem     bool                `json:"firstitem"`
-	Total         int64               `json:"total,omitempty"`
-	Date          string              `json:"date"`
-	Icon          string              `json:"icon"`
-	Media         map[string]int      `json:"media"`
-	MetaPublic    bool                `json:"metapublic"`
-	ContentPublic bool                `json:"contentpublic"`
-	MetaOK        bool                `json:"metaok"`
-	ContentOK     bool                `json:"contentok"`
-	Poster        *Media              `json:"poster"`
-	Highlight     map[string][]string `json:"highlight"`
+	Id            string                     `json:"Id"`
+	Type          string                     `json:"type"`
+	Title         *translate.MultiLangString `json:"title"`
+	Text          string                     `json:"text"`
+	Collection    string                     `json:"collection"`
+	Authors       []string                   `json:"authors"`
+	AuthorText    string                     `json:"authortext"`
+	Link          string                     `json:"link"`
+	FirstItem     bool                       `json:"firstitem"`
+	Total         int64                      `json:"total,omitempty"`
+	Date          string                     `json:"date"`
+	Icon          string                     `json:"icon"`
+	Media         map[string]int             `json:"media"`
+	MetaPublic    bool                       `json:"metapublic"`
+	ContentPublic bool                       `json:"contentpublic"`
+	MetaOK        bool                       `json:"metaok"`
+	ContentOK     bool                       `json:"contentok"`
+	Poster        *Media                     `json:"poster"`
+	Highlight     map[string][]string        `json:"highlight"`
 }
 
 type KV struct{ Key, Name string }
@@ -1269,7 +1270,7 @@ func (s *Server) doc2result(
 		item := SearchResultItem{
 			Id:         doc.Signature,
 			Type:       doc.Type,
-			Title:      doc.Title.String(),
+			Title:      doc.Title,
 			Text:       "",
 			Collection: doc.CollectionTitle,
 			Authors:    []string{},

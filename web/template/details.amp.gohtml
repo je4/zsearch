@@ -88,7 +88,7 @@ limitations under the License.
 
     <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
 
-    <title>Mediathek - {{.Doc.Title}}</title>
+    <title>Mediathek - {{.Doc.Title.String}}</title>
     {{if and .MetaPublic .ContentPublic}}<link rel="canonical" href="{{.Canonical}}">{{end}}
 </head>
 
@@ -130,7 +130,7 @@ limitations under the License.
         </div>
         <div class="col-12 md-col-6 flex flex-wrap content-start px2 md-pl5 md-pr7 md-pt4">
             <div class="col-12 self-start pb2">
-                <h1 class="h3 md-h2">{{.Doc.Title}}</h1>
+                <h1 class="h3 md-h2">{{.Doc.Title.String}}</h1>
                 <div class="h4 md-h3">{{range $key, $person := .Doc.Persons}}{{ if $key }}; {{ end }}<a class="nobreak"href="{{$user.LinkSearch (printf "author:\"%s\"" $person.Name)}}">{{$person.Name}}</a>{{end}}</div>
             </div>
             <div class="col-12 self-start pb4">
@@ -141,7 +141,7 @@ limitations under the License.
                 {{end}}
                 {{if len .Doc.Abstract}}
                     <amp-truncate-text layout="fixed-height" height="8em">
-                        {{nl2br .Doc.Abstract}}
+                        {{nl2br .Doc.Abstract.String}}
                         <button class="gsearch-btn gsearch-btn-seemore caps" slot="collapsed">See more</button>
                     </amp-truncate-text>
                 {{end}}

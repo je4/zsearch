@@ -421,20 +421,6 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if pusher, ok := w.(http.Pusher); ok {
-		// Push is supported.
-		furl := "/" + s.prefixes["static"] + "/font/inter/Inter-roman.var.woff2?v=3.15"
-		s.log.Infof("pushing font %s", furl)
-		if err := pusher.Push(furl, nil); err != nil {
-			s.log.Errorf("Failed to push %s: %v", furl, err)
-		}
-		furl = "/" + s.prefixes["static"] + "/font/inter/Inter-Bold.woff2?v=3.15"
-		s.log.Infof("pushing font %s", furl)
-		if err := pusher.Push(furl, nil); err != nil {
-			s.log.Errorf("Failed to push %s: %v", furl, err)
-		}
-	}
-
 	if tpl, ok := s.templates["details.amp.gohtml"]; ok {
 		err = tpl.Execute(w, status)
 		if err != nil {

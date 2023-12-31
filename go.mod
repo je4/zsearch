@@ -1,6 +1,8 @@
 module github.com/je4/zsearch/v2
 
-go 1.21
+go 1.21.0
+
+toolchain go1.21.5
 
 //replace dario.cat/mergo v1.0.0 => github.com/imdario/mergo v1.0.0
 
@@ -55,6 +57,7 @@ require (
 	github.com/ProtonMail/go-crypto v0.0.0-20230923063757-afb1ddc0824c // indirect
 	github.com/RoaringBitmap/roaring v1.5.0 // indirect
 	github.com/acomagu/bufpipe v1.0.4 // indirect
+	github.com/andybalholm/brotli v1.0.6 // indirect
 	github.com/armon/go-radix v1.0.0 // indirect
 	github.com/bits-and-blooms/bitset v1.9.0 // indirect
 	github.com/blend/go-sdk v1.20220411.3 // indirect

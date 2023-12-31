@@ -133,7 +133,7 @@ func main() {
 		return
 	}
 	defer badgerDB.Close()
-	translator := translate.NewDeeplTranslator(string(config.DeeplApiKey), config.DeeplApiUrl, badgerDB)
+	translator := translate.NewDeeplTranslator(string(config.DeeplApiKey), config.DeeplApiUrl, badgerDB, logger)
 
 	var zsClient *zsearchclient.ZSearchClient
 	zsClient, err = zsearchclient.NewZSearchClient(
@@ -254,10 +254,15 @@ func main() {
 		}
 		counter++
 		items = append(items, src)
+		/*
+			if counter > 500 {
+				return errors.New("stop")
+			}
+		*/
 		return nil
 	},
 	); err != nil {
-		logger.Panicf("error iterating works: %v", err)
+		logger.Errorf("error iterating works: %v", err)
 	}
 	if doFair {
 		if err := fservice.EndUpdate(srcPrefix); err != nil {

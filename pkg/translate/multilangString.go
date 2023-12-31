@@ -5,6 +5,7 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/text/language"
 	"regexp"
+	"strings"
 )
 
 type multiLangString struct {
@@ -17,7 +18,7 @@ type MultiLangString []multiLangString
 
 const translatePostfix = "t:"
 
-var langPrefixRegexp = regexp.MustCompile(`^(.*) ::(` + translatePostfix + `)?([a-z]{3})$`)
+var langPrefixRegexp = regexp.MustCompile(`^(?s)(.*) ::(` + translatePostfix + `)?([a-z]{3})$`)
 
 func (m *MultiLangString) String() string {
 	if len(*m) == 0 {
@@ -83,7 +84,33 @@ func (m *MultiLangString) Remove(lang language.Tag) {
 	*m = result
 }
 
+var mlStringRegexpStart = regexp.MustCompile(`^(?is)[a-z]{2,3}: .*$`)
+var mlStringRegexp = regexp.MustCompile(`(?is)([a-z]{2,3}): `)
+
 func (m *MultiLangString) Set(str string, lang language.Tag, translated bool) {
+	str = strings.TrimSpace(str)
+	if mlStringRegexpStart.MatchString(str) {
+		indexes := mlStringRegexp.FindAllStringSubmatchIndex(str, -1)
+		if indexes != nil {
+			num := len(indexes)
+			for i, ind := range indexes {
+				langStr := str[ind[2]:ind[3]]
+				textStr := ""
+				if i < num-1 {
+					textStr = strings.TrimSpace(str[ind[1]:indexes[i+1][0]])
+				} else {
+					textStr = strings.TrimSpace(str[ind[1]:])
+				}
+				nLang, err := language.Parse(langStr)
+				if err != nil {
+					nLang = language.Und
+				}
+				m.Remove(nLang)
+				*m = append(*m, multiLangString{lang: nLang, str: textStr, translated: false})
+			}
+			return
+		}
+	}
 	m.Remove(lang)
 	*m = append(*m, multiLangString{lang: lang, str: str, translated: translated})
 }
@@ -112,7 +139,6 @@ func (m *MultiLangString) MarshalJSON() ([]byte, error) {
 }
 
 func (m *MultiLangString) UnmarshalJSON(data []byte) error {
-	*m = []multiLangString{}
 	var strList []string
 	if err := json.Unmarshal(data, &strList); err != nil {
 		var str string
@@ -121,6 +147,7 @@ func (m *MultiLangString) UnmarshalJSON(data []byte) error {
 		}
 		strList = []string{str}
 	}
+	*m = (*m)[:0]
 	for _, str := range strList {
 		matches := langPrefixRegexp.FindStringSubmatch(str)
 		if matches == nil {
