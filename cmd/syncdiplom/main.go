@@ -21,7 +21,7 @@ import (
 	"emperror.dev/emperror"
 	"flag"
 	"fmt"
-	"github.com/dgraph-io/badger/v3"
+	"github.com/dgraph-io/badger/v4"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/je4/utils/v2/pkg/ssh"
 	"github.com/je4/zsearch/v2/pkg/forms2"

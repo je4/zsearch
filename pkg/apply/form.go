@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"github.com/gosimple/slug"
 	"github.com/je4/zsearch/v2/pkg/search"
+	"github.com/je4/zsearch/v2/pkg/translate"
 	"github.com/vanng822/go-solr/solr"
 	"golang.org/x/exp/slices"
+	"golang.org/x/text/language"
 	"html/template"
 	"path"
 	"regexp"
@@ -54,12 +56,15 @@ func (form *Form) GetSignatureOriginal() string {
 	return fmt.Sprintf("%v", form.Id)
 }
 
-func (form *Form) GetTitle() string {
+func (form *Form) GetTitle() *translate.MultiLangString {
 	title := strings.TrimSpace(form.Data["titel"])
 	if title == "" {
 		title = "ohne Titel"
 	}
-	return title
+	lang := language.Und
+	mlStr := &translate.MultiLangString{}
+	mlStr.Set(title, lang, false)
+	return mlStr
 }
 
 func (form *Form) GetSeries() string {
@@ -173,8 +178,15 @@ func (form *Form) GetTags() []string {
 	var tags = []string{"vwg:declare"}
 	tags = search.AppendIfMissing(tags, fmt.Sprintf("%v", form.GetDate()))
 	tags = search.AppendIfMissing(tags, form.Data["medium"])
-	if strings.HasPrefix(strings.ToLower(form.GetTitle()), "bangbang:") {
+	if strings.HasPrefix(strings.ToLower(form.GetTitle().String()), "bangbang:") {
 		tags = search.AppendIfMissing(tags, "BangBang Production")
+	}
+	if schlagwort, ok := form.Data["schlagwort"]; ok {
+		parts := strings.Split(schlagwort, ";")
+		for _, part := range parts {
+			part = strings.TrimSpace(part)
+			tags = search.AppendIfMissing(tags, "voc:"+part)
+		}
 	}
 	return tags
 }
@@ -339,8 +351,20 @@ func (form *Form) GetNotes() []search.Note {
 	return notes
 }
 
-func (form *Form) GetAbstract() string {
-	return form.Data["descr"]
+func (form *Form) GetAbstract() *translate.MultiLangString {
+	descr := form.Data["descr"]
+	lang := language.Und
+	langStr := strings.ToLower(strings.TrimSpace(form.Data["sprache"]))
+	if langStr != "" {
+		var err error
+		lang, err = language.Parse(langStr)
+		if err != nil {
+			lang = language.Und
+		}
+	}
+	mlStr := &translate.MultiLangString{}
+	mlStr.Set(descr, lang, false)
+	return mlStr
 }
 
 func (form *Form) GetRights() string {

@@ -184,7 +184,7 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 	sort.Strings(status.Areas)
 	for _, area := range status.Areas {
 		sort.Slice(status.Result[area], func(a, b int) bool {
-			return status.Result[area][a].Title < status.Result[area][b].Title
+			return status.Result[area][a].Title.String() < status.Result[area][b].Title.String()
 		})
 	}
 

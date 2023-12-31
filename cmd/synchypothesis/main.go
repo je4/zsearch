@@ -17,7 +17,7 @@ package main
 
 import (
 	"flag"
-	"github.com/dgraph-io/badger/v3"
+	"github.com/dgraph-io/badger/v4"
 	"github.com/je4/zsearch/v2/pkg/hypothesis"
 	"github.com/je4/zsearch/v2/pkg/search"
 	"os"

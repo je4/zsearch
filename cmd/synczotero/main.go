@@ -30,8 +30,8 @@ import (
 	"github.com/je4/zsearch/v2/pkg/mediaserver"
 	"github.com/je4/zsearch/v2/pkg/search"
 	"github.com/je4/zsearch/v2/pkg/zsearchclient"
-	"github.com/je4/zsync/pkg/filesystem"
-	"github.com/je4/zsync/pkg/zotero"
+	"github.com/je4/zsync/v2/pkg/filesystem"
+	"github.com/je4/zsync/v2/pkg/zotero"
 	"github.com/pkg/errors"
 	"strconv"
 	"strings"
@@ -400,7 +400,7 @@ func main() {
 					switch archiveStrategy[group.Id] {
 					case "single":
 						archiveName := fmt.Sprintf("%s", i.GetSignature())
-						if err := fservice.AddArchive(archiveName, i.GetAbstract()); err != nil {
+						if err := fservice.AddArchive(archiveName, i.GetAbstract().String()); err != nil {
 							return errors.Wrapf(err, "cannot create archive %s", archiveName)
 						}
 						if err := fservice.AddArchiveItem(archiveName, fairItem.UUID); err != nil {

@@ -10,6 +10,7 @@ import (
 	"github.com/je4/zsearch/v2/pkg/search"
 	"github.com/op/go-logging"
 	"github.com/pkg/errors"
+	"io"
 	"io/ioutil"
 	"math"
 	"net/http"
@@ -60,7 +61,7 @@ func (zsc *ZSearchClient) SignatureCreate(data *search.SourceData) error {
 	if err != nil {
 		return errors.Wrapf(err, "error creating signature - POST %s", qurl)
 	}
-	resultData, err := ioutil.ReadAll(response.Body)
+	resultData, err := io.ReadAll(response.Body)
 	if err != nil {
 		return errors.Wrap(err, "cannot read response body")
 	}
