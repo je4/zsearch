@@ -2,7 +2,7 @@ package search
 
 import (
 	"fmt"
-	"github.com/je4/sitemap"
+	"github.com/je4/sitemap/v2"
 	"github.com/pkg/errors"
 	"os"
 	"time"

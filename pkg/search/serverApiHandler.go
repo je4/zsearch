@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -37,7 +37,7 @@ func (s *Server) apiHandlerSignatureCreate(w http.ResponseWriter, req *http.Requ
 		err := decoder.Decode(&data)
 	*/
 	defer req.Body.Close()
-	bdata, err := ioutil.ReadAll(req.Body)
+	bdata, err := io.ReadAll(req.Body)
 	if err != nil {
 		msg := fmt.Sprintf("cannot read request body: %v", err)
 		s.log.Errorf(msg)
@@ -67,6 +67,7 @@ func (s *Server) apiHandlerSignatureCreate(w http.ResponseWriter, req *http.Requ
 		}
 		return
 	}
+	data.SetStatistics()
 	if err := s.mts.se.UpdateTimestamp(data, time.Now()); err != nil {
 		msg := fmt.Sprintf("cannot update item: %v", err)
 		s.log.Errorf(msg)

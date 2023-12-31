@@ -99,7 +99,6 @@ type Query struct {
 type Cfg_ElasticSearch struct {
 	Endpoint []string `toml:"endpoint"`
 	Index    string   `toml:"index"`
-	ApiKey   string   `toml:"apikey"`
 }
 
 type Cfg_Google struct {
@@ -113,6 +112,14 @@ type Cfg_Google struct {
 type Endpoint struct {
 	Host string `toml:"host"`
 	Port int    `toml:"port"`
+}
+
+type Elastic struct {
+	Index       string `toml:"elasticindex"`       // elastic search index to fill
+	IndexCreate string `toml:"elasticindexcreate"` //  deletes and creates elastic index with given schema
+	Endpoint    string `toml:"elasticendpoint"`    // endpoint for elastic search
+	V8          bool   `toml:"elasticv8"`          // use elastic search client version 8
+	APIKey      string `toml:"elasticapikey"`      // Apikey for elastic
 }
 
 type SSHTunnel struct {
@@ -169,6 +176,7 @@ type Config struct {
 	Google              Cfg_Google          `toml:"google"`
 	InstanceName        string              `toml:"instancename"`
 	SSHTunnel           SSHTunnel           `toml:"sshtunnel"`
+	Target              Elastic             `toml:"target"`
 }
 
 var prefixNames = []string{
