@@ -28,6 +28,7 @@ import (
 	"github.com/je4/zsearch/v2/pkg/apply"
 	"github.com/je4/zsearch/v2/pkg/fairservice"
 	"github.com/je4/zsearch/v2/pkg/mediaserver"
+	"github.com/je4/zsearch/v2/pkg/openai"
 	"github.com/je4/zsearch/v2/pkg/search"
 	"github.com/je4/zsearch/v2/pkg/translate"
 	"github.com/je4/zsearch/v2/pkg/zsearchclient"
@@ -39,9 +40,11 @@ import (
 
 var doFair = false
 
+var cfgfile = flag.String("cfg", "./syncbang.toml", "locations of config file")
+var clear = flag.Bool("clear", false, "clear all data")
+
 func main() {
 	var err error
-	cfgfile := flag.String("cfg", "./syncbang.toml", "locations of config file")
 	flag.Parse()
 	config := LoadConfig(*cfgfile)
 
@@ -134,6 +137,7 @@ func main() {
 	}
 	defer badgerDB.Close()
 	translator := translate.NewDeeplTranslator(string(config.DeeplApiKey), config.DeeplApiUrl, badgerDB, logger)
+	embeddings := openai.NewClient(config.OpenaiApiUrl, string(config.OpenaiApiKey), badgerDB, logger)
 
 	var zsClient *zsearchclient.ZSearchClient
 	zsClient, err = zsearchclient.NewZSearchClient(
@@ -210,6 +214,12 @@ func main() {
 		}
 	}
 
+	if clear != nil && *clear {
+		if _, err := zsClient.SignaturesClear("bangbang"); err != nil {
+			logger.Panicf("cannot clear signatures with prefix 'bangbang': %v", err)
+		}
+	}
+
 	if err := app.IterateFormsAll(func(form *apply.Form) error {
 		formItems = append(formItems, form)
 
@@ -249,6 +259,9 @@ func main() {
 			}
 		}
 		src.Translate(translator, []language.Tag{language.Italian, language.German, language.English, language.French})
+		//		src.ModifyVocabulary()
+		_ = embeddings
+
 		if err := zsClient.SignatureCreate(src); err != nil {
 			return errors.Wrapf(err, "cannot create work entity")
 		}

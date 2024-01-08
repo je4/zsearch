@@ -58,6 +58,8 @@ type SourceData struct {
 	Rights            string                     `json:"rights"`
 	License           string                     `json:"license"`
 	Statistics        *SourceStatistic           `json:"statistics,omitempty"`
+	TitleVector       []float64                  `json:"title_vector,omitempty"`
+	ContentVector     []float64                  `json:"content_vector,omitempty"`
 }
 
 func NewSourceData(src Source) (*SourceData, error) {
