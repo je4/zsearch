@@ -166,7 +166,7 @@ limitations under the License.
                                         <div style="display:table-cell; vertical-align: top;">
                                             <div style="height:100%; overflow:hidden;">
                                                 <a style="text-decoration: none;" href="{{$user.LinkSubject "search" $item.Signature "search"}}">
-                                                <b>{{trimLeft "0123456789_" $item.Title}}</b>
+                                                <b>{{trimLeft "0123456789_" $item.Title.String}}</b>
                                                 {{if not (eq $item.Date "")}}<br />{{$item.Date}}{{end}}
                                                 </a>
                                                 {{if len $item.Abstract}}
@@ -174,7 +174,7 @@ limitations under the License.
                                                     {{$item.Abstract}}
                                                     <button class="gsearch-btn gsearch-btn-seemore caps" slot="collapsed">See more</button>
                                                 </amp-truncate-text>
-                                                <!-- <p style="padding-top:10px;">{{$item.Abstract}}</p> -->{{end}}
+                                                <!-- <p style="padding-top:10px;">{{$item.Abstract.String}}</p> -->{{end}}
                                             </div>
                                         </div>
                                     </div>
