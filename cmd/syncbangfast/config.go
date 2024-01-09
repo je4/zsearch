@@ -44,6 +44,8 @@ type Config struct {
 	DeeplApiKey    config.EnvString                `toml:"deeplapikey"`
 	DeeplApiUrl    string                          `toml:"deeplapiurl"`
 	TanslateDBPath string                          `toml:"translatedbpath"`
+	OpenaiApiUrl   string                          `toml:"openaiapiurl"`
+	OpenaiApiKey   config.EnvString                `toml:"openaiapikey"`
 }
 
 func LoadConfig(filepath string) Config {

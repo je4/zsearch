@@ -72,6 +72,12 @@
           }
         }
       },
+      "content_vector": {
+        "type": "dense_vector",
+        "dims": 1536,
+        "index": true,
+        "similarity": "cosine"
+      },
       "date": {
         "type": "text",
         "fields": {
@@ -1107,6 +1113,12 @@
             "ignore_above": 256
           }
         }
+      },
+      "title_vector": {
+        "type": "dense_vector",
+        "dims": 1536,
+        "index": true,
+        "similarity": "cosine"
       },
       "type": {
         "type": "text",

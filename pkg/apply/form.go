@@ -185,7 +185,16 @@ func (form *Form) GetTags() []string {
 		parts := strings.Split(schlagwort, ";")
 		for _, part := range parts {
 			part = strings.TrimSpace(part)
-			tags = search.AppendIfMissing(tags, "voc:"+part)
+			parts2 := strings.SplitN(part, ":", 2)
+			if len(parts2) != 2 {
+				tags = search.AppendIfMissing(tags, part)
+				continue
+			}
+			nt := fmt.Sprintf("voc:%s:%s",
+				"voc_"+strings.Replace(slug.MakeLang(strings.TrimSpace(parts2[0]), "de"), "-", "_", -1),
+				"voc_"+strings.Replace(slug.MakeLang(strings.TrimSpace(parts2[1]), "de"), "-", "_", -1),
+			)
+			tags = search.AppendIfMissing(tags, nt)
 		}
 	}
 	return tags
