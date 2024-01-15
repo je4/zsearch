@@ -23,6 +23,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/blevesearch/bleve/v2"
+	"github.com/dgraph-io/badger/v4"
 	"github.com/je4/FairService/v2/pkg/fair"
 	"github.com/je4/FairService/v2/pkg/fairclient"
 	sdmlcontent "github.com/je4/salon-digital/v2/pkg/content"
@@ -30,11 +31,14 @@ import (
 	"github.com/je4/zsearch/v2/pkg/apply"
 	"github.com/je4/zsearch/v2/pkg/fairservice"
 	"github.com/je4/zsearch/v2/pkg/mediaserver"
+	"github.com/je4/zsearch/v2/pkg/openai"
 	"github.com/je4/zsearch/v2/pkg/search"
+	"github.com/je4/zsearch/v2/pkg/translate"
 	"github.com/je4/zsearch/v2/pkg/zsearchclient"
 	"github.com/je4/zsync/v2/pkg/filesystem"
 	"github.com/je4/zsync/v2/pkg/zotero"
 	"github.com/pkg/errors"
+	"golang.org/x/text/language"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -149,7 +153,18 @@ func main() {
 		return
 	}
 	var zsClient *zsearchclient.ZSearchClient
+	var translator translate.Translator
+	var embeddings *openai.Client
 	if doZSearch {
+		badgerDB, err := badger.Open(badger.DefaultOptions(config.TanslateDBPath))
+		if err != nil {
+			logger.Panic(err)
+			return
+		}
+		defer badgerDB.Close()
+		translator = translate.NewDeeplTranslator(string(config.DeeplApiKey), config.DeeplApiUrl, badgerDB, logger)
+		embeddings = openai.NewClient(config.OpenaiApiUrl, string(config.OpenaiApiKey), badgerDB, logger)
+
 		zsClient, err = zsearchclient.NewZSearchClient(
 			config.ZSearchService.ServiceName,
 			config.ZSearchService.Address,
@@ -442,6 +457,10 @@ func main() {
 			index.SetInternal([]byte(src.Signature), data)
 		}
 		if doZSearch {
+			src.Translate(translator, []language.Tag{language.Italian, language.German, language.English, language.French})
+			//		src.ModifyVocabulary()
+			_ = embeddings
+
 			if err := zsClient.SignatureCreate(src); err != nil {
 				return errors.Wrapf(err, "cannot create work entity")
 			}
