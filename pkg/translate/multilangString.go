@@ -55,6 +55,20 @@ func (m *MultiLangString) GetNativeLanguages() []language.Tag {
 	return result
 }
 
+func (m *MultiLangString) GetNativeLanguage() language.Tag {
+	var result []language.Tag
+	for _, v := range *m {
+		if v.translated {
+			continue
+		}
+		result = append(result, v.lang)
+	}
+	if len(result) == 0 {
+		return language.Und
+	}
+	return result[0]
+}
+
 func (m *MultiLangString) GetLanguages() []language.Tag {
 	var result []language.Tag
 	for _, v := range *m {
