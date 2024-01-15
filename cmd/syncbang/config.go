@@ -18,6 +18,7 @@ package main
 
 import (
 	"github.com/BurntSushi/toml"
+	"github.com/je4/utils/v2/pkg/config"
 	"github.com/je4/zsearch/v2/configdata"
 	"log"
 	"strings"
@@ -40,6 +41,11 @@ type Config struct {
 	DetailTemplate string                          `toml:"detailtemplate"`
 	TableTemplate  string                          `toml:"tabletemplate"`
 	Full           bool                            `toml:"fullexport"`
+	DeeplApiKey    config.EnvString                `toml:"deeplapikey"`
+	DeeplApiUrl    string                          `toml:"deeplapiurl"`
+	TanslateDBPath string                          `toml:"translatedbpath"`
+	OpenaiApiUrl   string                          `toml:"openaiapiurl"`
+	OpenaiApiKey   config.EnvString                `toml:"openaiapikey"`
 }
 
 func LoadConfig(filepath string) Config {
