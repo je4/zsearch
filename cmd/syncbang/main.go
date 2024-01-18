@@ -163,7 +163,7 @@ func main() {
 		}
 		defer badgerDB.Close()
 		translator = translate.NewDeeplTranslator(string(config.DeeplApiKey), config.DeeplApiUrl, badgerDB, logger)
-		embeddings = openai.NewClient(config.OpenaiApiUrl, string(config.OpenaiApiKey), badgerDB, logger)
+		embeddings = openai.NewClient(string(config.OpenaiApiKey), badgerDB, logger)
 
 		zsClient, err = zsearchclient.NewZSearchClient(
 			config.ZSearchService.ServiceName,

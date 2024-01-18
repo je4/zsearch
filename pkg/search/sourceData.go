@@ -1,13 +1,17 @@
 package search
 
 import (
+	"bytes"
 	"fmt"
 	isoduration "github.com/channelmeter/iso8601duration"
+	"github.com/je4/zsearch/v2/pkg/openai"
 	"github.com/je4/zsearch/v2/pkg/translate"
+	oai "github.com/sashabaranov/go-openai"
 	"github.com/vanng822/go-solr/solr"
 	"golang.org/x/text/language"
 	"slices"
 	"strings"
+	"text/template"
 	"time"
 )
 
@@ -58,8 +62,8 @@ type SourceData struct {
 	Rights            string                     `json:"rights"`
 	License           string                     `json:"license"`
 	Statistics        *SourceStatistic           `json:"statistics,omitempty"`
-	TitleVector       []float64                  `json:"title_vector,omitempty"`
-	ContentVector     []float64                  `json:"content_vector,omitempty"`
+	TitleVector       []float32                  `json:"title_vector,omitempty"`
+	ContentVector     []float32                  `json:"content_vector,omitempty"`
 }
 
 func NewSourceData(src Source) (*SourceData, error) {
@@ -120,6 +124,32 @@ func (sd *SourceData) Translate(tr translate.Translator, langs []language.Tag) {
 	if err := tr.Translate(sd.Abstract, langs); err != nil {
 		fmt.Printf("cannot translate abstract: %v\n", err)
 	}
+}
+
+func (sd *SourceData) CreateEmbedding(embeddings *openai.Client, tpl *template.Template, available []string) {
+	var str string
+	for _, lang := range available {
+		data := struct {
+			Lang   string
+			Source *SourceData
+		}{
+			Lang:   lang,
+			Source: sd,
+		}
+		buf := &bytes.Buffer{}
+		if err := tpl.Execute(buf, data); err != nil {
+			fmt.Printf("cannot execute template: %v\n", err)
+			continue
+		}
+		str += buf.String() + "\n\n"
+	}
+
+	vec, err := embeddings.CreateEmbedding(str, oai.AdaEmbeddingV2)
+	if err != nil {
+		fmt.Printf("cannot create embedding: %v\n", err)
+		return
+	}
+	sd.ContentVector = vec.Embedding
 }
 
 func (sd *SourceData) SetStatistics() {
