@@ -2,6 +2,7 @@ package translate
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/pkg/errors"
 	"golang.org/x/text/language"
 	"regexp"
@@ -33,6 +34,14 @@ func (m *MultiLangString) String() string {
 		return m.Get(nLangs[0])
 	}
 	return (*m)[0].str
+}
+
+func (m *MultiLangString) GetStr(lang string) string {
+	tag, err := language.Parse(lang)
+	if err != nil {
+		return fmt.Sprintf("cannot parse language %s: %v", lang, err)
+	}
+	return m.Get(tag)
 }
 
 func (m *MultiLangString) Get(lang language.Tag) string {
