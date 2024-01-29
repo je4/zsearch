@@ -1,9 +1,10 @@
+---
 {{- $lang := .Lang }}
 {{- $source := .Source }}
 {{- $title := $source.Title }}
 {{- $abstract := $source.Abstract }}
 {{- $titleStr := $title.String }}
-{{ langName $lang $lang }} - {{ $source.Signature }}
+Language: {{ langName $lang $lang }}
 
 # {{ $titleStr }}{{ if $source.Date }} ({{ $source.Date }}){{ end }}
 {{- if ne $title.GetNativeLanguage.String $lang }}

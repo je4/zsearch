@@ -127,7 +127,7 @@ func (sd *SourceData) Translate(tr translate.Translator, langs []language.Tag) {
 }
 
 func (sd *SourceData) CreateEmbedding(embeddings *openai.Client, tpl *template.Template, available []string) {
-	var str string
+	var str string = "Signature: " + sd.Signature + "\n\n" + "Place: " + sd.Place + "\n\n" + "Date: " + sd.Date + "\n\n\n"
 	for _, lang := range available {
 		data := struct {
 			Lang   string
