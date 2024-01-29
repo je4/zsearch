@@ -2,6 +2,7 @@ package translate
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/pkg/errors"
 	"golang.org/x/text/language"
 	"regexp"
@@ -33,6 +34,14 @@ func (m *MultiLangString) String() string {
 		return m.Get(nLangs[0])
 	}
 	return (*m)[0].str
+}
+
+func (m *MultiLangString) GetStr(lang string) string {
+	tag, err := language.Parse(lang)
+	if err != nil {
+		return fmt.Sprintf("cannot parse language %s: %v", lang, err)
+	}
+	return m.Get(tag)
 }
 
 func (m *MultiLangString) Get(lang language.Tag) string {
@@ -152,15 +161,7 @@ func (m *MultiLangString) MarshalJSON() ([]byte, error) {
 	return json.Marshal(strList)
 }
 
-func (m *MultiLangString) UnmarshalJSON(data []byte) error {
-	var strList []string
-	if err := json.Unmarshal(data, &strList); err != nil {
-		var str string
-		if err := json.Unmarshal(data, &str); err != nil {
-			return errors.Wrapf(err, "cannot unmarshal %s", string(data))
-		}
-		strList = []string{str}
-	}
+func (m *MultiLangString) SetMultiString(strList []string) error {
 	*m = (*m)[:0]
 	for _, str := range strList {
 		matches := langPrefixRegexp.FindStringSubmatch(str)
@@ -174,6 +175,19 @@ func (m *MultiLangString) UnmarshalJSON(data []byte) error {
 		}
 		m.Set(matches[1], lang, matches[2] == translatePostfix)
 	}
+	return nil
+}
+
+func (m *MultiLangString) UnmarshalJSON(data []byte) error {
+	var strList []string
+	if err := json.Unmarshal(data, &strList); err != nil {
+		var str string
+		if err := json.Unmarshal(data, &str); err != nil {
+			return errors.Wrapf(err, "cannot unmarshal %s", string(data))
+		}
+		strList = []string{str}
+	}
+	m.SetMultiString(strList)
 	return nil
 }
 
