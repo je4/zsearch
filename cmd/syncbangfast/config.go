@@ -24,6 +24,11 @@ import (
 	"strings"
 )
 
+type LocaleConfig struct {
+	Default   string   `toml:"default"`
+	Available []string `toml:"available"`
+}
+
 type Config struct {
 	Logfile        string                          `toml:"logfile"`
 	Loglevel       string                          `toml:"loglevel"`
@@ -46,6 +51,7 @@ type Config struct {
 	TanslateDBPath string                          `toml:"translatedbpath"`
 	OpenaiApiUrl   string                          `toml:"openaiapiurl"`
 	OpenaiApiKey   config.EnvString                `toml:"openaiapikey"`
+	Locale         LocaleConfig                    `toml:"locale"`
 }
 
 func LoadConfig(filepath string) Config {

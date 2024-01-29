@@ -11,10 +11,10 @@ require (
 	emperror.dev/errors v0.8.1
 	github.com/BurntSushi/toml v1.3.2
 	github.com/Masterminds/sprig v2.22.0+incompatible
+	github.com/andybalholm/brotli v1.0.6
 	github.com/araddon/dateparse v0.0.0-20210429162001-6b43995a97de
 	github.com/blevesearch/bleve/v2 v2.3.10
 	github.com/bluele/gcache v0.0.2
-	github.com/bounoable/deepl v0.5.3
 	github.com/channelmeter/iso8601duration v0.0.0-20150204201828-8da3af7a2a61
 	github.com/dgraph-io/badger/v4 v4.2.0
 	github.com/drgrib/maps v0.0.0-20220318162102-37b53c75ae89
@@ -35,15 +35,17 @@ require (
 	github.com/je4/utils/v2 v2.0.10
 	github.com/je4/zsync/v2 v2.0.1
 	github.com/juliangruber/go-intersect v1.1.0
+	github.com/nicksnyder/go-i18n/v2 v2.3.0
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 	github.com/opensearch-project/opensearch-go v1.1.0
 	github.com/pkg/errors v0.9.1
+	github.com/sashabaranov/go-openai v1.18.2
 	github.com/vanng822/go-solr v0.10.0
 	go.mongodb.org/mongo-driver v1.12.1
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	golang.org/x/image v0.12.0
 	golang.org/x/net v0.15.0
-	golang.org/x/text v0.13.0
+	golang.org/x/text v0.14.0
 	google.golang.org/api v0.143.0
 )
 
@@ -57,7 +59,6 @@ require (
 	github.com/ProtonMail/go-crypto v0.0.0-20230923063757-afb1ddc0824c // indirect
 	github.com/RoaringBitmap/roaring v1.5.0 // indirect
 	github.com/acomagu/bufpipe v1.0.4 // indirect
-	github.com/andybalholm/brotli v1.0.6 // indirect
 	github.com/armon/go-radix v1.0.0 // indirect
 	github.com/bits-and-blooms/bitset v1.9.0 // indirect
 	github.com/blend/go-sdk v1.20220411.3 // indirect
