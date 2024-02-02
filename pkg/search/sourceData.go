@@ -144,7 +144,7 @@ func (sd *SourceData) CreateEmbedding(embeddings *openai.Client, tpl *template.T
 		str += buf.String() + "\n\n"
 	}
 
-	vec, err := embeddings.CreateEmbedding(str, oai.AdaEmbeddingV2)
+	vec, err := embeddings.CreateEmbedding(str, oai.SmallEmbedding3)
 	if err != nil {
 		fmt.Printf("cannot create embedding: %v\n", err)
 		return

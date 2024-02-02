@@ -115,6 +115,30 @@ func (item *ZoteroItem) GetDateAdded() time.Time {
 }
 
 func (item *ZoteroItem) GetCollectionTitle() string {
+	for _, c := range item.Data.Collections {
+		for _, collKey := range item.Data.Collections {
+			coll, err := item.Group.GetCollectionByKeyLocal(collKey)
+			if err != nil {
+				item.Group.Zot.Logger.Errorf("could not load collection #%v.%v", item.Group.Data.Id, collKey)
+				continue
+			}
+			if strings.HasPrefix(coll.Data.Name, collPrefix) {
+				return strings.TrimPrefix(coll.Data.Name, collPrefix)
+			}
+			if coll.Key == c {
+				if coll.Data.ParentCollection != "" {
+					coll2, err := item.Group.GetCollectionByKeyLocal(string(coll.Data.ParentCollection))
+					if err != nil {
+						break
+					}
+					if strings.HasPrefix(coll2.Data.Name, collPrefix) {
+						return strings.TrimPrefix(coll2.Data.Name, collPrefix)
+					}
+				}
+			}
+		}
+	}
+
 	meta := zotero.Text2Metadata(item.Group.Data.Description)
 	if titles, ok := meta["title"]; ok {
 		if len(titles) > 0 {
@@ -212,6 +236,8 @@ func (item *ZoteroItem) GetCatalogs() []string {
 	return catalogs
 }
 
+const collPrefix = "coll:"
+
 func (item *ZoteroItem) GetCategories() []string {
 	categories := []string{}
 	for _, collection := range item.Data.Collections {
@@ -224,20 +250,21 @@ func (item *ZoteroItem) GetCategories() []string {
 			if err != nil {
 				break
 			}
-			categories = append(categories, fmt.Sprintf("%v!!%v!!%v!!%v", item.Name(), item.Group.Data.Name, coll2.Data.Name, parentColl.Data.Name))
+			categories = append(categories, fmt.Sprintf("%v!!%v!!%v!!%v", item.Name(), strings.TrimPrefix(item.Group.Data.Name, collPrefix), strings.TrimPrefix(coll2.Data.Name, collPrefix), strings.TrimPrefix(parentColl.Data.Name, "coll:")))
 		} else {
-			categories = append(categories, fmt.Sprintf("%v!!%v!!%v", item.Name(), item.Group.Data.Name, parentColl.Data.Name))
+			categories = append(categories, fmt.Sprintf("%v!!%v!!%v", item.Name(), strings.TrimPrefix(item.Group.Data.Name, collPrefix), strings.TrimPrefix(parentColl.Data.Name, collPrefix)))
 		}
 
 	}
 	if len(categories) == 0 {
-		categories = append(categories, fmt.Sprintf("%v!!%v", item.Name(), item.Group.Data.Name))
+		categories = append(categories, fmt.Sprintf("%v!!%v", item.Name(), strings.TrimPrefix(item.Group.Data.Name, collPrefix)))
 	}
 	return categories
 }
 
 func (item *ZoteroItem) GetTags() []string {
 	var tags []string
+
 	for _, t := range item.Data.Tags {
 		// ignore variables (i.e. <Name>:<value>
 		if !zoteroTagACLVariable.MatchString(t.Tag) {
@@ -254,13 +281,13 @@ func (item *ZoteroItem) GetTags() []string {
 				continue
 			}
 			if coll.Key == c {
-				tags = AppendIfMissing(tags, strings.ToLower(coll.Data.Name))
+				tags = AppendIfMissing(tags, strings.TrimPrefix(strings.ToLower(strings.TrimSpace(coll.Data.Name)), collPrefix))
 				if coll.Data.ParentCollection != "" {
 					coll2, err := item.Group.GetCollectionByKeyLocal(string(coll.Data.ParentCollection))
 					if err != nil {
 						break
 					}
-					tags = AppendIfMissing(tags, strings.ToLower(coll2.Data.Name))
+					tags = AppendIfMissing(tags, strings.TrimPrefix(strings.ToLower(strings.TrimSpace(coll2.Data.Name)), collPrefix))
 				}
 			}
 		}
@@ -630,10 +657,10 @@ func (item *ZoteroItem) GetQueries() []Query {
 				break
 			}
 			queries = appendQuery(queries, Query{
-				Label:  fmt.Sprintf("%s - %s - %s", title, subParentColl.Data.Name, parentColl.Data.Name),
+				Label:  fmt.Sprintf("%s - %s - %s", title, strings.TrimPrefix(subParentColl.Data.Name, collPrefix), strings.TrimPrefix(parentColl.Data.Name, collPrefix)),
 				Search: fmt.Sprintf(`cat:"%v!!%v!!%v!!%v"`, item.Name(), item.Group.Data.Name, subParentColl.Data.Name, parentColl.Data.Name),
 			}, Query{
-				Label:  fmt.Sprintf("%s - %s", title, subParentColl.Data.Name),
+				Label:  fmt.Sprintf("%s - %s", title, strings.TrimPrefix(subParentColl.Data.Name, collPrefix)),
 				Search: fmt.Sprintf(`cat:"%v!!%v!!%v"`, item.Name(), item.Group.Data.Name, subParentColl.Data.Name),
 			})
 		} else {
@@ -679,3 +706,5 @@ func (item *ZoteroItem) GetContentMime() string {
 	return ""
 
 }
+
+var _ = Source(&ZoteroItem{})
