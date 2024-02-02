@@ -413,11 +413,12 @@ func (s *Server) detailHandler(w http.ResponseWriter, req *http.Request) {
 
 	if data {
 		w.Header().Set("Content-type", "text/json")
-		enc := json.NewEncoder(w)
-		if err := enc.Encode(status); err != nil {
+		jsonBytes, err := json.MarshalIndent(status, "", "  ")
+		if err != nil {
 			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot marshal solr doc", true, jwt)
 			return
 		}
+		w.Write(jsonBytes)
 		return
 	}
 
