@@ -1,6 +1,7 @@
 package configdata
 
 import (
+	utilconfig "github.com/je4/utils/v2/pkg/config"
 	"time"
 )
 
@@ -33,8 +34,9 @@ type MediaserverMySQL struct {
 }
 
 type CfgElasticSearch struct {
-	Endpoint []string `toml:"endpoint"`
-	Index    string   `toml:"index"`
+	Endpoint []string             `toml:"endpoint"`
+	Index    string               `toml:"index"`
+	ApiKey   utilconfig.EnvString `toml:"apikey"`
 }
 
 type CfgS3 struct {

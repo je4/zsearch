@@ -1,15 +1,13 @@
 package main
 
 import (
-	"database/sql"
 	"emperror.dev/emperror"
+	"emperror.dev/errors"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/je4/utils/v2/pkg/ssh"
-	"github.com/je4/zsearch/v2/pkg/mediaserver"
 	"github.com/je4/zsearch/v2/pkg/search"
 	"golang.org/x/image/draw"
 	"image"
@@ -86,25 +84,26 @@ func main() {
 		time.Sleep(2 * time.Second)
 	}
 
-	mediadb, err := sql.Open(config.Mediaserver.DB.ServerType, config.Mediaserver.DB.DSN)
-	if err != nil {
-		logger.Panic(err)
-		return
-	}
-	defer mediadb.Close()
-	err = mediadb.Ping()
-	if err != nil {
-		logger.Panic(err)
-		return
-	}
+	/*
+			mediadb, err := sql.Open(config.Mediaserver.DB.ServerType, config.Mediaserver.DB.DSN)
+			if err != nil {
+				logger.Panic(err)
+				return
+			}
+			defer mediadb.Close()
+			err = mediadb.Ping()
+			if err != nil {
+				logger.Panic(err)
+				return
+			}
 
-	ms, err := mediaserver.NewMediaserverMySQL(config.Mediaserver.Url, mediadb, config.Mediaserver.DB.Schema, logger)
-	if err != nil {
-		logger.Panic(err)
-		return
-	}
-
-	mte, err := search.NewMTElasticSearch(config.ElasticSearch.Endpoint, config.ElasticSearch.Index, logger)
+		ms, err := mediaserver.NewMediaserverMySQL(config.Mediaserver.Url, nil, config.Mediaserver.DB.Schema, logger)
+		if err != nil {
+			logger.Panic(err)
+			return
+		}
+	*/
+	mte, err := search.NewMTElasticSearch(config.ElasticSearch.Endpoint, config.ElasticSearch.Index, string(config.ElasticSearch.ApiKey), logger)
 	if err != nil {
 		logger.Panic(err)
 		return
@@ -122,8 +121,8 @@ func main() {
 	}
 
 	var images = []struct {
-		url string
-		img image.Image
+		signature string
+		img       image.Image
 	}{}
 	var width int64
 	var cHeight = config.CHeight
@@ -158,18 +157,20 @@ func main() {
 					logger.Warningf("invalid media type - %s", mType)
 					return nil
 				}
-				function := fmt.Sprintf("resize/autorotate/formatpng/size%d0x%d", HEIGHT, HEIGHT)
-				msUrl, err := ms.GetUrl(collection, signature, function)
-				if err != nil {
-					return emperror.Wrapf(err, "cannot create url for %s/%s/%s", collection, signature, function)
-				}
+				msUrl := fmt.Sprintf("%s/%s/%s/resize/autorotate/formatpng/size%d0x%d", config.Mediaserver.Url, collection, signature, HEIGHT, HEIGHT)
+				/*
+					msUrl, err := ms.GetUrl(collection, signature, function)
+					if err != nil {
+						return errors.Wrapf(err, "cannot create url for %s/%s/%s", collection, signature, function)
+					}
+				*/
 				logger.Infof("loading media: %s", msUrl)
 				client := http.Client{
 					Timeout: 3600 * time.Second,
 				}
 				resp, err := client.Get(msUrl)
 				if err != nil {
-					return emperror.Wrapf(err, "cannot load url %s", msUrl)
+					return errors.Wrapf(err, "cannot load url %s", msUrl)
 				}
 				defer resp.Body.Close()
 				if resp.StatusCode >= 300 {
@@ -179,15 +180,15 @@ func main() {
 				}
 				img, _, err := image.Decode(resp.Body)
 				if err != nil {
-					logger.Errorf("cannot decode image %s/%s/%s: %v", collection, signature, function, err)
+					logger.Errorf("cannot decode image %s: %v", msUrl, err)
 					return nil
 				}
 				dst := image.NewRGBA(image.Rect(0, 0, (cHeight*img.Bounds().Max.X)/img.Bounds().Max.Y, cHeight))
 				draw.ApproxBiLinear.Scale(dst, dst.Rect, img, img.Bounds(), draw.Over, nil)
 				images = append(images, struct {
-					url string
-					img image.Image
-				}{url: fmt.Sprintf("https://mediathek.hgk.fhnw.ch/amp/detail/%s", data.Signature), img: dst})
+					signature string
+					img       image.Image
+				}{signature: fmt.Sprintf("%s", data.Signature), img: dst})
 				width += int64(img.Bounds().Dx())
 			}
 		}
@@ -196,7 +197,6 @@ func main() {
 	}); err != nil {
 		logger.Panic(err)
 	}
-	rand.Seed(time.Now().UnixNano())
 	rand.Shuffle(len(images), func(i, j int) { images[i], images[j] = images[j], images[i] })
 
 	intDx := config.Width
@@ -210,22 +210,23 @@ func main() {
 	posX := 0
 	positions := map[string][]image.Rectangle{}
 	for i := 0; i < len(images); i++ {
+		posY := row * cHeight
 		key := i
 		img := images[key]
 		//	for key, img := range images {
 		logger.Infof("collage image #%v of %v", key, len(images))
 		draw.Copy(coll,
-			image.Point{X: posX, Y: row * cHeight},
+			image.Point{X: posX, Y: posY},
 			img.img,
 			img.img.Bounds(),
 			draw.Over,
 			nil)
-		if _, ok := positions[img.url]; !ok {
-			positions[img.url] = []image.Rectangle{}
+		if _, ok := positions[img.signature]; !ok {
+			positions[img.signature] = []image.Rectangle{}
 		}
-		positions[img.url] = append(positions[img.url], image.Rectangle{
-			Min: image.Point{X: posX, Y: row * cHeight},
-			Max: image.Point{X: posX + img.img.Bounds().Dx(), Y: row*cHeight + img.img.Bounds().Dy()},
+		positions[img.signature] = append(positions[img.signature], image.Rectangle{
+			Min: image.Point{X: posX, Y: posY},
+			Max: image.Point{X: posX + img.img.Bounds().Dx(), Y: posY + img.img.Bounds().Dy()},
 		})
 		posX += img.img.Bounds().Max.X
 		if posX > intDx {
@@ -235,28 +236,28 @@ func main() {
 			i--
 		}
 		if (row+1)*cHeight > intDy {
-			logger.Infof("collage %v images of %v", key, len(images))
+			logger.Infof("collage %v images of %v", key+1, len(images))
 			break
 		}
 	}
 	fp, err := os.Create(filepath.Join(config.ExportPath, "collage.png"))
 	if err != nil {
-		emperror.Panic(emperror.Wrap(err, "cannot create collage file"))
+		emperror.Panic(errors.Wrap(err, "cannot create collage file"))
 	}
 	if err := png.Encode(fp, coll); err != nil {
 		fp.Close()
-		emperror.Panic(emperror.Wrap(err, "cannot encode collage png"))
+		emperror.Panic(errors.Wrap(err, "cannot encode collage png"))
 	}
 	fp.Close()
 
 	fp, err = os.Create(filepath.Join(config.ExportPath, "collage.json"))
 	if err != nil {
-		emperror.Panic(emperror.Wrap(err, "cannot create collage json file"))
+		emperror.Panic(errors.Wrap(err, "cannot create collage json file"))
 	}
 	jsonW := json.NewEncoder(fp)
 	if err := jsonW.Encode(positions); err != nil {
 		fp.Close()
-		emperror.Panic(emperror.Wrap(err, "cannot store json"))
+		emperror.Panic(errors.Wrap(err, "cannot store json"))
 	}
 	fp.Close()
 
