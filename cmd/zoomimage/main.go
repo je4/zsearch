@@ -7,7 +7,6 @@ import (
 	"flag"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/je4/utils/v2/pkg/ssh"
 	"github.com/je4/zsearch/v2/pkg/search"
 	"golang.org/x/image/draw"
 	"image"
@@ -36,73 +35,6 @@ func main() {
 	logger, lf := search.CreateLogger("zoomimage", config.Logfile, config.Loglevel)
 	defer lf.Close()
 
-	var tunnels []*ssh.SSHtunnel
-	for name, tunnel := range config.Tunnel {
-		logger.Infof("starting tunnel %s", name)
-
-		forwards := make(map[string]*ssh.SourceDestination)
-		for fwName, fw := range tunnel.Forward {
-			forwards[fwName] = &ssh.SourceDestination{
-				Local: &ssh.Endpoint{
-					Host: fw.Local.Host,
-					Port: fw.Local.Port,
-				},
-				Remote: &ssh.Endpoint{
-					Host: fw.Remote.Host,
-					Port: fw.Remote.Port,
-				},
-			}
-		}
-
-		t, err := ssh.NewSSHTunnel(
-			tunnel.User,
-			tunnel.PrivateKey,
-			&ssh.Endpoint{
-				Host: tunnel.Endpoint.Host,
-				Port: tunnel.Endpoint.Port,
-			},
-			forwards,
-			logger,
-		)
-		if err != nil {
-			logger.Errorf("cannot create tunnel %v@%v:%v - %v", tunnel.User, tunnel.Endpoint.Host, tunnel.Endpoint.Port, err)
-			return
-		}
-		if err := t.Start(); err != nil {
-			logger.Errorf("cannot create configfile %v - %v", t.String(), err)
-			return
-		}
-		tunnels = append(tunnels, t)
-	}
-	defer func() {
-		for _, t := range tunnels {
-			t.Close()
-		}
-	}()
-	// if tunnels are made, wait until connection is established
-	if len(config.Tunnel) > 0 {
-		time.Sleep(2 * time.Second)
-	}
-
-	/*
-			mediadb, err := sql.Open(config.Mediaserver.DB.ServerType, config.Mediaserver.DB.DSN)
-			if err != nil {
-				logger.Panic(err)
-				return
-			}
-			defer mediadb.Close()
-			err = mediadb.Ping()
-			if err != nil {
-				logger.Panic(err)
-				return
-			}
-
-		ms, err := mediaserver.NewMediaserverMySQL(config.Mediaserver.Url, nil, config.Mediaserver.DB.Schema, logger)
-		if err != nil {
-			logger.Panic(err)
-			return
-		}
-	*/
 	mte, err := search.NewMTElasticSearch(config.ElasticSearch.Endpoint, config.ElasticSearch.Index, string(config.ElasticSearch.ApiKey), logger)
 	if err != nil {
 		logger.Panic(err)
@@ -115,9 +47,9 @@ func main() {
 		Fields:         nil,
 		QStr:           "",
 		FiltersFields:  config.Filters,
-		Groups:         []string{"global/user", "global/admin"},
-		ContentVisible: false,
-		IsAdmin:        true,
+		Groups:         []string{"global/guest"},
+		ContentVisible: true,
+		IsAdmin:        false,
 	}
 
 	var images = []struct {
@@ -258,6 +190,38 @@ func main() {
 	if err := jsonW.Encode(positions); err != nil {
 		fp.Close()
 		emperror.Panic(errors.Wrap(err, "cannot store json"))
+	}
+	fp.Close()
+	fp, err = os.Create(filepath.Join(config.ExportPath, "collage.jsonl"))
+	if err != nil {
+		emperror.Panic(errors.Wrap(err, "cannot create collage jsonl file"))
+	}
+	for signature, rects := range positions {
+		jsonBytes, err := json.Marshal(map[string]interface{}{
+			"signature": signature,
+			"rects":     rects,
+		})
+		if err != nil {
+			fp.Close()
+			emperror.Panic(errors.Wrap(err, "cannot store JSONL"))
+		}
+		jsonBytes = append(jsonBytes, []byte("\n")...)
+		if _, err := fp.Write(jsonBytes); err != nil {
+			fp.Close()
+			emperror.Panic(errors.Wrap(err, "cannot store JSONL"))
+		}
+	}
+	fp.Close()
+	fp, err = os.Create(filepath.Join(config.ExportPath, "signatures.txt"))
+	if err != nil {
+		emperror.Panic(errors.Wrap(err, "cannot create signatures file"))
+	}
+	for signature, _ := range positions {
+		str := signature + "\n"
+		if _, err := fp.Write([]byte(str)); err != nil {
+			fp.Close()
+			emperror.Panic(errors.Wrap(err, "cannot store signatures"))
+		}
 	}
 	fp.Close()
 
