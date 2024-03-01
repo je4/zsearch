@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/je4/utils/v2/pkg/MySQLReprepareStmt"
+	"github.com/je4/utils/v2/pkg/zLogger"
 	"github.com/je4/zsearch/v2/pkg/mediaserver"
-	"github.com/op/go-logging"
 	"github.com/pkg/errors"
 	"strconv"
 	"strings"
@@ -20,7 +20,7 @@ type Apply struct {
 	DataStmt              *MySQLReprepareStmt.Stmt
 	FileStmt              *MySQLReprepareStmt.Stmt
 	filePath              string
-	logger                *logging.Logger
+	logger                zLogger.ZLogger
 }
 
 func getOrientation(metadata *mediaserver.Metadata) int64 {
@@ -44,7 +44,7 @@ func getOrientation(metadata *mediaserver.Metadata) int64 {
 	return orientation
 }
 
-func NewApply(logger *logging.Logger, db *sql.DB, schema string, filePath string, ms mediaserver.Mediaserver, msCollection string) (*Apply, error) {
+func NewApply(logger zLogger.ZLogger, db *sql.DB, schema string, filePath string, ms mediaserver.Mediaserver, msCollection string) (*Apply, error) {
 	apply := &Apply{
 		logger:                logger,
 		db:                    db,

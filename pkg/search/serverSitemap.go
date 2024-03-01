@@ -26,7 +26,7 @@ func (s *Server) buildSitemap() error {
 	var sitemapPrefix = "zsearch"
 
 	if err := s.mts.se.Scroll(cfg, func(data *SourceData) error {
-		//		log.Infof("%0.5d - %v", counter, data.Signature)
+		//		log.Info().Msgf("%0.5d - %v", counter, data.Signature)
 		if counter%size == 0 {
 			if counter > 0 {
 				filename := fmt.Sprintf("%s/%s-%05d.xml", s.sitemapDir, sitemapPrefix, sitemapNo)
@@ -35,10 +35,10 @@ func (s *Server) buildSitemap() error {
 					return errors.Wrapf(err, "cannot create file %s", filename)
 				}
 				if _, err := sm.WriteTo(file); err != nil {
-					s.log.Errorf("buildSitemap: cannot write xml to %s: %v", filename, err)
+					s.log.Error().Msgf("buildSitemap: cannot write xml to %s: %v", filename, err)
 				}
 				file.Close()
-				s.log.Infof("buildSitemap: %v written", filename)
+				s.log.Info().Msgf("buildSitemap: %v written", filename)
 
 				lastMod := time.Now()
 				u := &sitemap.URL{
@@ -68,10 +68,10 @@ func (s *Server) buildSitemap() error {
 			return errors.Wrapf(err, "cannot create file %s", filename)
 		}
 		if _, err := sm.WriteTo(file); err != nil {
-			s.log.Errorf("buildSitemap: cannot write xml to %s: %v", filename, err)
+			s.log.Error().Msgf("buildSitemap: cannot write xml to %s: %v", filename, err)
 		}
 		file.Close()
-		s.log.Infof("buildSitemap: %v written", filename)
+		s.log.Info().Msgf("buildSitemap: %v written", filename)
 		lastMod := time.Now()
 		u := &sitemap.URL{
 			Loc:     fmt.Sprintf("%s/%s/%s-%05d.xml", s.addrExt, s.prefixes["sitemap"], sitemapPrefix, sitemapNo),
@@ -87,7 +87,7 @@ func (s *Server) buildSitemap() error {
 	}
 	sitemapindex.WriteTo(file)
 	file.Close()
-	s.log.Infof("buildSitemap: %v written", filename)
+	s.log.Info().Msgf("buildSitemap: %v written", filename)
 
 	return nil
 }

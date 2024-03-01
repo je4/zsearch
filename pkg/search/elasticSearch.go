@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	elasticsearch8 "github.com/elastic/go-elasticsearch/v8"
-	"github.com/op/go-logging"
+	"github.com/je4/utils/v2/pkg/zLogger"
 	esapi7 "github.com/opensearch-project/opensearch-go/opensearchapi"
 	"github.com/pkg/errors"
 	"io"
@@ -159,10 +159,10 @@ func elasticScroll(query *tElasticQuery) *tElasticScroll {
 type MTElasticSearch struct {
 	es    *elasticsearch8.Client
 	index string
-	log   *logging.Logger
+	log   zLogger.ZLogger
 }
 
-func NewMTElasticSearch(urls []string, index string, apikey string, log *logging.Logger) (*MTElasticSearch, error) {
+func NewMTElasticSearch(urls []string, index string, apikey string, log zLogger.ZLogger) (*MTElasticSearch, error) {
 	es, err := elasticsearch8.NewClient(elasticsearch8.Config{
 		APIKey:    apikey,
 		Addresses: urls,
@@ -271,7 +271,7 @@ func (mte *MTElasticSearch) StatsByACL(catalog []string) (int64, FacetCountResul
 	if err != nil {
 		return 0, nil, errors.Wrapf(err, "cannot marshal %v", fq)
 	}
-	mte.log.Debugf("%v", string(jsonstr))
+	mte.log.Debug().Msgf("%v", string(jsonstr))
 	buf := bytes.NewBuffer(jsonstr)
 	res, err := mte.es.Search(
 		mte.es.Search.WithIndex(mte.index),
@@ -396,7 +396,7 @@ func (mte *MTElasticSearch) Scroll(cfg *ScrollConfig, callback func(data *Source
 	if err != nil {
 		return errors.Wrapf(err, "cannot marshal %v", fq)
 	}
-	mte.log.Debugf("%v", string(jsonstr))
+	mte.log.Debug().Msgf("%v", string(jsonstr))
 	buf := bytes.NewBuffer(jsonstr)
 	res, err := mte.es.Search(
 		mte.es.Search.WithIndex(mte.index),
@@ -574,7 +574,7 @@ func (mte *MTElasticSearch) Search(cfg *SearchConfig) ([]map[string][]string, []
 	if err != nil {
 		return nil, nil, 0, nil, errors.Wrapf(err, "cannot marshal %v", fq)
 	}
-	mte.log.Debugf("%v", string(jsonstr))
+	mte.log.Debug().Msgf("%v", string(jsonstr))
 	buf := bytes.NewBuffer(jsonstr)
 	res, err := mte.es.Search(
 		mte.es.Search.WithIndex(mte.index),
@@ -698,7 +698,7 @@ func (mte *MTElasticSearch) LastUpdate(cfg *ScrollConfig) (time.Time, error) {
 	if err != nil {
 		return lastUpdate, errors.Wrapf(err, "cannot marshal %v", fq)
 	}
-	mte.log.Debugf("%v", string(jsonstr))
+	mte.log.Debug().Msgf("%v", string(jsonstr))
 	buf := bytes.NewBuffer(jsonstr)
 	res, err := mte.es.Search(
 		mte.es.Search.WithIndex(mte.index),
@@ -808,7 +808,7 @@ func (mte *MTElasticSearch) Delete(cfg *ScrollConfig) (int64, error) {
 	if err != nil {
 		return 0, errors.Wrapf(err, "cannot marshal %v", fq)
 	}
-	mte.log.Debugf("%v", string(jsonstr))
+	mte.log.Debug().Msgf("%v", string(jsonstr))
 	buf := bytes.NewBuffer(jsonstr)
 	dbq, err := mte.es.DeleteByQuery([]string{mte.index}, buf)
 	if err != nil {

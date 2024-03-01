@@ -190,9 +190,15 @@ func (form *Form) GetTags() []string {
 				tags = search.AppendIfMissing(tags, part)
 				continue
 			}
+			/*
+				nt := fmt.Sprintf("voc:%s:%s",
+					"voc_"+strings.Replace(slug.MakeLang(strings.TrimSpace(parts2[0]), "de"), "-", "_", -1),
+					"voc_"+strings.Replace(slug.MakeLang(strings.TrimSpace(parts2[1]), "de"), "-", "_", -1),
+				)
+			*/
 			nt := fmt.Sprintf("voc:%s:%s",
-				"voc_"+strings.Replace(slug.MakeLang(strings.TrimSpace(parts2[0]), "de"), "-", "_", -1),
-				"voc_"+strings.Replace(slug.MakeLang(strings.TrimSpace(parts2[1]), "de"), "-", "_", -1),
+				"voc_"+strings.TrimSpace(parts2[0]),
+				"voc_"+strings.TrimSpace(parts2[1]),
 			)
 			tags = search.AppendIfMissing(tags, nt)
 		}

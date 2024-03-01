@@ -28,15 +28,19 @@ import (
 	"github.com/gosimple/slug"
 	"github.com/je4/FairService/v2/pkg/fair"
 	"github.com/je4/FairService/v2/pkg/fairclient"
-	"github.com/je4/utils/v2/pkg/ssh"
+	"github.com/je4/utils/v2/pkg/openai"
+	"github.com/je4/utils/v2/pkg/zLogger"
 	"github.com/je4/zsearch/v2/cmd/locales"
 	"github.com/je4/zsearch/v2/pkg/apply"
 	"github.com/je4/zsearch/v2/pkg/fairservice"
 	"github.com/je4/zsearch/v2/pkg/mediaserver"
-	"github.com/je4/zsearch/v2/pkg/openai"
 	"github.com/je4/zsearch/v2/pkg/search"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"github.com/rs/zerolog"
+	"io"
 	"io/fs"
+	"log"
+	"os"
 
 	"github.com/je4/zsearch/v2/pkg/translate"
 	"github.com/je4/zsearch/v2/pkg/zsearchclient"
@@ -127,99 +131,68 @@ func main() {
 	config := LoadConfig(*cfgfile)
 
 	// create logger instance
-	logger, lf := search.CreateLogger("synczotero", config.Logfile, config.Loglevel)
-	defer lf.Close()
+	//	logger, lf := search.CreateLogger("synczotero", config.Logfile, config.Loglevel)
+	//	defer lf.Close()
 
-	var tunnels []*ssh.SSHtunnel
-	for name, tunnel := range config.Tunnel {
-		logger.Infof("starting tunnel %s", name)
-
-		forwards := make(map[string]*ssh.SourceDestination)
-		for fwName, fw := range tunnel.Forward {
-			forwards[fwName] = &ssh.SourceDestination{
-				Local: &ssh.Endpoint{
-					Host: fw.Local.Host,
-					Port: fw.Local.Port,
-				},
-				Remote: &ssh.Endpoint{
-					Host: fw.Remote.Host,
-					Port: fw.Remote.Port,
-				},
-			}
-		}
-
-		t, err := ssh.NewSSHTunnel(
-			tunnel.User,
-			tunnel.PrivateKey,
-			&ssh.Endpoint{
-				Host: tunnel.Endpoint.Host,
-				Port: tunnel.Endpoint.Port,
-			},
-			forwards,
-			logger,
-		)
+	// create logger instance
+	var out io.Writer = os.Stdout
+	if config.Logfile != "" {
+		fp, err := os.OpenFile(config.Logfile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 		if err != nil {
-			logger.Errorf("cannot create tunnel %v@%v:%v - %v", tunnel.User, tunnel.Endpoint.Host, tunnel.Endpoint.Port, err)
-			return
+			log.Fatalf("cannot open logfile %s: %v", config.Logfile, err)
 		}
-		if err := t.Start(); err != nil {
-			logger.Errorf("cannot create configfile %v - %v", t.String(), err)
-			return
-		}
-		tunnels = append(tunnels, t)
+		defer fp.Close()
+		out = fp
 	}
-	defer func() {
-		for _, t := range tunnels {
-			t.Close()
-		}
-	}()
-	// if tunnels are made, wait until connection is established
-	if len(config.Tunnel) > 0 {
-		time.Sleep(2 * time.Second)
-	}
+
+	//	output := zerolog.ConsoleWriter{Out: out, TimeFormat: time.RFC3339}
+	_logger := zerolog.New(out).With().Timestamp().Logger()
+	_logger.Level(zLogger.LogLevel(config.Loglevel))
+	var logger zLogger.ZLogger = &_logger
 
 	mediadb, err := sql.Open(config.Mediaserver.DB.ServerType, config.Mediaserver.DB.DSN)
 	if err != nil {
-		logger.Panic(err)
+		logger.Panic().Err(err)
 		return
 	}
 	defer mediadb.Close()
 	err = mediadb.Ping()
 	if err != nil {
-		logger.Panic(err)
+		logger.Panic().Err(err)
 		return
 	}
 
 	ms, err := mediaserver.NewMediaserverMySQL(config.Mediaserver.Url, mediadb, config.Mediaserver.DB.Schema, logger)
 	if err != nil {
-		logger.Panic(err)
+		logger.Panic().Err(err)
 		return
 	}
 
 	applicationDB, err := sql.Open(config.ApplicationDB.ServerType, config.ApplicationDB.DSN)
 	if err != nil {
-		logger.Panic(err)
+		logger.Panic().Err(err)
 		return
 	}
 	defer applicationDB.Close()
 	err = applicationDB.Ping()
 	if err != nil {
-		logger.Panic(err)
+		logger.Panic().Err(err)
 		return
 	}
 
 	badgerDB, err := badger.Open(badger.DefaultOptions(config.TanslateDBPath))
 	if err != nil {
-		logger.Panic(err)
+		logger.Panic().Err(err)
 		return
 	}
 	defer badgerDB.Close()
 	translator := translate.NewDeeplTranslator(string(config.DeeplApiKey), config.DeeplApiUrl, badgerDB, logger)
-	embeddings := openai.NewClient(string(config.OpenaiApiKey), badgerDB, logger)
+	kvBadger := openai.NewKVBadger(badgerDB)
+	embeddings := openai.NewClientV2(string(config.OpenaiApiKey), kvBadger, logger)
 
 	glang, err := language.Parse(config.Locale.Default)
 	if err != nil {
-		logger.Panic(err)
+		logger.Panic().Err(err)
 		return
 	}
 
@@ -229,17 +202,17 @@ func main() {
 	for _, lang := range config.Locale.Available {
 		localeFile := fmt.Sprintf("active.%s.toml", lang)
 		if _, err := fs.Stat(locales.LocaleFS, localeFile); err != nil {
-			logger.Panicf("cannot find locale file [%v] %s", locales.LocaleFS, localeFile)
+			logger.Panic().Msgf("cannot find locale file [%v] %s", locales.LocaleFS, localeFile)
 		}
 
 		if _, err := bundle.LoadMessageFileFS(locales.LocaleFS, localeFile); err != nil {
-			logger.Panicf("cannot load locale file [%v] %s: %v", locales.LocaleFS, localeFile, err)
+			logger.Panic().Msgf("cannot load locale file [%v] %s: %v", locales.LocaleFS, localeFile, err)
 		}
 
 	}
 	tpl, err := template.New("embedding.gotmpl").Funcs(funcMap(bundle)).Parse(embeddingTemplate)
 	if err != nil {
-		logger.Panic(err)
+		logger.Panic().Err(err)
 		return
 	}
 
@@ -253,20 +226,20 @@ func main() {
 		30*time.Second,
 		logger)
 	if err != nil {
-		logger.Panicf("cannot create zsearch zsearchclient: %v", err)
+		logger.Panic().Msgf("cannot create zsearch zsearchclient: %v", err)
 		return
 	}
 	if err := zsClient.Ping(); err != nil {
-		logger.Panicf("cannot ping zsearch zsearchclient: %v", err)
+		logger.Panic().Msgf("cannot ping zsearch zsearchclient: %v", err)
 		return
 	}
 	/*
 		sPrefix := "bangbang-"
 		num, err := zsClient.SignaturesClear(sPrefix)
-		logger.Infof("%v items deleted from INK", num)
+		logger.Info().Msgf("%v items deleted from INK", num)
 		//					num, err := mte.Delete(cfg)
 		if err != nil {
-			logger.Panicf("cannot delete items with signature prefix %s: %v", sPrefix, err)
+			logger.Panic().Msgf("cannot delete items with signature prefix %s: %v", sPrefix, err)
 		}
 	*/
 
@@ -281,16 +254,16 @@ func main() {
 			30*time.Second,
 		)
 		if err != nil {
-			logger.Panicf("cannot instantiate fair service: %v", err)
+			logger.Panic().Msgf("cannot instantiate fair service: %v", err)
 		}
 		if err := fservice.Ping(); err != nil {
-			logger.Panicf("cannot ping fair service: %v", err)
+			logger.Panic().Msgf("cannot ping fair service: %v", err)
 		}
 	}
 
 	app, err := apply.NewApply(logger, applicationDB, config.ApplicationDB.Schema, config.FilePath, ms, "bangbang")
 	if err != nil {
-		logger.Panic(err)
+		logger.Panic().Err(err)
 		return
 	}
 	defer app.Close()
@@ -311,16 +284,16 @@ func main() {
 			Partition:   "mediathek",
 		}
 		if err := fservice.SetSource(src); err != nil {
-			logger.Panicf("cannot set source %#v: %v", src, err)
+			logger.Panic().Msgf("cannot set source %#v: %v", src, err)
 		}
 		if err := fservice.StartUpdate(srcPrefix); err != nil {
-			logger.Panicf("cannot start fairservice update: %v", err)
+			logger.Panic().Msgf("cannot start fairservice update: %v", err)
 		}
 	}
 
 	if clear != nil && *clear {
 		if _, err := zsClient.SignaturesClear("bangbang"); err != nil {
-			logger.Panicf("cannot clear signatures with prefix 'bangbang': %v", err)
+			logger.Panic().Msgf("cannot clear signatures with prefix 'bangbang': %v", err)
 		}
 	}
 
@@ -332,7 +305,7 @@ func main() {
 		if err != nil {
 			return errors.Wrap(err, "cannot create sourcedata from iid item")
 		}
-		logger.Infof("work %v", src.GetSignature())
+		logger.Info().Msgf("work %v", src.GetSignature())
 		if doFair {
 			fItem := fairservice.SourceToFairItem(src)
 			var fairItem *fair.ItemData
@@ -379,18 +352,18 @@ func main() {
 		return nil
 	},
 	); err != nil {
-		logger.Errorf("error iterating works: %v", err)
+		logger.Error().Msgf("error iterating works: %v", err)
 	}
 	if doFair {
 		if err := fservice.EndUpdate(srcPrefix); err != nil {
-			logger.Panicf("cannot end fairservice update: %v", err)
+			logger.Panic().Msgf("cannot end fairservice update: %v", err)
 		}
 	}
 
 	if counter > 0 {
 		zsClient.ClearCache()
 		if err := zsClient.BuildSitemap(); err != nil {
-			logger.Panic(err)
+			logger.Panic().Err(err)
 		}
 	}
 

@@ -20,11 +20,13 @@ import (
 	"context"
 	"flag"
 	badger "github.com/dgraph-io/badger/v4"
-	"github.com/je4/utils/v2/pkg/ssh"
+	"github.com/je4/utils/v2/pkg/zLogger"
 	"github.com/je4/zsearch/v2/pkg/search"
+	"github.com/rs/zerolog"
 	"google.golang.org/api/customsearch/v1"
 	"google.golang.org/api/option"
 	"io"
+	"log"
 	"net"
 	"os"
 	"os/signal"
@@ -85,9 +87,20 @@ func main() {
 	flag.Parse()
 	config := LoadConfig(*cfgfile)
 
-	// create logger instance
-	log, lf := search.CreateLogger("zsearch", config.Logfile, config.Loglevel)
-	defer lf.Close()
+	var out io.Writer = os.Stdout
+	if config.Logfile != "" {
+		fp, err := os.OpenFile(config.Logfile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
+		if err != nil {
+			log.Fatalf("cannot open logfile %s: %v", config.Logfile, err)
+		}
+		defer fp.Close()
+		out = fp
+	}
+
+	output := zerolog.ConsoleWriter{Out: out, TimeFormat: time.RFC3339}
+	_logger := zerolog.New(output).With().Timestamp().Logger()
+	_logger.Level(zLogger.LogLevel(config.Loglevel))
+	var logger zLogger.ZLogger = &_logger
 
 	var accesslog io.Writer
 	if config.AccessLog == "" {
@@ -95,120 +108,86 @@ func main() {
 	} else {
 		f, err := os.OpenFile(config.AccessLog, os.O_WRONLY|os.O_CREATE, 0755)
 		if err != nil {
-			log.Panicf("cannot open file %s: %v", config.AccessLog, err)
+			logger.Panic().Msgf("cannot open file %s: %v", config.AccessLog, err)
 			return
 		}
 		defer f.Close()
 		accesslog = f
 	}
 
-	if config.SSHTunnel.User != "" && config.SSHTunnel.PrivateKey != "" {
-		tunnels := map[string]*ssh.SourceDestination{}
-		tunnels["postgres"] = &ssh.SourceDestination{
-			Local: &ssh.Endpoint{
-				Host: config.SSHTunnel.LocalEndpoint.Host,
-				Port: config.SSHTunnel.LocalEndpoint.Port,
-			},
-			Remote: &ssh.Endpoint{
-				Host: config.SSHTunnel.RemoteEndpoint.Host,
-				Port: config.SSHTunnel.RemoteEndpoint.Port,
-			},
-		}
-		tunnel, err := ssh.NewSSHTunnel(
-			config.SSHTunnel.User,
-			config.SSHTunnel.PrivateKey,
-			&ssh.Endpoint{
-				Host: config.SSHTunnel.ServerEndpoint.Host,
-				Port: config.SSHTunnel.ServerEndpoint.Port,
-			},
-			tunnels,
-			log,
-		)
-		if err != nil {
-			log.Errorf("cannot create sshtunnel %v@%v:%v - %v", config.SSHTunnel.User, config.SSHTunnel.ServerEndpoint.Host, &config.SSHTunnel.ServerEndpoint.Port, err)
-			return
-		}
-		if err := tunnel.Start(); err != nil {
-			log.Errorf("cannot create sshtunnel %v - %v", tunnel.String(), err)
-			return
-		}
-		defer tunnel.Close()
-		time.Sleep(2 * time.Second)
-	}
-
 	stat, err := os.Stat(config.CacheDir)
 	if err != nil {
-		log.Panicf("cannot stat %s", config.CacheDir)
+		logger.Panic().Msgf("cannot stat %s", config.CacheDir)
 		return
 	}
 	if !stat.IsDir() {
-		log.Panicf("%s not a director", config.CacheDir)
+		logger.Panic().Msgf("%s not a director", config.CacheDir)
 		return
 	}
 	if config.ClearCacheOnStartup {
-		log.Infof("deleting cache files in %s", config.CacheDir)
+		logger.Info().Msgf("deleting cache files in %s", config.CacheDir)
 		if len(config.CacheDir) < 4 {
-			log.Panicf("%s too short. will not clear cache", config.CacheDir)
+			logger.Panic().Msgf("%s too short. will not clear cache", config.CacheDir)
 			return
 		}
 		d, err := os.Open(config.CacheDir)
 		if err != nil {
-			log.Panicf("cannot open directory %s", config.CacheDir)
+			logger.Panic().Msgf("cannot open directory %s", config.CacheDir)
 			return
 		}
 		names, err := d.Readdirnames(-1)
 		if err != nil {
 			d.Close()
-			log.Panicf("cannot read %s", config.CacheDir)
+			logger.Panic().Msgf("cannot read %s", config.CacheDir)
 			return
 		}
 		d.Close()
 		for _, name := range names {
 			fullpath := filepath.Join(config.CacheDir, name)
-			log.Infof("delete %s", fullpath)
+			logger.Info().Msgf("delete %s", fullpath)
 			if err := os.Remove(fullpath); err != nil {
-				log.Panicf("cannot delete %s", fullpath)
+				logger.Panic().Msgf("cannot delete %s", fullpath)
 				return
 			}
 		}
 	}
 	/*
 		if err := os.RemoveAll(config.CacheDir); err != nil {
-			log.Errorf("cannot remove %s: %v", config.CacheDir, err)
+			logger.Error().Err(err).Msgf("cannot remove %s: %v", config.CacheDir, err)
 		}
 	*/
 	bconfig := badger.DefaultOptions(config.CacheDir)
 	if runtime.GOOS == "windows" {
 		// bconfig.Truncate = true
 	}
-	bconfig.Logger = log
+	//	bconfig.Logger = logger
 	db, err := badger.Open(bconfig)
 	if err != nil {
-		log.Panicf("cannot open badger database: %v", err)
+		logger.Panic().Msgf("cannot open badger database: %v", err)
 		return
 	}
 	defer db.Close()
 
-	mtElasticWrapper, err := search.NewMTElasticSearch(config.ElasticSearch.Endpoint, config.ElasticSearch.Index, config.ElasticSearch.ApiKey, log)
+	mtElasticWrapper, err := search.NewMTElasticSearch(config.ElasticSearch.Endpoint, config.ElasticSearch.Index, config.ElasticSearch.ApiKey, logger)
 	if err != nil {
-		log.Panicf("cannot initialize solr search wrapper: %v", err)
+		logger.Panic().Msgf("cannot initialize solr search wrapper: %v", err)
 		return
 	}
 
-	searchEngine, err := search.NewSearch(mtElasticWrapper, config.Solr.CacheSize, config.CacheExpiry.Duration, db, log)
+	searchEngine, err := search.NewSearch(mtElasticWrapper, config.Solr.CacheSize, config.CacheExpiry.Duration, db, logger)
 	if err != nil {
-		log.Panicf("cannot initialize solr search engine: %v", err)
+		logger.Panic().Msgf("cannot initialize solr search engine: %v", err)
 		return
 	}
 
 	uc, err := search.NewUserCache(config.IdleTimeout.Duration, config.UserCacheSize)
 	if err != nil {
-		log.Panic(err)
+		logger.Panic().Err(err)
 	}
 
 	googleSvc, err := customsearch.NewService(context.Background(), option.WithAPIKey(config.Google.Apikey))
 	if err != nil {
-		log.Panic(err)
+		logger.Panic().Err(err)
 	}
 
 	facets := search.SolrFacetList{}
@@ -255,7 +234,7 @@ func main() {
 		config.Mediaserver,
 		config.MediaserverKey,
 		config.MediaserverExp.Duration,
-		log,
+		logger,
 		accesslog,
 		config.Prefixes,
 		config.StaticDir,
@@ -285,12 +264,12 @@ func main() {
 	)
 
 	if err != nil {
-		log.Errorf("error initializing server: %v", err)
+		logger.Error().Err(err).Msgf("error initializing server: %v", err)
 		return
 	}
 	go func() {
 		if err := srv.ListenAndServe(config.CertPEM, config.KeyPEM); err != nil {
-			log.Fatalf("server died: %v", err)
+			logger.Fatal().Msgf("server died: %v", err)
 		}
 	}()
 
@@ -309,7 +288,7 @@ func main() {
 		<-sigint
 
 		// We received an interrupt signal, shut down.
-		log.Infof("shutdown requested")
+		logger.Info().Msgf("shutdown requested")
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer cancel()
 
@@ -319,5 +298,5 @@ func main() {
 	}()
 
 	<-end
-	log.Info("server stopped")
+	logger.Info().Msg("server stopped")
 }

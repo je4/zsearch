@@ -35,10 +35,10 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/htfy96/reformism"
 	"github.com/je4/utils/v2/pkg/JWTInterceptor"
+	"github.com/je4/utils/v2/pkg/zLogger"
 	"github.com/je4/zsearch/v2/pkg/amp"
 	"github.com/je4/zsearch/v2/pkg/translate"
 	"github.com/je4/zsearch/v2/web"
-	"github.com/op/go-logging"
 	"github.com/pkg/errors"
 	"google.golang.org/api/customsearch/v1"
 	"html/template"
@@ -323,7 +323,7 @@ func (bs BaseStatus) LinkCollections() string {
 func (bs BaseStatus) LinkSubject(area, sub, subject string, params ...string) string {
 	prefix, ok := bs.server.prefixes[area]
 	if !ok {
-		bs.server.log.Errorf("invalid area %s in link", area)
+		bs.server.log.Error().Msgf("invalid area %s in link", area)
 		return fmt.Sprintf("#invalid area %s in link", area)
 	}
 	var urlstr string
@@ -405,7 +405,7 @@ type Server struct {
 	mediaserver         string
 	mediaserverKey      string
 	mediaTokenExp       time.Duration
-	log                 *logging.Logger
+	log                 zLogger.ZLogger
 	accesslog           io.Writer
 	ampApiKey           *rsa.PrivateKey
 	ampCache            *amp.Cache
@@ -441,7 +441,7 @@ func NewServer(
 	addr, addrExt,
 	mediaserver, mediaserverkey string,
 	mediatokenexp time.Duration,
-	log *logging.Logger,
+	log zLogger.ZLogger,
 	accesslog io.Writer,
 	prefixes map[string]string,
 	staticDir,
@@ -485,7 +485,7 @@ func NewServer(
 	_, err = buffer.Read(pembytes)
 	data, _ := pem.Decode([]byte(pembytes))
 	if err := privateKeyFile.Close(); err != nil {
-		log.Errorf("error closing private key file: %v", err)
+		log.Error().Err(err).Msgf("error closing private key file: %v", err)
 	}
 	ampApiKey, err := x509.ParsePKCS1PrivateKey(data.Bytes)
 	if err != nil {
@@ -752,7 +752,7 @@ func (s *Server) DoPanicf(user *User, req *http.Request, writer http.ResponseWri
 	msg := fmt.Sprintf(message, a...)
 	if json {
 		if err := s.DoPanicJSON(writer, status, msg); err != nil {
-			s.log.Errorf("error sending panic json: %v", err)
+			s.log.Error().Msgf("error sending panic json: %v", err)
 		}
 	} else {
 		if user == nil {
@@ -790,7 +790,7 @@ func (s *Server) DoPanicf(user *User, req *http.Request, writer http.ResponseWri
 		writer.WriteHeader(http.StatusNotFound)
 		if tpl, ok := s.templates["error.amp.gohtml"]; ok {
 			if err := tpl.Execute(writer, data); err != nil {
-				s.log.Errorf("executing error.amp.gohtml template: %v", err)
+				s.log.Error().Msgf("executing error.amp.gohtml template: %v", err)
 			}
 		}
 	}
@@ -807,7 +807,7 @@ func (s *Server) DoPanic(writer http.ResponseWriter, status int, message string)
 
 	//debug.PrintStack()
 
-	s.log.Error(message)
+	s.log.Error().Msg(message)
 	data := errData{
 		Status:     status,
 		StatusText: http.StatusText(status),
@@ -817,7 +817,7 @@ func (s *Server) DoPanic(writer http.ResponseWriter, status int, message string)
 	// if there's no error Template, there's no help...
 	if tpl, ok := s.templates["error.gohtml"]; ok {
 		if err := tpl.Execute(writer, data); err != nil {
-			s.log.Errorf("executing error.gohtml template: %v", err)
+			s.log.Error().Msgf("executing error.gohtml template: %v", err)
 		}
 	} else {
 		return fmt.Errorf("no error template found")
@@ -834,7 +834,7 @@ func (s *Server) DoPanicJSON(writer http.ResponseWriter, status int, message str
 
 	debug.PrintStack()
 
-	s.log.Error(message)
+	s.log.Error().Msg(message)
 	data := errData{
 		Status:     status,
 		StatusText: http.StatusText(status),
@@ -843,7 +843,7 @@ func (s *Server) DoPanicJSON(writer http.ResponseWriter, status int, message str
 	writer.WriteHeader(status)
 	jenc := json.NewEncoder(writer)
 	if err := jenc.Encode(data); err != nil {
-		s.log.Errorf("error encoding json [%v]: %v", data, err)
+		s.log.Error().Msgf("error encoding json [%v]: %v", data, err)
 	}
 	return
 }
@@ -877,7 +877,7 @@ func (s *Server) userFromToken(tokenstring, signature string) (*User, error) {
 		user.LoggedOut = false
 
 		if err := s.userCache.SetUser(user, user.Id); err != nil {
-			s.log.Errorf("error adding user to cache: %v", err)
+			s.log.Error().Msgf("error adding user to cache: %v", err)
 		}
 	} else {
 		// sub given?
@@ -985,11 +985,11 @@ func (s *Server) ListenAndServe(cert, key string) error {
 	if runtime.GOOS == "windows" {
 
 		if err := mime.AddExtensionType(".js", "application/javascript; charset=utf-8"); err != nil {
-			s.log.Errorf("cannot add mime extension type: %v", err)
+			s.log.Error().Msgf("cannot add mime extension type: %v", err)
 		}
 
 		if err := mime.AddExtensionType(".css", "text/css; charset=utf-8"); err != nil {
-			s.log.Errorf("cannot add mime extension type: %v", err)
+			s.log.Error().Msgf("cannot add mime extension type: %v", err)
 		}
 	}
 
@@ -1035,7 +1035,7 @@ func (s *Server) ListenAndServe(cert, key string) error {
 		writer.Header().Set("Content-type", "text/html")
 
 		if _, err := writer.Write([]byte("google-site-verification: google54f060b89e33248e.html\n")); err != nil {
-			s.log.Errorf("cannot write response data: %v", err)
+			s.log.Error().Msgf("cannot write response data: %v", err)
 		}
 	})
 	router.Handle(
@@ -1109,19 +1109,19 @@ func (s *Server) ListenAndServe(cert, key string) error {
 		Addr:    addr,
 	}
 	if cert == "auto" || key == "auto" {
-		s.log.Info("generating new certificate")
+		s.log.Info().Msg("generating new certificate")
 		cert, err := DefaultCertificate()
 		if err != nil {
 			return errors.Wrap(err, "cannot generate default certificate")
 		}
 		s.srv.TLSConfig = &tls.Config{Certificates: []tls.Certificate{*cert}}
-		s.log.Infof("starting HTTPS zsearch at https://%v/%v", addr, s.prefixes["search"])
+		s.log.Info().Msgf("starting HTTPS zsearch at https://%v/%v", addr, s.prefixes["search"])
 		return s.srv.ListenAndServeTLS("", "")
 	} else if cert != "" && key != "" {
-		s.log.Infof("starting HTTPS zsearch at https://%v", addr)
+		s.log.Info().Msgf("starting HTTPS zsearch at https://%v", addr)
 		return s.srv.ListenAndServeTLS(cert, key)
 	} else {
-		s.log.Infof("starting HTTP zsearch at http://%v", addr)
+		s.log.Info().Msgf("starting HTTP zsearch at http://%v", addr)
 		return s.srv.ListenAndServe()
 	}
 }

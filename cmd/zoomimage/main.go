@@ -7,10 +7,14 @@ import (
 	"flag"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/je4/utils/v2/pkg/zLogger"
 	"github.com/je4/zsearch/v2/pkg/search"
+	"github.com/rs/zerolog"
 	"golang.org/x/image/draw"
 	"image"
 	"image/png"
+	"io"
+	"log"
 	"math/rand"
 	"net/http"
 	"os"
@@ -31,13 +35,24 @@ func main() {
 
 	//	HEIGHT := config.CHeight
 
-	// create logger instance
-	logger, lf := search.CreateLogger("zoomimage", config.Logfile, config.Loglevel)
-	defer lf.Close()
+	var out io.Writer = os.Stdout
+	if config.Logfile != "" {
+		fp, err := os.OpenFile(config.Logfile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
+		if err != nil {
+			log.Fatalf("cannot open logfile %s: %v", config.Logfile, err)
+		}
+		defer fp.Close()
+		out = fp
+	}
+
+	output := zerolog.ConsoleWriter{Out: out, TimeFormat: time.RFC3339}
+	_logger := zerolog.New(output).With().Timestamp().Logger()
+	_logger.Level(zLogger.LogLevel(config.Loglevel))
+	var logger zLogger.ZLogger = &_logger
 
 	mte, err := search.NewMTElasticSearch(config.ElasticSearch.Endpoint, config.ElasticSearch.Index, string(config.ElasticSearch.ApiKey), logger)
 	if err != nil {
-		logger.Panic(err)
+		logger.Panic().Err(err)
 		return
 	}
 
@@ -67,16 +82,16 @@ func main() {
 			for _, media := range mediaList {
 				matches := mediaserverRegexp.FindStringSubmatch(media.Uri)
 				if matches == nil {
-					logger.Errorf("invalid url format: %s", media.Uri)
+					logger.Error().Msgf("invalid url format: %s", media.Uri)
 					return errors.New(fmt.Sprintf("invalid url: %s", media.Uri))
 				}
 				collection := matches[1]
 				signature := matches[2]
-				logger.Infof("Loading %s", media.Uri)
+				logger.Info().Msgf("Loading %s", media.Uri)
 				switch mType {
 				case "image":
 					if media.Mimetype == "image/x-canon-cr2" {
-						logger.Warning("ignoring mime type image/x-canon-cr2")
+						logger.Warn().Msg("ignoring mime type image/x-canon-cr2")
 						return nil
 					}
 				case "video":
@@ -86,7 +101,7 @@ func main() {
 				case "pdf":
 					signature += "$$poster"
 				default:
-					logger.Warningf("invalid media type - %s", mType)
+					logger.Warn().Msgf("invalid media type - %s", mType)
 					return nil
 				}
 				msUrl := fmt.Sprintf("%s/%s/%s/resize/autorotate/formatpng/size%d0x%d", config.Mediaserver.Url, collection, signature, HEIGHT, HEIGHT)
@@ -96,7 +111,7 @@ func main() {
 						return errors.Wrapf(err, "cannot create url for %s/%s/%s", collection, signature, function)
 					}
 				*/
-				logger.Infof("loading media: %s", msUrl)
+				logger.Info().Msgf("loading media: %s", msUrl)
 				client := http.Client{
 					Timeout: 3600 * time.Second,
 				}
@@ -106,13 +121,13 @@ func main() {
 				}
 				defer resp.Body.Close()
 				if resp.StatusCode >= 300 {
-					logger.Errorf("cannot get image: %v - %s", resp.StatusCode, resp.Status)
+					logger.Error().Msgf("cannot get image: %v - %s", resp.StatusCode, resp.Status)
 					//return errors.New(fmt.Sprintf("cannot get image: %v - %s", resp.StatusCode, resp.Status))
 					return nil
 				}
 				img, _, err := image.Decode(resp.Body)
 				if err != nil {
-					logger.Errorf("cannot decode image %s: %v", msUrl, err)
+					logger.Error().Msgf("cannot decode image %s: %v", msUrl, err)
 					return nil
 				}
 				dst := image.NewRGBA(image.Rect(0, 0, (cHeight*img.Bounds().Max.X)/img.Bounds().Max.Y, cHeight))
@@ -127,7 +142,7 @@ func main() {
 		//		logger.Debug(data)
 		return nil
 	}); err != nil {
-		logger.Panic(err)
+		logger.Panic().Err(err)
 	}
 	rand.Shuffle(len(images), func(i, j int) { images[i], images[j] = images[j], images[i] })
 
@@ -146,7 +161,7 @@ func main() {
 		key := i
 		img := images[key]
 		//	for key, img := range images {
-		logger.Infof("collage image #%v of %v", key, len(images))
+		logger.Info().Msgf("collage image #%v of %v", key, len(images))
 		draw.Copy(coll,
 			image.Point{X: posX, Y: posY},
 			img.img,
@@ -168,7 +183,7 @@ func main() {
 			i--
 		}
 		if (row+1)*cHeight > intDy {
-			logger.Infof("collage %v images of %v", key+1, len(images))
+			logger.Info().Msgf("collage %v images of %v", key+1, len(images))
 			break
 		}
 	}

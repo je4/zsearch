@@ -39,14 +39,14 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 	if pusher, ok := w.(http.Pusher); ok {
 		// Push is supported.
 		furl := "/" + s.prefixes["static"] + "/font/inter/Inter-roman.var.woff2?v=3.15"
-		s.log.Infof("pushing font %s", furl)
+		s.log.Info().Msgf("pushing font %s", furl)
 		if err := pusher.Push(furl, nil); err != nil {
-			s.log.Errorf("Failed to push %s: %v", furl, err)
+			s.log.Error().Msgf("Failed to push %s: %v", furl, err)
 		}
 		furl = "/" + s.prefixes["static"] + "/font/inter/Inter-Bold.woff2?v=3.15"
-		s.log.Infof("pushing font %s", furl)
+		s.log.Info().Msgf("pushing font %s", furl)
 		if err := pusher.Push(furl, nil); err != nil {
-			s.log.Errorf("Failed to push %s: %v", furl, err)
+			s.log.Error().Msgf("Failed to push %s: %v", furl, err)
 		}
 	}
 
@@ -163,7 +163,7 @@ func (s *Server) collectionsHandler(w http.ResponseWriter, req *http.Request) {
 		s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot execute solr query: %v", false, err)
 		return
 	}
-	s.log.Infof("found %v collections", len(docs))
+	s.log.Info().Msgf("found %v collections", len(docs))
 
 	// sort documents into result sets
 	for _, doc := range docs {

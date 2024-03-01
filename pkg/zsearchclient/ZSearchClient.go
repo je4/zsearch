@@ -7,8 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/je4/utils/v2/pkg/JWTInterceptor"
+	"github.com/je4/utils/v2/pkg/zLogger"
 	"github.com/je4/zsearch/v2/pkg/search"
-	"github.com/op/go-logging"
 	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
@@ -23,10 +23,10 @@ type ZSearchClient struct {
 	jwtKey         string
 	jwtAlg         string
 	certSkipVerify bool
-	log            *logging.Logger
+	log            zLogger.ZLogger
 }
 
-func NewZSearchClient(service, baseUrl, jwtKey, jwtAlg string, certSkipVerify bool, jwtTimeout time.Duration, log *logging.Logger) (*ZSearchClient, error) {
+func NewZSearchClient(service, baseUrl, jwtKey, jwtAlg string, certSkipVerify bool, jwtTimeout time.Duration, log zLogger.ZLogger) (*ZSearchClient, error) {
 	zsc := &ZSearchClient{
 		service:        service,
 		baseUrl:        baseUrl,
@@ -91,7 +91,7 @@ func (zsc *ZSearchClient) SignaturesClear(prefix string) (int64, error) {
 		return 0, errors.Wrapf(err, "cannot create delete request %s", qurl)
 	}
 
-	zsc.log.Infof("calling %s:%s", req.Method, req.URL.String())
+	zsc.log.Info().Msgf("calling %s:%s", req.Method, req.URL.String())
 	response, err := client.Do(req)
 	if err != nil {
 		return 0, errors.Wrapf(err, "cannot query DELETE:%s", qurl)
@@ -130,7 +130,7 @@ func (zsc *ZSearchClient) ClearCache() error {
 		return errors.Wrapf(err, "cannot create post request %s", qurl)
 	}
 
-	zsc.log.Infof("calling %s:%s", req.Method, req.URL.String())
+	zsc.log.Info().Msgf("calling %s:%s", req.Method, req.URL.String())
 	response, err := client.Do(req)
 	if err != nil {
 		return errors.Wrapf(err, "cannot query POST:%s", qurl)
@@ -166,7 +166,7 @@ func (zsc *ZSearchClient) LastUpdate(prefix string) (time.Time, error) {
 		return time.Time{}, errors.Wrapf(err, "cannot create delete request %s", qurl)
 	}
 
-	zsc.log.Infof("calling %s:%s", req.Method, req.URL.String())
+	zsc.log.Info().Msgf("calling %s:%s", req.Method, req.URL.String())
 	response, err := client.Do(req)
 	if err != nil {
 		return time.Time{}, errors.Wrapf(err, "cannot query DELETE:%s", qurl)
@@ -209,7 +209,7 @@ func (zsc *ZSearchClient) BuildSitemap() error {
 		return errors.Wrapf(err, "cannot create post request %s", qurl)
 	}
 
-	zsc.log.Infof("calling %s:%s", req.Method, req.URL.String())
+	zsc.log.Info().Msgf("calling %s:%s", req.Method, req.URL.String())
 	response, err := client.Do(req)
 	if err != nil {
 		return errors.Wrapf(err, "cannot query POST:%s", qurl)
@@ -236,7 +236,7 @@ func (zsc *ZSearchClient) BuildSitemap() error {
 
 func (zsc *ZSearchClient) Ping() error {
 	qurl := fmt.Sprintf("%s/ping", zsc.baseUrl)
-	zsc.log.Infof("calling %s:%s", "GET", qurl)
+	zsc.log.Info().Msgf("calling %s:%s", "GET", qurl)
 	response, err := http.Get(qurl)
 	if err != nil {
 		return errors.Wrapf(err, "cannot query GET:%s", qurl)
