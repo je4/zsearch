@@ -236,7 +236,7 @@ func (form *Form) GetMedia() map[string]search.MediaList {
 
 			}
 			if metadata, err := form.apply.mediaserver.GetMetadata(form.apply.mediaserverCollection, signature); err != nil {
-				form.apply.logger.Errorf("cannot get metadata for signature %s: %v", err)
+				form.apply.logger.Error().Err(err).Msgf("cannot get metadata for signature %s", signature)
 			} else {
 				fulltext, _ := form.apply.mediaserver.GetFulltext(form.apply.mediaserverCollection, signature)
 				media := search.Media{

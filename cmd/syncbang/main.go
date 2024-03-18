@@ -28,7 +28,7 @@ import (
 	"github.com/je4/FairService/v2/pkg/fairclient"
 	sdmlcontent "github.com/je4/salon-digital/v2/pkg/content"
 	"github.com/je4/utils/v2/pkg/openai"
-	"github.com/je4/utils/v2/pkg/ssh"
+	"github.com/je4/utils/v2/pkg/zLogger"
 	"github.com/je4/zsearch/v2/pkg/apply"
 	"github.com/je4/zsearch/v2/pkg/fairservice"
 	"github.com/je4/zsearch/v2/pkg/mediaserver"
@@ -38,7 +38,10 @@ import (
 	"github.com/je4/zsync/v2/pkg/filesystem"
 	"github.com/je4/zsync/v2/pkg/zotero"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
 	"golang.org/x/text/language"
+	"io"
+	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -65,84 +68,52 @@ func main() {
 	config := LoadConfig(*cfgfile)
 
 	// create logger instance
-	logger, lf := search.CreateLogger("synczotero", config.Logfile, config.Loglevel)
-	defer lf.Close()
+	//	logger, lf := search.CreateLogger("synczotero", config.Logfile, config.Loglevel)
+	//	defer lf.Close()
 
-	var tunnels []*ssh.SSHtunnel
-	for name, tunnel := range config.Tunnel {
-		logger.Infof("starting tunnel %s", name)
-
-		forwards := make(map[string]*ssh.SourceDestination)
-		for fwName, fw := range tunnel.Forward {
-			forwards[fwName] = &ssh.SourceDestination{
-				Local: &ssh.Endpoint{
-					Host: fw.Local.Host,
-					Port: fw.Local.Port,
-				},
-				Remote: &ssh.Endpoint{
-					Host: fw.Remote.Host,
-					Port: fw.Remote.Port,
-				},
-			}
-		}
-
-		t, err := ssh.NewSSHTunnel(
-			tunnel.User,
-			tunnel.PrivateKey,
-			&ssh.Endpoint{
-				Host: tunnel.Endpoint.Host,
-				Port: tunnel.Endpoint.Port,
-			},
-			forwards,
-			logger,
-		)
+	// create logger instance
+	var out io.Writer = os.Stdout
+	if config.Logfile != "" {
+		fp, err := os.OpenFile(config.Logfile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 		if err != nil {
-			logger.Errorf("cannot create tunnel %v@%v:%v - %v", tunnel.User, tunnel.Endpoint.Host, tunnel.Endpoint.Port, err)
-			return
+			log.Fatalf("cannot open logfile %s: %v", config.Logfile, err)
 		}
-		if err := t.Start(); err != nil {
-			logger.Errorf("cannot create configfile %v - %v", t.String(), err)
-			return
-		}
-		tunnels = append(tunnels, t)
+		defer fp.Close()
+		out = fp
 	}
-	defer func() {
-		for _, t := range tunnels {
-			t.Close()
-		}
-	}()
-	// if tunnels are made, wait until connection is established
-	if len(config.Tunnel) > 0 {
-		time.Sleep(2 * time.Second)
-	}
+
+	//	output := zerolog.ConsoleWriter{Out: out, TimeFormat: time.RFC3339}
+	_logger := zerolog.New(out).With().Timestamp().Logger()
+	_logger.Level(zLogger.LogLevel(config.Loglevel))
+	var logger zLogger.ZLogger = &_logger
 
 	mediadb, err := sql.Open(config.Mediaserver.DB.ServerType, config.Mediaserver.DB.DSN)
 	if err != nil {
-		logger.Panic(err)
+		logger.Panic().Err(err)
 		return
 	}
 	defer mediadb.Close()
 	err = mediadb.Ping()
 	if err != nil {
-		logger.Panic(err)
+		logger.Panic().Err(err)
 		return
 	}
 
 	ms, err := mediaserver.NewMediaserverMySQL(config.Mediaserver.Url, mediadb, config.Mediaserver.DB.Schema, logger)
 	if err != nil {
-		logger.Panic(err)
+		logger.Panic().Err(err)
 		return
 	}
 
 	applicationDB, err := sql.Open(config.ApplicationDB.ServerType, config.ApplicationDB.DSN)
 	if err != nil {
-		logger.Panic(err)
+		logger.Panic().Err(err)
 		return
 	}
 	defer applicationDB.Close()
 	err = applicationDB.Ping()
 	if err != nil {
-		logger.Panic(err)
+		logger.Panic().Err(err)
 		return
 	}
 	if doDataUpdateOnly != "" {
@@ -158,7 +129,7 @@ func main() {
 	if doZSearch {
 		badgerDB, err := badger.Open(badger.DefaultOptions(config.TanslateDBPath))
 		if err != nil {
-			logger.Panic(err)
+			logger.Panic().Err(err)
 			return
 		}
 		defer badgerDB.Close()
@@ -174,19 +145,19 @@ func main() {
 			30*time.Second,
 			logger)
 		if err != nil {
-			logger.Panicf("cannot create zsearch zsearchclient: %v", err)
+			logger.Panic().Msgf("cannot create zsearch zsearchclient: %v", err)
 			return
 		}
 		if err := zsClient.Ping(); err != nil {
-			logger.Panicf("cannot ping zsearch zsearchclient: %v", err)
+			logger.Panic().Msgf("cannot ping zsearch zsearchclient: %v", err)
 			return
 		}
 		sPrefix := "bangbang-"
 		num, err := zsClient.SignaturesClear(sPrefix)
-		logger.Infof("%v items deleted from INK", num)
+		logger.Info().Msgf("%v items deleted from INK", num)
 		//					num, err := mte.Delete(cfg)
 		if err != nil {
-			logger.Panicf("cannot delete items with signature prefix %s: %v", sPrefix, err)
+			logger.Panic().Msgf("cannot delete items with signature prefix %s: %v", sPrefix, err)
 		}
 
 	}
@@ -194,14 +165,14 @@ func main() {
 	// get database connection handle
 	zoteroDB, err := sql.Open(config.Zotero.DB.ServerType, config.Zotero.DB.DSN)
 	if err != nil {
-		logger.Panic(err)
+		logger.Panic().Err(err)
 		return
 	}
 	defer zoteroDB.Close()
 	// Open doesn't open a connection. Validate DSN data:
 	err = zoteroDB.Ping()
 	if err != nil {
-		logger.Panic(err)
+		logger.Panic().Err(err)
 		return
 	}
 
@@ -211,7 +182,7 @@ func main() {
 		config.S3.SecretAccessKey,
 		config.S3.UseSSL)
 	if err != nil {
-		logger.Panicf("cannot connect to s3 instance: %v", err)
+		logger.Panic().Msgf("cannot connect to s3 instance: %v", err)
 		return
 	}
 
@@ -225,7 +196,7 @@ func main() {
 		logger,
 		false)
 	if err != nil {
-		logger.Panicf("cannot create zotero instance: %v", err)
+		logger.Panic().Msgf("cannot create zotero instance: %v", err)
 		return
 	}
 
@@ -240,10 +211,10 @@ func main() {
 			30*time.Second,
 		)
 		if err != nil {
-			logger.Panicf("cannot instantiate fair service: %v", err)
+			logger.Panic().Msgf("cannot instantiate fair service: %v", err)
 		}
 		if err := fservice.Ping(); err != nil {
-			logger.Panicf("cannot ping fair service: %v", err)
+			logger.Panic().Msgf("cannot ping fair service: %v", err)
 		}
 	}
 
@@ -251,7 +222,7 @@ func main() {
 		path := filepath.Join(config.ExportPath, "bangbang.bleve")
 		index, err := bleve.Open(path)
 		if err != nil {
-			logger.Panicf("cannot load bleve index %s: %v", path, err)
+			logger.Panic().Msgf("cannot load bleve index %s: %v", path, err)
 		}
 		defer index.Close()
 		bQuery := bleve.NewMatchAllQuery()
@@ -261,16 +232,16 @@ func main() {
 		for {
 			searchResult, err := index.Search(bSearch)
 			if err != nil {
-				logger.Panicf("cannot load works from index: %v", err)
+				logger.Panic().Msgf("cannot load works from index: %v", err)
 			}
 			for _, val := range searchResult.Hits {
 				raw, err := index.GetInternal([]byte(val.ID))
 				if err != nil {
-					logger.Panicf("cannot get document #%s from index: %v", val.ID, err)
+					logger.Panic().Msgf("cannot get document #%s from index: %v", val.ID, err)
 				}
 				var src = &search.SourceData{}
 				if err := json.Unmarshal(raw, src); err != nil {
-					logger.Panicf("cannot unmarshal document #%s: %v", val.ID, err)
+					logger.Panic().Msgf("cannot unmarshal document #%s: %v", val.ID, err)
 				}
 				works = append(works, src)
 			}
@@ -280,7 +251,7 @@ func main() {
 			bSearch.From += 100
 		}
 		if err := collage(logger, config.ExportPath, ms, works); err != nil {
-			logger.Panic(err)
+			logger.Panic().Err(err)
 		}
 		return
 	}
@@ -295,7 +266,7 @@ func main() {
 
 	app, err := apply.NewApply(logger, applicationDB, config.ApplicationDB.Schema, config.FilePath, ms, "bangbang")
 	if err != nil {
-		logger.Panic(err)
+		logger.Panic().Err(err)
 		return
 	}
 	defer app.Close()
@@ -305,7 +276,7 @@ func main() {
 	/*
 		if doZSearch {
 				if _, err := zsClient.SignaturesClear("bangbang"); err != nil {
-					logger.Panicf("cannot clear signatures with prefix 'bangbang': %v", err)
+					logger.Panic().Msgf("cannot clear signatures with prefix 'bangbang': %v", err)
 				}
 		}
 	*/
@@ -327,17 +298,17 @@ func main() {
 			Partition:   "mediathek",
 		}
 		if err := fservice.SetSource(src); err != nil {
-			logger.Panicf("cannot set source %#v: %v", src, err)
+			logger.Panic().Msgf("cannot set source %#v: %v", src, err)
 		}
 		if err := fservice.StartUpdate(srcPrefix); err != nil {
-			logger.Panicf("cannot start fairservice update: %v", err)
+			logger.Panic().Msgf("cannot start fairservice update: %v", err)
 		}
 	}
 
 	if doPCB {
 		group, err := zot.LoadGroupLocal(1624911)
 		if err != nil {
-			logger.Panicf("cannot load groups: %v", err)
+			logger.Panic().Msgf("cannot load groups: %v", err)
 		}
 
 		since := time.Date(1970, 01, 01, 0, 0, 0, 0, time.Local)
@@ -349,7 +320,7 @@ func main() {
 				//return nil // dont do PCB
 
 				counter++
-				logger.Infof("#%v item: %v.%v", counter, item.Group.Id, item.Key)
+				logger.Info().Msgf("#%v item: %v.%v", counter, item.Group.Id, item.Key)
 				if item.Deleted || item.Trashed {
 					return nil
 				}
@@ -373,7 +344,7 @@ func main() {
 				acls := i.GetACL()
 				contentACL, ok := acls["content"]
 				if !ok {
-					logger.Infof("--- no content ACL for #%s", i.GetSignatureOriginal())
+					logger.Info().Msgf("--- no content ACL for #%s", i.GetSignatureOriginal())
 					return nil
 				}
 				aclOK := false
@@ -384,7 +355,7 @@ func main() {
 					}
 				}
 				if !aclOK {
-					logger.Infof("--- no public access to content of #%s", i.GetSignatureOriginal())
+					logger.Info().Msgf("--- no public access to content of #%s", i.GetSignatureOriginal())
 					return nil
 				}
 				items = append(items, i)
@@ -406,7 +377,7 @@ func main() {
 				return nil
 			},
 		); err != nil {
-			logger.Errorf("error getting items: %v", err)
+			logger.Error().Err(err).Msg("error getting items")
 		}
 	}
 
@@ -418,7 +389,7 @@ func main() {
 		if err != nil {
 			return errors.Wrap(err, "cannot create sourcedata from iid item")
 		}
-		logger.Infof("work %v", src.GetSignature())
+		logger.Info().Msgf("work %v", src.GetSignature())
 		if doFair {
 			fItem := fairservice.SourceToFairItem(src)
 			var fairItem *fair.ItemData
@@ -470,11 +441,11 @@ func main() {
 		return nil
 	},
 	); err != nil {
-		logger.Panicf("error iterating works: %v", err)
+		logger.Panic().Msgf("error iterating works: %v", err)
 	}
 	if doFair {
 		if err := fservice.EndUpdate(srcPrefix); err != nil {
-			logger.Panicf("cannot end fairservice update: %v", err)
+			logger.Panic().Msgf("cannot end fairservice update: %v", err)
 		}
 	}
 
@@ -482,7 +453,7 @@ func main() {
 		if doZSearch {
 			zsClient.ClearCache()
 			if err := zsClient.BuildSitemap(); err != nil {
-				logger.Panic(err)
+				logger.Panic().Err(err)
 			}
 		}
 	}
@@ -500,11 +471,11 @@ func main() {
 		formid, err := strconv.ParseInt(strings.TrimSpace(item.SignatureOriginal), 10, 64)
 		if err != nil {
 			formid = 0
-			//logger.Panicf("cannot parse signatureOriginal of %s: %s // %v", item.Signature, item.SignatureOriginal, err)
+			//logger.Panic().Msgf("cannot parse signatureOriginal of %s: %s // %v", item.Signature, item.SignatureOriginal, err)
 		}
 		if formid > 0 {
 			if err := applicationDB.QueryRow(sqlstr, formid).Scan(&locked); err != nil {
-				logger.Panic(err)
+				logger.Panic().Err(err)
 			}
 		}
 		// do not do that....
@@ -516,7 +487,7 @@ func main() {
 					fmt.Printf("%s -> %s", artists, newartists)
 					sqlstr := "UPDATE formdata SET value=? WHERE formid=? AND name=?"
 					if _, err := applicationDB.Exec(sqlstr, newartists, item.SignatureOriginal, "artists"); err != nil {
-						logger.Panic(err)
+						logger.Panic().Err(err)
 					}
 					(*item.Meta)["artists"] = newartists
 				}
@@ -528,7 +499,7 @@ func main() {
 					fmt.Printf("%s -> %s", performers, newperformers)
 					sqlstr := "UPDATE formdata SET value=? WHERE formid=? AND name=?"
 					if _, err := applicationDB.Exec(sqlstr, newperformers, item.SignatureOriginal, "performers"); err != nil {
-						logger.Panic(err)
+						logger.Panic().Err(err)
 					}
 					(*item.Meta)["performers"] = newperformers
 				}
@@ -540,7 +511,7 @@ func main() {
 					fmt.Printf("%s -> %s", camera, newcamera)
 					sqlstr := "UPDATE formdata SET value=? WHERE formid=? AND name=?"
 					if _, err := applicationDB.Exec(sqlstr, newcamera, item.SignatureOriginal, "camera"); err != nil {
-						logger.Panic(err)
+						logger.Panic().Err(err)
 					}
 					(*item.Meta)["camera"] = newcamera
 				}
@@ -548,16 +519,16 @@ func main() {
 			}
 			// lock it up
 			if _, err := applicationDB.Exec(sqlstr2, formid); err != nil {
-				logger.Panic(err)
+				logger.Panic().Err(err)
 			}
 		}
 	}
 
 	if err := writeCSV(config.ExportPath, formItems); err != nil {
-		logger.Panic(err)
+		logger.Panic().Err(err)
 	}
 	if err := writePersons(config.ExportPath, formItems); err != nil {
-		logger.Panic(err)
+		logger.Panic().Err(err)
 	}
 
 	if doWait {
@@ -567,12 +538,12 @@ func main() {
 	}
 
 	if err := writeData(logger, config.Full, config.ListTemplate, config.DetailTemplate, config.TableTemplate, config.ExportPath, ms, items, false); err != nil {
-		logger.Panic(err)
+		logger.Panic().Err(err)
 	}
 
 	if doCollage {
 		if err := collage(logger, config.ExportPath, ms, items); err != nil {
-			logger.Panic(err)
+			logger.Panic().Err(err)
 		}
 	}
 
@@ -657,7 +628,7 @@ func main() {
 						m.Uri+"/resize/autorotate/formatjpeg/size1024x768")
 				}
 				if err != nil {
-					logger.Panic(err)
+					logger.Panic().Err(err)
 				}
 				cnt.Medias[t] = append(cnt.Medias[t], sdmlcontent.Media{
 					Type:      m.Type,
@@ -671,7 +642,7 @@ func main() {
 	}
 	jfile, err := os.OpenFile(filepath.Join(config.ExportPath, "salon.json"), os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0666)
 	if err != nil {
-		logger.Panic(err)
+		logger.Panic().Err(err)
 	}
 	jenc := json.NewEncoder(jfile)
 	jenc.SetIndent("", "  ")

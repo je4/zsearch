@@ -145,8 +145,8 @@ func main() {
 		out = fp
 	}
 
-	//	output := zerolog.ConsoleWriter{Out: out, TimeFormat: time.RFC3339}
-	_logger := zerolog.New(out).With().Timestamp().Logger()
+	output := zerolog.ConsoleWriter{Out: out, TimeFormat: time.RFC3339}
+	_logger := zerolog.New(output).With().Timestamp().Logger()
 	_logger.Level(zLogger.LogLevel(config.Loglevel))
 	var logger zLogger.ZLogger = &_logger
 
