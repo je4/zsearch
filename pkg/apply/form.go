@@ -170,7 +170,7 @@ func (form *Form) GetCatalogs() []string {
 func (form *Form) GetCategories() []string {
 	var categories = []string{}
 	categories = append(categories, fmt.Sprintf("%s", form.Name()))
-	categories = append(categories, fmt.Sprintf("%s!!%v", form.Name(), form.GetDate()))
+	//categories = append(categories, fmt.Sprintf("%s!!%v", form.Name(), form.GetDate()))
 	return categories
 }
 
