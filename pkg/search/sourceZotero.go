@@ -486,6 +486,27 @@ func (item *ZoteroItem) GetPoster() *Media {
 			}
 		}
 	}
+	if _, ok := medias["pdf"]; ok {
+		if len(medias["pdf"]) > 0 {
+			pdf := medias["pdf"][0]
+			if matches := mediaserverRegexp.FindStringSubmatch(pdf.Uri); matches != nil {
+				collection := matches[1]
+				signature := fmt.Sprintf("%s$$poster", matches[2])
+				metadata, err := item.ms.GetMetadata(collection, signature)
+				if err == nil {
+					return &Media{
+						Name:     "poster",
+						Mimetype: metadata.Mimetype,
+						Type:     metadata.Type,
+						Uri:      fmt.Sprintf("mediaserver:%v/%v", collection, signature),
+						Width:    metadata.Width,
+						Height:   metadata.Height,
+						Duration: metadata.Duration,
+					}
+				}
+			}
+		}
+	}
 	return nil
 }
 
