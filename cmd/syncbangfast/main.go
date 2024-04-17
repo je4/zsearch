@@ -337,7 +337,7 @@ func main() {
 		}
 		src.Translate(translator, []language.Tag{language.Italian, language.German, language.English, language.French})
 		//		src.ModifyVocabulary()
-		src.CreateEmbedding(embeddings, tpl, config.Locale.Available)
+		src.CreateEmbedding(embeddings, tpl, []string{config.Locale.Default})
 
 		if err := zsClient.SignatureCreate(src); err != nil {
 			return errors.Wrapf(err, "cannot create work entity")
