@@ -207,9 +207,6 @@ func main() {
 	}
 
 	googleSvc, err := customsearch.NewService(context.Background(), option.WithAPIKey(config.Google.Apikey))
-	if err != nil {
-		log.Panic(err)
-	}
 
 	facets := search.SolrFacetList{}
 	for _, facet := range config.Facets {

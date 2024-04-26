@@ -1,4 +1,5 @@
 .idea
+cache/
 configs/search.toml
 configs/synczotero2.toml
 configs/synciid.toml
