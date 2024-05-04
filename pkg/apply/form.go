@@ -73,7 +73,7 @@ func (form *Form) GetSeries() string {
 
 func (form *Form) GetUrl() string {
 	web := strings.TrimSpace(form.Data["web"])
-	if !strings.HasPrefix("http", strings.ToLower(web)) && web != "" {
+	if !strings.HasPrefix(strings.ToLower(web), "http") && web != "" {
 		web = "https://" + web
 	}
 	return web
