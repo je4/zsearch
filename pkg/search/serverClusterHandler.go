@@ -52,23 +52,6 @@ func (s *Server) clusterHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if pusher, ok := w.(http.Pusher); ok {
-		pushfonts := []string{
-			"/" + s.prefixes["static"] + "/font/inter/Inter-ExtraLight.woff2?v=3.15",
-			"/" + s.prefixes["static"] + "/font/inter/Inter-Regular.woff2?v=3.15",
-			"/" + s.prefixes["static"] + "/font/inter/Inter-Light.woff2?v=3.15",
-			"/" + s.prefixes["static"] + "/font/inter/Inter-Bold.woff2?v=3.15",
-			"/" + s.prefixes["static"] + "/font/inter/Inter-roman.var.woff2?v=3.15",
-		}
-
-		for _, furl := range pushfonts {
-			s.log.Infof("pushing font %s", furl)
-			if err := pusher.Push(furl, nil); err != nil {
-				s.log.Errorf("Failed to push %s: %v", furl, err)
-			}
-		}
-	}
-
 	var start int64 = 0
 	//var rows int64 = 10
 	var search, lastsearch string
@@ -117,7 +100,7 @@ func (s *Server) clusterHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	if err != gcache.KeyNotFoundError {
-		s.log.Info("serving from cache")
+		s.log.Info().Msg("serving from cache")
 		dt, err := Decompress(result.([]byte))
 		if err != nil {
 			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot decompress cache: %v", false, err)

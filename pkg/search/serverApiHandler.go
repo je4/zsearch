@@ -24,7 +24,7 @@ func (s *Server) apiHandlerPing(w http.ResponseWriter, req *http.Request) {
 		Message: "service available",
 		Result:  nil,
 	}); err != nil {
-		s.log.Errorf("cannot return error message: %v", err)
+		s.log.Error().Msgf("cannot return error message: %v", err)
 	}
 }
 
@@ -40,7 +40,7 @@ func (s *Server) apiHandlerSignatureCreate(w http.ResponseWriter, req *http.Requ
 	bdata, err := io.ReadAll(req.Body)
 	if err != nil {
 		msg := fmt.Sprintf("cannot read request body: %v", err)
-		s.log.Errorf(msg)
+		s.log.Error().Msgf(msg)
 		j := json.NewEncoder(w)
 		w.WriteHeader(http.StatusBadRequest)
 		if err := j.Encode(ApiResult{
@@ -48,14 +48,14 @@ func (s *Server) apiHandlerSignatureCreate(w http.ResponseWriter, req *http.Requ
 			Message: msg,
 			Result:  nil,
 		}); err != nil {
-			s.log.Errorf("cannot return error message: %v", err)
+			s.log.Error().Msgf("cannot return error message: %v", err)
 		}
 		return
 	}
 
 	if err := json.Unmarshal(bdata, data); err != nil {
 		msg := fmt.Sprintf("cannot unmarshal request body [%s]: %v", string(bdata), err)
-		s.log.Errorf(msg)
+		s.log.Error().Msgf(msg)
 		j := json.NewEncoder(w)
 		w.WriteHeader(http.StatusBadRequest)
 		if err := j.Encode(ApiResult{
@@ -63,14 +63,14 @@ func (s *Server) apiHandlerSignatureCreate(w http.ResponseWriter, req *http.Requ
 			Message: msg,
 			Result:  nil,
 		}); err != nil {
-			s.log.Errorf("cannot return error message: %v", err)
+			s.log.Error().Msgf("cannot return error message: %v", err)
 		}
 		return
 	}
 	data.SetStatistics()
 	if err := s.mts.se.UpdateTimestamp(data, time.Now()); err != nil {
 		msg := fmt.Sprintf("cannot update item: %v", err)
-		s.log.Errorf(msg)
+		s.log.Error().Msgf(msg)
 		j := json.NewEncoder(w)
 		w.WriteHeader(http.StatusInternalServerError)
 		if err := j.Encode(ApiResult{
@@ -78,7 +78,7 @@ func (s *Server) apiHandlerSignatureCreate(w http.ResponseWriter, req *http.Requ
 			Message: msg,
 			Result:  nil,
 		}); err != nil {
-			s.log.Errorf("cannot return error message: %v", err)
+			s.log.Error().Msgf("cannot return error message: %v", err)
 		}
 		return
 	}
@@ -89,7 +89,7 @@ func (s *Server) apiHandlerSignatureCreate(w http.ResponseWriter, req *http.Requ
 		Message: fmt.Sprintf("item %s created", data.Signature),
 		Result:  nil,
 	}); err != nil {
-		s.log.Errorf("cannot return error message: %v", err)
+		s.log.Error().Msgf("cannot return error message: %v", err)
 	}
 
 }
@@ -102,7 +102,7 @@ func (s *Server) apiHandlerSignaturesDelete(w http.ResponseWriter, req *http.Req
 	prefix, ok := vars["prefix"]
 	if !ok {
 		msg := "no prefix for signature deletion found"
-		s.log.Infof("error in apiHandlerSignaturesDelete: %s", msg)
+		s.log.Info().Msgf("error in apiHandlerSignaturesDelete: %s", msg)
 		j := json.NewEncoder(w)
 		w.WriteHeader(http.StatusBadRequest)
 		if err := j.Encode(ApiResult{
@@ -110,7 +110,7 @@ func (s *Server) apiHandlerSignaturesDelete(w http.ResponseWriter, req *http.Req
 			Message: msg,
 			Result:  nil,
 		}); err != nil {
-			s.log.Errorf("cannot return error message: %v", err)
+			s.log.Error().Msgf("cannot return error message: %v", err)
 		}
 		return
 	}
@@ -127,7 +127,7 @@ func (s *Server) apiHandlerSignaturesDelete(w http.ResponseWriter, req *http.Req
 	num, err := s.mts.se.Delete(cfg)
 	if err != nil {
 		msg := fmt.Sprintf("error deleting signatures %s: %v", prefix, err)
-		s.log.Infof("error in apiHandlerSignaturesDelete: %s", msg)
+		s.log.Info().Msgf("error in apiHandlerSignaturesDelete: %s", msg)
 		j := json.NewEncoder(w)
 		w.WriteHeader(http.StatusInternalServerError)
 		if err := j.Encode(ApiResult{
@@ -135,19 +135,19 @@ func (s *Server) apiHandlerSignaturesDelete(w http.ResponseWriter, req *http.Req
 			Message: msg,
 			Result:  nil,
 		}); err != nil {
-			s.log.Errorf("cannot return error message: %v", err)
+			s.log.Error().Msgf("cannot return error message: %v", err)
 		}
 		return
 	}
 	msg := fmt.Sprintf("%v signatures with prefix %s deleted", num, prefix)
-	s.log.Infof("apiHandlerSignaturesDelete: %s", msg)
+	s.log.Info().Msgf("apiHandlerSignaturesDelete: %s", msg)
 	j := json.NewEncoder(w)
 	if err := j.Encode(ApiResult{
 		Status:  "ok",
 		Message: msg,
 		Result:  num,
 	}); err != nil {
-		s.log.Errorf("cannot return error message: %v", err)
+		s.log.Error().Msgf("cannot return error message: %v", err)
 	}
 }
 
@@ -159,7 +159,7 @@ func (s *Server) apiHandlerLastUpdate(w http.ResponseWriter, req *http.Request) 
 	prefix, ok := vars["prefix"]
 	if !ok {
 		msg := "no prefix for signature deletion found"
-		s.log.Infof("error in apiHandlerSignaturesDelete: %s", msg)
+		s.log.Info().Msgf("error in apiHandlerSignaturesDelete: %s", msg)
 		j := json.NewEncoder(w)
 		w.WriteHeader(http.StatusBadRequest)
 		if err := j.Encode(ApiResult{
@@ -167,7 +167,7 @@ func (s *Server) apiHandlerLastUpdate(w http.ResponseWriter, req *http.Request) 
 			Message: msg,
 			Result:  nil,
 		}); err != nil {
-			s.log.Errorf("cannot return error message: %v", err)
+			s.log.Error().Msgf("cannot return error message: %v", err)
 		}
 		return
 	}
@@ -184,7 +184,7 @@ func (s *Server) apiHandlerLastUpdate(w http.ResponseWriter, req *http.Request) 
 	last, err := s.mts.se.LastUpdate(cfg)
 	if err != nil {
 		msg := fmt.Sprintf("error getting last update %s: %v", prefix, err)
-		s.log.Infof("error in apiHandlerLastUpdate: %s", msg)
+		s.log.Info().Msgf("error in apiHandlerLastUpdate: %s", msg)
 		j := json.NewEncoder(w)
 		w.WriteHeader(http.StatusInternalServerError)
 		if err := j.Encode(ApiResult{
@@ -192,19 +192,19 @@ func (s *Server) apiHandlerLastUpdate(w http.ResponseWriter, req *http.Request) 
 			Message: msg,
 			Result:  nil,
 		}); err != nil {
-			s.log.Errorf("cannot return error message: %v", err)
+			s.log.Error().Msgf("cannot return error message: %v", err)
 		}
 		return
 	}
 	msg := fmt.Sprintf("last update of %s at %v", prefix, last)
-	s.log.Infof("apiHandlerLastUpdate: %s", msg)
+	s.log.Info().Msgf("apiHandlerLastUpdate: %s", msg)
 	j := json.NewEncoder(w)
 	if err := j.Encode(ApiResult{
 		Status:  "ok",
 		Message: msg,
 		Result:  last,
 	}); err != nil {
-		s.log.Errorf("cannot return error message: %v", err)
+		s.log.Error().Msgf("cannot return error message: %v", err)
 	}
 }
 
@@ -213,7 +213,7 @@ func (s *Server) apiHandlerClearCache(w http.ResponseWriter, req *http.Request) 
 
 	if err := s.mts.clearCache(); err != nil {
 		msg := fmt.Sprintf("cannot clear cache: %v", err)
-		s.log.Errorf(msg)
+		s.log.Error().Msgf(msg)
 		j := json.NewEncoder(w)
 		w.WriteHeader(http.StatusInternalServerError)
 		if err := j.Encode(ApiResult{
@@ -221,7 +221,7 @@ func (s *Server) apiHandlerClearCache(w http.ResponseWriter, req *http.Request) 
 			Message: msg,
 			Result:  nil,
 		}); err != nil {
-			s.log.Errorf("cannot return error message: %v", err)
+			s.log.Error().Msgf("cannot return error message: %v", err)
 		}
 		return
 	}
@@ -232,7 +232,7 @@ func (s *Server) apiHandlerClearCache(w http.ResponseWriter, req *http.Request) 
 		Message: "cache cleared",
 		Result:  nil,
 	}); err != nil {
-		s.log.Errorf("cannot return error message: %v", err)
+		s.log.Error().Msgf("cannot return error message: %v", err)
 	}
 
 }
@@ -244,7 +244,7 @@ func (s *Server) apiHandlerBuildSitemap(w http.ResponseWriter, req *http.Request
 	defer sitemapMutex.Unlock()
 	if err := s.buildSitemap(); err != nil {
 		msg := "error building sitemap"
-		s.log.Infof("error in apiHandlerBuildSitemap: %s", msg)
+		s.log.Info().Msgf("error in apiHandlerBuildSitemap: %s", msg)
 		j := json.NewEncoder(w)
 		w.WriteHeader(http.StatusInternalServerError)
 		if err := j.Encode(ApiResult{
@@ -252,19 +252,19 @@ func (s *Server) apiHandlerBuildSitemap(w http.ResponseWriter, req *http.Request
 			Message: msg,
 			Result:  nil,
 		}); err != nil {
-			s.log.Errorf("cannot return error message: %v", err)
+			s.log.Error().Msgf("cannot return error message: %v", err)
 		}
 		return
 	}
 
 	msg := "build sitemap done"
-	s.log.Infof("apiHandlerBuildSitemap: %s", msg)
+	s.log.Info().Msgf("apiHandlerBuildSitemap: %s", msg)
 	j := json.NewEncoder(w)
 	if err := j.Encode(ApiResult{
 		Status:  "ok",
 		Message: msg,
 		Result:  nil,
 	}); err != nil {
-		s.log.Errorf("cannot return error message: %v", err)
+		s.log.Error().Msgf("cannot return error message: %v", err)
 	}
 }

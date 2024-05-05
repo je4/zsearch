@@ -73,7 +73,7 @@ func (form *Form) GetSeries() string {
 
 func (form *Form) GetUrl() string {
 	web := strings.TrimSpace(form.Data["web"])
-	if !strings.HasPrefix("http", strings.ToLower(web)) && web != "" {
+	if !strings.HasPrefix(strings.ToLower(web), "http") && web != "" {
 		web = "https://" + web
 	}
 	return web
@@ -170,7 +170,7 @@ func (form *Form) GetCatalogs() []string {
 func (form *Form) GetCategories() []string {
 	var categories = []string{}
 	categories = append(categories, fmt.Sprintf("%s", form.Name()))
-	categories = append(categories, fmt.Sprintf("%s!!%v", form.Name(), form.GetDate()))
+	//categories = append(categories, fmt.Sprintf("%s!!%v", form.Name(), form.GetDate()))
 	return categories
 }
 
@@ -190,9 +190,15 @@ func (form *Form) GetTags() []string {
 				tags = search.AppendIfMissing(tags, part)
 				continue
 			}
+			/*
+				nt := fmt.Sprintf("voc:%s:%s",
+					"voc_"+strings.Replace(slug.MakeLang(strings.TrimSpace(parts2[0]), "de"), "-", "_", -1),
+					"voc_"+strings.Replace(slug.MakeLang(strings.TrimSpace(parts2[1]), "de"), "-", "_", -1),
+				)
+			*/
 			nt := fmt.Sprintf("voc:%s:%s",
-				"voc_"+strings.Replace(slug.MakeLang(strings.TrimSpace(parts2[0]), "de"), "-", "_", -1),
-				"voc_"+strings.Replace(slug.MakeLang(strings.TrimSpace(parts2[1]), "de"), "-", "_", -1),
+				"voc_"+strings.TrimSpace(parts2[0]),
+				"voc_"+strings.TrimSpace(parts2[1]),
 			)
 			tags = search.AppendIfMissing(tags, nt)
 		}
@@ -230,7 +236,7 @@ func (form *Form) GetMedia() map[string]search.MediaList {
 
 			}
 			if metadata, err := form.apply.mediaserver.GetMetadata(form.apply.mediaserverCollection, signature); err != nil {
-				form.apply.logger.Errorf("cannot get metadata for signature %s: %v", err)
+				form.apply.logger.Error().Err(err).Msgf("cannot get metadata for signature %s", signature)
 			} else {
 				fulltext, _ := form.apply.mediaserver.GetFulltext(form.apply.mediaserverCollection, signature)
 				media := search.Media{

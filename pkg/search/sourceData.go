@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	isoduration "github.com/channelmeter/iso8601duration"
-	"github.com/je4/zsearch/v2/pkg/openai"
+	"github.com/je4/utils/v2/pkg/openai"
 	"github.com/je4/zsearch/v2/pkg/translate"
 	oai "github.com/sashabaranov/go-openai"
 	"github.com/vanng822/go-solr/solr"
@@ -126,7 +126,7 @@ func (sd *SourceData) Translate(tr translate.Translator, langs []language.Tag) {
 	}
 }
 
-func (sd *SourceData) CreateEmbedding(embeddings *openai.Client, tpl *template.Template, available []string) {
+func (sd *SourceData) CreateEmbedding(embeddings *openai.ClientV2, tpl *template.Template, available []string) {
 	var str string = "Signature: " + sd.Signature + "\n\n" + "Place: " + sd.Place + "\n\n" + "Date: " + sd.Date + "\n\n\n"
 	for _, lang := range available {
 		data := struct {

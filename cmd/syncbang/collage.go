@@ -2,9 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/je4/utils/v2/pkg/zLogger"
 	"github.com/je4/zsearch/v2/pkg/mediaserver"
 	"github.com/je4/zsearch/v2/pkg/search"
-	"github.com/op/go-logging"
 	"github.com/pkg/errors"
 	"golang.org/x/image/draw"
 	"image"
@@ -17,7 +17,7 @@ import (
 
 const HEIGHT = 150
 
-func collage(logger *logging.Logger, exportPath string, ms mediaserver.Mediaserver, data []*search.SourceData) error {
+func collage(logger zLogger.ZLogger, exportPath string, ms mediaserver.Mediaserver, data []*search.SourceData) error {
 	var err error
 	var images = []struct {
 		signature string
@@ -26,10 +26,10 @@ func collage(logger *logging.Logger, exportPath string, ms mediaserver.Mediaserv
 
 	var width int64
 
-	logger.Infof("creating collage")
+	logger.Info().Msgf("creating collage")
 
 	for key, item := range data {
-		logger.Infof("item %v of %v", key, len(data))
+		logger.Info().Msgf("item %v of %v", key, len(data))
 		derivatePath := filepath.ToSlash(filepath.Join("werke", item.SignatureOriginal, "derivate"))
 		for _, medias := range item.GetMedia() {
 			for _, m := range medias {
@@ -69,7 +69,7 @@ func collage(logger *logging.Logger, exportPath string, ms mediaserver.Mediaserv
 						m.Uri+"/resize/autorotate/formatjpeg/size240x240")
 				}
 				if err != nil {
-					logger.Error(err)
+					logger.Error().Err(err)
 					continue
 				}
 				if thumb == "" {
@@ -78,7 +78,7 @@ func collage(logger *logging.Logger, exportPath string, ms mediaserver.Mediaserv
 				fullpath := filepath.Join(exportPath, derivatePath, thumb)
 				fp, err := os.Open(fullpath)
 				if err != nil {
-					logger.Panic(err)
+					logger.Panic().Err(err)
 				}
 				img, _, err := image.Decode(fp)
 				if err != nil {
@@ -114,7 +114,7 @@ func collage(logger *logging.Logger, exportPath string, ms mediaserver.Mediaserv
 		key := i
 		img := images[key]
 		//	for key, img := range images {
-		logger.Infof("collage image #%v of %v", key, len(images))
+		logger.Info().Msgf("collage image #%v of %v", key, len(images))
 		draw.Copy(coll,
 			image.Point{X: posX, Y: row * HEIGHT},
 			img.img,
@@ -136,7 +136,7 @@ func collage(logger *logging.Logger, exportPath string, ms mediaserver.Mediaserv
 			i--
 		}
 		if (row+1)*HEIGHT > intDy {
-			logger.Infof("collage %v images of %v", key, len(images))
+			logger.Info().Msgf("collage %v images of %v", key, len(images))
 			break
 		}
 	}
