@@ -269,9 +269,11 @@ func (item *ZoteroItem) GetTags() []string {
 		// ignore variables (i.e. <Name>:<value>
 		if !zoteroTagACLVariable.MatchString(t.Tag) {
 			tagStr := t.Tag
-			if !strings.HasPrefix(tagStr, "voc:voc_") {
-				tagStr = strings.ToLower(tagStr)
-			}
+			/*
+				if !strings.HasPrefix(tagStr, "voc:voc_") {
+					tagStr = strings.ToLower(tagStr)
+				}
+			*/
 			tags = AppendIfMissing(tags, tagStr)
 		}
 	}
