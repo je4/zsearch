@@ -1,0 +1,6 @@
+Host sshgw.fhnw.ch
+  ProxyCommand none
+
+Host *.fhnw.ch
+  User proserver
+  ProxyCommand ssh -W %h:%p -q punkt.de-git@sshgw.fhnw.ch
