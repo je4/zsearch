@@ -2,7 +2,7 @@ include:
   - component: $CI_SERVER_FQDN/fhnw/fhnw-ink-app/fhnw-go-docker-deploy/build@main
     inputs:
       name: zsearch
-      cmd_path: ./cmd/zsearch
+      cmd_path: ./cmd/datapage
   - component: $CI_SERVER_FQDN/fhnw/fhnw-ink-app/fhnw-go-docker-deploy/publish@main
   - component: $CI_SERVER_FQDN/fhnw/fhnw-ink-app/fhnw-go-docker-deploy/deploy@main
     inputs:
