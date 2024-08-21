@@ -1042,7 +1042,7 @@ func (s *Server) ListenAndServe(cert, key string) error {
 		fmt.Sprintf("/%s/signatures", s.prefixes["api"]), JWTInterceptor.JWTInterceptor(
 			s.service,
 			"SignatureCreate",
-			JWTInterceptor.Secure,
+			JWTInterceptor.Simple,
 			func() http.Handler { return http.HandlerFunc(s.apiHandlerSignatureCreate) }(),
 			s.jwtKey,
 			s.jwtAlg,
@@ -1055,7 +1055,7 @@ func (s *Server) ListenAndServe(cert, key string) error {
 		fmt.Sprintf("/%s/clearcache", s.prefixes["api"]), JWTInterceptor.JWTInterceptor(
 			s.service,
 			"ClearCache",
-			JWTInterceptor.Secure,
+			JWTInterceptor.Simple,
 			func() http.Handler { return http.HandlerFunc(s.apiHandlerClearCache) }(),
 			s.jwtKey,
 			s.jwtAlg,
@@ -1068,7 +1068,7 @@ func (s *Server) ListenAndServe(cert, key string) error {
 		fmt.Sprintf("/%s/signatures/{prefix}", s.prefixes["api"]), JWTInterceptor.JWTInterceptor(
 			s.service,
 			"SignaturesDelete",
-			JWTInterceptor.Secure,
+			JWTInterceptor.Simple,
 			func() http.Handler { return http.HandlerFunc(s.apiHandlerSignaturesDelete) }(),
 			s.jwtKey,
 			s.jwtAlg,
@@ -1080,7 +1080,7 @@ func (s *Server) ListenAndServe(cert, key string) error {
 		fmt.Sprintf("/%s/buildsitemap", s.prefixes["api"]), JWTInterceptor.JWTInterceptor(
 			s.service,
 			"BuildSitemap",
-			JWTInterceptor.Secure,
+			JWTInterceptor.Simple,
 			func() http.Handler { return http.HandlerFunc(s.apiHandlerBuildSitemap) }(),
 			s.jwtKey,
 			s.jwtAlg,
@@ -1092,7 +1092,7 @@ func (s *Server) ListenAndServe(cert, key string) error {
 		fmt.Sprintf("/%s/signatures/{prefix}/lastupdate", s.prefixes["api"]), JWTInterceptor.JWTInterceptor(
 			s.service,
 			"LastUpdate",
-			JWTInterceptor.Secure,
+			JWTInterceptor.Simple,
 			func() http.Handler { return http.HandlerFunc(s.apiHandlerLastUpdate) }(),
 			s.jwtKey,
 			s.jwtAlg,
