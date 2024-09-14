@@ -29,9 +29,11 @@ func main() {
 
 	zsClient, err := zsearchclient.NewZSearchClient(
 		"ZSearch",
-		"https://mediathek.hgk.fhnw.ch/amp/api",
+		//"https://mediathek.hgk.fhnw.ch/amp/api",
+		"https://localhost:8443/api",
 		"io5poi24ajoai36fjoaej2fe4aoij",
 		"HS512",
+		false,
 		true,
 		30*time.Second,
 		logger)

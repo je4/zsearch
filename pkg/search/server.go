@@ -394,6 +394,7 @@ type Server struct {
 	staticCacheControl  string
 	jwtKey              string
 	jwtAlg              []string
+	jwtSecure           bool
 	linkTokenExp        time.Duration
 	loginUrl            string
 	loginIssuer         string
@@ -430,44 +431,7 @@ type Server struct {
 	facebookAppId       string
 }
 
-func NewServer(
-	service string,
-	mts *Search,
-	uc *UserCache,
-	google *customsearch.Service,
-	templateFiles map[string][]string,
-	templateDev bool,
-	InstanceName,
-	addr, addrExt,
-	mediaserver, mediaserverkey string,
-	mediatokenexp time.Duration,
-	log zLogger.ZLogger,
-	accesslog io.Writer,
-	prefixes map[string]string,
-	staticDir,
-	sitemapdir,
-	staticCacheControl,
-	templatedir,
-	jwtKey string, jwtAlg []string,
-	linkTokenExp,
-	sessionTimeout time.Duration,
-	loginUrl,
-	loginIssuer,
-	guestGroup,
-	adminGroup,
-	AmpCache,
-	ampApiKeyFile string,
-	searchFields map[string]string,
-	facets SolrFacetList,
-	locations NetGroups,
-	icons map[string]string,
-	baseCatalog []string,
-	subFilter []SubFilter,
-	collectionsCatalog,
-	clusterCatalog string,
-	googleCSEKey map[string]KV,
-	facebookAppId string,
-) (*Server, error) {
+func NewServer(service string, mts *Search, uc *UserCache, google *customsearch.Service, templateFiles map[string][]string, templateDev bool, InstanceName, addr, addrExt, mediaserver, mediaserverkey string, mediatokenexp time.Duration, log zLogger.ZLogger, accesslog io.Writer, prefixes map[string]string, staticDir, sitemapdir, staticCacheControl, templatedir, jwtKey string, jwtAlg []string, jwtSecure bool, linkTokenExp, sessionTimeout time.Duration, loginUrl, loginIssuer, guestGroup, adminGroup, AmpCache, ampApiKeyFile string, searchFields map[string]string, facets SolrFacetList, locations NetGroups, icons map[string]string, baseCatalog []string, subFilter []SubFilter, collectionsCatalog, clusterCatalog string, googleCSEKey map[string]KV, facebookAppId string) (*Server, error) {
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
 		//log.Panicf("cannot split address %s: %v", addr, err)
@@ -525,6 +489,7 @@ func NewServer(
 		templateDev:        templateDev,
 		jwtKey:             jwtKey,
 		jwtAlg:             jwtAlg,
+		jwtSecure:          jwtSecure,
 		linkTokenExp:       linkTokenExp,
 		sessionTimeout:     sessionTimeout,
 		loginUrl:           loginUrl,
@@ -851,7 +816,7 @@ func (s *Server) DoPanicJSON(writer http.ResponseWriter, status int, message str
 func (s *Server) userFromToken(tokenstring, signature string) (*User, error) {
 
 	// jwt valid?
-	claims, err := CheckJWTValid(tokenstring, s.jwtKey, s.jwtAlg)
+	claims, err := CheckJWTValid(tokenstring, s.jwtKey, s.jwtAlg, s.jwtSecure)
 	if err != nil {
 		return nil, errors.Wrapf(err, "invalid access token")
 	}
@@ -1038,11 +1003,16 @@ func (s *Server) ListenAndServe(cert, key string) error {
 			s.log.Error().Msgf("cannot write response data: %v", err)
 		}
 	})
+	interceptorLevel := JWTInterceptor.Simple
+	if s.jwtSecure {
+		interceptorLevel = JWTInterceptor.Secure
+		s.log.Info().Msg("using secure jwt")
+	}
 	router.Handle(
 		fmt.Sprintf("/%s/signatures", s.prefixes["api"]), JWTInterceptor.JWTInterceptor(
 			s.service,
 			"SignatureCreate",
-			JWTInterceptor.Simple,
+			interceptorLevel,
 			func() http.Handler { return http.HandlerFunc(s.apiHandlerSignatureCreate) }(),
 			s.jwtKey,
 			s.jwtAlg,
@@ -1055,7 +1025,7 @@ func (s *Server) ListenAndServe(cert, key string) error {
 		fmt.Sprintf("/%s/clearcache", s.prefixes["api"]), JWTInterceptor.JWTInterceptor(
 			s.service,
 			"ClearCache",
-			JWTInterceptor.Simple,
+			interceptorLevel,
 			func() http.Handler { return http.HandlerFunc(s.apiHandlerClearCache) }(),
 			s.jwtKey,
 			s.jwtAlg,
@@ -1068,7 +1038,7 @@ func (s *Server) ListenAndServe(cert, key string) error {
 		fmt.Sprintf("/%s/signatures/{prefix}", s.prefixes["api"]), JWTInterceptor.JWTInterceptor(
 			s.service,
 			"SignaturesDelete",
-			JWTInterceptor.Simple,
+			interceptorLevel,
 			func() http.Handler { return http.HandlerFunc(s.apiHandlerSignaturesDelete) }(),
 			s.jwtKey,
 			s.jwtAlg,
@@ -1080,7 +1050,7 @@ func (s *Server) ListenAndServe(cert, key string) error {
 		fmt.Sprintf("/%s/buildsitemap", s.prefixes["api"]), JWTInterceptor.JWTInterceptor(
 			s.service,
 			"BuildSitemap",
-			JWTInterceptor.Simple,
+			interceptorLevel,
 			func() http.Handler { return http.HandlerFunc(s.apiHandlerBuildSitemap) }(),
 			s.jwtKey,
 			s.jwtAlg,
@@ -1092,7 +1062,7 @@ func (s *Server) ListenAndServe(cert, key string) error {
 		fmt.Sprintf("/%s/signatures/{prefix}/lastupdate", s.prefixes["api"]), JWTInterceptor.JWTInterceptor(
 			s.service,
 			"LastUpdate",
-			JWTInterceptor.Simple,
+			interceptorLevel,
 			func() http.Handler { return http.HandlerFunc(s.apiHandlerLastUpdate) }(),
 			s.jwtKey,
 			s.jwtAlg,

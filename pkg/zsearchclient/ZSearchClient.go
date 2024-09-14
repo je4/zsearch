@@ -22,16 +22,18 @@ type ZSearchClient struct {
 	baseUrl        string
 	jwtKey         string
 	jwtAlg         string
+	jwtSecure      bool
 	certSkipVerify bool
 	log            zLogger.ZLogger
 }
 
-func NewZSearchClient(service, baseUrl, jwtKey, jwtAlg string, certSkipVerify bool, jwtTimeout time.Duration, log zLogger.ZLogger) (*ZSearchClient, error) {
+func NewZSearchClient(service, baseUrl, jwtKey, jwtAlg string, jwtSecure bool, certSkipVerify bool, jwtTimeout time.Duration, log zLogger.ZLogger) (*ZSearchClient, error) {
 	zsc := &ZSearchClient{
 		service:        service,
 		baseUrl:        baseUrl,
 		jwtKey:         jwtKey,
 		jwtAlg:         jwtAlg,
+		jwtSecure:      jwtSecure,
 		certSkipVerify: certSkipVerify,
 		log:            log,
 	}
@@ -41,7 +43,11 @@ func NewZSearchClient(service, baseUrl, jwtKey, jwtAlg string, certSkipVerify bo
 	return zsc, nil
 }
 func (zsc *ZSearchClient) SignatureCreate(data *search.SourceData) error {
-	tr, err := JWTInterceptor.NewJWTTransport(zsc.service, "SignatureCreate", JWTInterceptor.Secure, nil, sha512.New(), zsc.jwtKey, zsc.jwtAlg, 30*time.Second)
+	interceptorLevel := JWTInterceptor.Simple
+	if zsc.jwtSecure {
+		interceptorLevel = JWTInterceptor.Secure
+	}
+	tr, err := JWTInterceptor.NewJWTTransport(zsc.service, "SignatureCreate", interceptorLevel, nil, sha512.New(), zsc.jwtKey, zsc.jwtAlg, 30*time.Second)
 	if err != nil {
 		return errors.Wrapf(err, "cannot create jwt transport")
 	}
