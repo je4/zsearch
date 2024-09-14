@@ -243,6 +243,7 @@ func main() {
 		config.TemplateDir,
 		config.JWTKey,
 		config.JWTAlg,
+		config.JWTSecure,
 		config.LinkTokenExp.Duration,
 		config.SessionTimeout.Duration,
 		config.LoginUrl,

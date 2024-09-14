@@ -28,7 +28,7 @@ func (s *Server) reloadTemplateHandler(w http.ResponseWriter, req *http.Request)
 		s.DoPanicf(nil, req, w, http.StatusForbidden, "empty token to access template reload", true)
 		return
 	}
-	claims, err := CheckJWTValid(tokenstring, s.jwtKey, s.jwtAlg)
+	claims, err := CheckJWTValid(tokenstring, s.jwtKey, s.jwtAlg, false)
 	if err != nil {
 		s.DoPanicf(nil, req, w, http.StatusForbidden, "invalid access token - %v: %v", true, tokenstring, err)
 		return

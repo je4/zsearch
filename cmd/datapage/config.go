@@ -141,6 +141,7 @@ type Config struct {
 	ClusterCatalog      string              `toml:"clustercatalog"`
 	JWTKey              string              `toml:"jwtkey"`
 	JWTAlg              []string            `toml:"jwtalg"`
+	JWTSecure           bool                `toml:"jwtsecure"`
 	LinkTokenExp        duration            `toml:"linktokenexp"`
 	LoginUrl            string              `toml:"loginurl"`
 	LoginIssuer         string              `toml:"loginissuer"`
