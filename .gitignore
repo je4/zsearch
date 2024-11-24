@@ -1,3 +1,5 @@
+go.work
+go.work.sum
 .idea
 configs/search.toml
 configs/synczotero2.toml

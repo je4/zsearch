@@ -72,7 +72,7 @@ func main() {
 	for key, val := range config.ArchiveStrategy {
 		intKey, err := strconv.ParseInt(key, 10, 64)
 		if err != nil {
-			logger.Panic().Msgf("cannot parse archive strategy key %s", key)
+			logger.Fatal().Msgf("cannot parse archive strategy key %s", key)
 			return
 		}
 		archiveStrategy[intKey] = val
@@ -92,14 +92,14 @@ func main() {
 
 	since, err := dateparse.ParseAny(*sinceFlag)
 	if err != nil {
-		logger.Panic().Msgf("cannot parse since parameter %v", *sinceFlag)
+		logger.Fatal().Msgf("cannot parse since parameter %v", *sinceFlag)
 		return
 	}
 
 	// get database connection handle
 	zoteroDB, err := sql.Open(config.Zotero.DB.ServerType, config.Zotero.DB.DSN)
 	if err != nil {
-		logger.Panic().Err(err)
+		logger.Fatal().Err(err)
 		return
 	}
 	defer zoteroDB.Close()
@@ -107,25 +107,25 @@ func main() {
 	// Open doesn't open a connection. Validate DSN data:
 	err = zoteroDB.Ping()
 	if err != nil {
-		logger.Panic().Err(err)
+		logger.Fatal().Err(err)
 		return
 	}
 
 	mediadb, err := sql.Open(config.Mediaserver.DB.ServerType, config.Mediaserver.DB.DSN)
 	if err != nil {
-		logger.Panic().Err(err)
+		logger.Fatal().Err(err)
 		return
 	}
 	defer mediadb.Close()
 	err = mediadb.Ping()
 	if err != nil {
-		logger.Panic().Err(err)
+		logger.Fatal().Err(err)
 		return
 	}
 
 	ms, err := mediaserver.NewMediaserverMySQL(config.Mediaserver.Url, mediadb, config.Mediaserver.DB.Schema, logger)
 	if err != nil {
-		logger.Panic().Err(err)
+		logger.Fatal().Err(err)
 		return
 	}
 
@@ -135,7 +135,7 @@ func main() {
 		config.S3.SecretAccessKey,
 		config.S3.UseSSL)
 	if err != nil {
-		logger.Panic().Msgf("cannot connect to s3 instance: %v", err)
+		logger.Fatal().Msgf("cannot connect to s3 instance: %v", err)
 		return
 	}
 
@@ -148,10 +148,10 @@ func main() {
 		30*time.Second,
 	)
 	if err != nil {
-		logger.Panic().Msgf("cannot instantiate fair service: %v", err)
+		logger.Fatal().Msgf("cannot instantiate fair service: %v", err)
 	}
 	if err := fservice.Ping(); err != nil {
-		logger.Panic().Msgf("cannot ping fair service: %v", err)
+		logger.Fatal().Msgf("cannot ping fair service: %v", err)
 	}
 
 	zot, err := zotero.NewZotero(
@@ -164,7 +164,7 @@ func main() {
 		logger,
 		false)
 	if err != nil {
-		logger.Panic().Msgf("cannot create zotero instance: %v", err)
+		logger.Fatal().Msgf("cannot create zotero instance: %v", err)
 		return
 	}
 
@@ -173,15 +173,16 @@ func main() {
 		config.ZSearchService.Address,
 		config.ZSearchService.JwtKey,
 		config.ZSearchService.JwtAlg,
+		true,
 		config.ZSearchService.CertSkipVerify,
 		30*time.Second,
 		logger)
 	if err != nil {
-		logger.Panic().Msgf("cannot create zsearch zsearchclient: %v", err)
+		logger.Fatal().Msgf("cannot create zsearch zsearchclient: %v", err)
 		return
 	}
 	if err := zsClient.Ping(); err != nil {
-		logger.Panic().Msgf("cannot ping zsearch zsearchclient: %v", err)
+		logger.Fatal().Msgf("cannot ping zsearch zsearchclient: %v", err)
 		return
 	}
 
@@ -291,7 +292,7 @@ func main() {
 			}
 		}
 		if doFair && fservice == nil {
-			logger.Panic().Msg("no fair service configured")
+			logger.Fatal().Msg("no fair service configured")
 		}
 
 		srcPrefix := fmt.Sprintf("zotero2-%v", group.Id)
@@ -305,11 +306,11 @@ func main() {
 				Partition:   "mediathek",
 			}
 			if err := fservice.SetSource(src); err != nil {
-				logger.Panic().Msgf("cannot set source %#v: %v", src, err)
+				logger.Fatal().Msgf("cannot set source %#v: %v", src, err)
 			}
 			if doClear || *updateAll {
 				if err := fservice.StartUpdate(srcPrefix); err != nil {
-					logger.Panic().Msgf("cannot start fairservice update: %v", err)
+					logger.Fatal().Msgf("cannot start fairservice update: %v", err)
 				}
 			}
 		}
@@ -390,14 +391,14 @@ func main() {
 			logger.Error().Msgf("error getting items: %v", err)
 			if doFair {
 				if err := fservice.AbortUpdate(srcPrefix); err != nil {
-					logger.Panic().Msgf("cannot abort fairservice update: %v", err)
+					logger.Fatal().Msgf("cannot abort fairservice update: %v", err)
 				}
 			}
 		}
 		if doFair {
 			if doClear || *updateAll {
 				if err := fservice.EndUpdate(srcPrefix); err != nil {
-					logger.Panic().Msgf("cannot end fairservice update: %v", err)
+					logger.Fatal().Msgf("cannot end fairservice update: %v", err)
 				}
 			}
 		}
@@ -406,6 +407,6 @@ func main() {
 		logger.Error().Msgf("cannot clear cache: %v", err)
 	}
 	if err := zsClient.BuildSitemap(); err != nil {
-		logger.Panic().Err(err)
+		logger.Fatal().Err(err)
 	}
 }

@@ -1017,6 +1017,7 @@ func (s *Server) ListenAndServe(cert, key string) error {
 			s.jwtKey,
 			s.jwtAlg,
 			sha512.New(),
+			"",
 			s.log,
 		),
 	).
@@ -1030,6 +1031,7 @@ func (s *Server) ListenAndServe(cert, key string) error {
 			s.jwtKey,
 			s.jwtAlg,
 			sha512.New(),
+			"",
 			s.log,
 		),
 	).
@@ -1043,6 +1045,7 @@ func (s *Server) ListenAndServe(cert, key string) error {
 			s.jwtKey,
 			s.jwtAlg,
 			sha512.New(),
+			"",
 			s.log,
 		)).
 		Methods("DELETE")
@@ -1055,6 +1058,7 @@ func (s *Server) ListenAndServe(cert, key string) error {
 			s.jwtKey,
 			s.jwtAlg,
 			sha512.New(),
+			"",
 			s.log,
 		)).
 		Methods("POST")
@@ -1067,6 +1071,7 @@ func (s *Server) ListenAndServe(cert, key string) error {
 			s.jwtKey,
 			s.jwtAlg,
 			sha512.New(),
+			"",
 			s.log,
 		)).
 		Methods("GET")

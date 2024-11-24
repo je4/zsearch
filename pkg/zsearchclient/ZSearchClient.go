@@ -14,6 +14,7 @@ import (
 	"io/ioutil"
 	"math"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -78,7 +79,7 @@ func (zsc *ZSearchClient) SignatureCreate(data *search.SourceData) error {
 	if err := json.Unmarshal(resultData, result); err != nil {
 		return errors.Wrap(err, "cannot decode result")
 	}
-	if result.Status != "ok" {
+	if strings.ToLower(result.Status) != "ok" {
 		return errors.Errorf("error creating signature: %s", result.Message)
 	}
 	return nil
@@ -153,7 +154,7 @@ func (zsc *ZSearchClient) ClearCache() error {
 	if err := json.Unmarshal(bodyBytes, result); err != nil {
 		return errors.Wrapf(err, "cannot unmarshal result %s", string(bodyBytes))
 	}
-	if result.Status != "ok" {
+	if strings.ToLower(result.Status) != "ok" {
 		return errors.Errorf("cannot clear cache: %v", result.Message)
 	}
 	return nil
@@ -233,7 +234,7 @@ func (zsc *ZSearchClient) BuildSitemap() error {
 		return errors.Wrapf(err, "cannot unmarshal result %s", string(bodyBytes))
 	}
 
-	if result.Status != "ok" {
+	if strings.ToLower(result.Status) != "ok" {
 		return errors.New(fmt.Sprintf("error building sitemap: %s", result.Message))
 	}
 
@@ -262,7 +263,7 @@ func (zsc *ZSearchClient) Ping() error {
 		return errors.Wrapf(err, "cannot unmarshal result %s", string(bodyBytes))
 	}
 
-	if result.Status != "ok" {
+	if strings.ToLower(result.Status) != "ok" {
 		return errors.New(fmt.Sprintf("cannot ping: %v", result.Message))
 	}
 	return nil
