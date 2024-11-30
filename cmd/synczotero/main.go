@@ -269,7 +269,7 @@ func main() {
 			num, err := zsClient.SignaturesClear(sPrefix)
 			//					num, err := mte.Delete(cfg)
 			if err != nil {
-				logger.Error().Msgf("cannot delete items with signature prefix %s: %v", groupId, sPrefix, err)
+				logger.Error().Msgf("cannot delete items of group %d with signature prefix %s: %v", groupId, sPrefix, err)
 				break
 			}
 			logger.Info().Msgf("%v items with signature prefix %s deleted", num, sPrefix)
@@ -355,7 +355,15 @@ func main() {
 					var identifiers = make(map[string]string)
 					for _, ident := range fairItem.Identifier {
 						parts := strings.SplitN(ident, ":", 2)
-						identifiers[parts[0]] = parts[1]
+						if len(parts) != 2 {
+							logger.Error().Msgf("cannot split identifier %s of item %s", ident, fairItem.Signature)
+							continue
+						}
+						if strings.ToLower(parts[0]) == "ark" {
+							identifiers["ark"] = ident
+						} else {
+							identifiers[parts[0]] = parts[1]
+						}
 					}
 					i.AddIdentifiers(identifiers)
 					rawOriginal, err := json.Marshal(i)
