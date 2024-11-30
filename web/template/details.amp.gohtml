@@ -210,12 +210,15 @@ limitations under the License.
                             {{range $name,$val := .Doc.Extra}}
                                 {{- $url := "" }}
                                 {{- if eq $name "ark" }}
+                                    {{- $name = "ARK" }}
                                     {{- $url = printf "https://n2t.net/%s" $val }}
                                 {{- end }}
                                 {{- if eq $name "doi" }}
+                                    {{- $name = "DOI" }}
                                     {{- $url = printf "https://doi.org/%s" $val }}
                                 {{- end }}
                                 {{- if eq $name "handle" }}
+                                    {{- $name = "Handle" }}
                                     {{- $url = printf "https://hdl.handle.net/%s" $val }}
                                 {{- end }}
                                 {{- if eq $name "isbn" }}
