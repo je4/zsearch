@@ -84,6 +84,7 @@ type CfgFairService struct {
 type CfgZSearchService struct {
 	ServiceName    string `toml:"servicename"`
 	Address        string `toml:"address"`
+	JWTSecure      bool   `toml:"jwtsecure"`
 	CertSkipVerify bool   `toml:"certskipverify"`
 	JwtKey         string `toml:"jwtkey"`
 	JwtAlg         string `toml:"jwtalg"`

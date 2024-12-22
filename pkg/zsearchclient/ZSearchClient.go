@@ -26,6 +26,7 @@ type ZSearchClient struct {
 	jwtSecure      bool
 	certSkipVerify bool
 	log            zLogger.ZLogger
+	jwtLevel       JWTInterceptor.JWTInterceptorLevel
 }
 
 func NewZSearchClient(service, baseUrl, jwtKey, jwtAlg string, jwtSecure bool, certSkipVerify bool, jwtTimeout time.Duration, log zLogger.ZLogger) (*ZSearchClient, error) {
@@ -38,17 +39,18 @@ func NewZSearchClient(service, baseUrl, jwtKey, jwtAlg string, jwtSecure bool, c
 		certSkipVerify: certSkipVerify,
 		log:            log,
 	}
+	if jwtSecure {
+		zsc.jwtLevel = JWTInterceptor.Secure
+	} else {
+		zsc.jwtLevel = JWTInterceptor.Simple
+	}
 	// create transport with authorization bearer
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: zsc.certSkipVerify}
 
 	return zsc, nil
 }
 func (zsc *ZSearchClient) SignatureCreate(data *search.SourceData) error {
-	interceptorLevel := JWTInterceptor.Simple
-	if zsc.jwtSecure {
-		interceptorLevel = JWTInterceptor.Secure
-	}
-	tr, err := JWTInterceptor.NewJWTTransport(zsc.service, "SignatureCreate", interceptorLevel, nil, sha512.New(), zsc.jwtKey, zsc.jwtAlg, 30*time.Second)
+	tr, err := JWTInterceptor.NewJWTTransport(zsc.service, "SignatureCreate", zsc.jwtLevel, nil, sha512.New(), zsc.jwtKey, zsc.jwtAlg, 30*time.Second)
 	if err != nil {
 		return errors.Wrapf(err, "cannot create jwt transport")
 	}
@@ -86,7 +88,7 @@ func (zsc *ZSearchClient) SignatureCreate(data *search.SourceData) error {
 }
 
 func (zsc *ZSearchClient) SignaturesClear(prefix string) (int64, error) {
-	tr, err := JWTInterceptor.NewJWTTransport(zsc.service, "SignaturesDelete", JWTInterceptor.Secure, nil, sha512.New(), zsc.jwtKey, zsc.jwtAlg, 30*time.Second)
+	tr, err := JWTInterceptor.NewJWTTransport(zsc.service, "SignaturesDelete", zsc.jwtLevel, nil, sha512.New(), zsc.jwtKey, zsc.jwtAlg, 30*time.Second)
 	if err != nil {
 		return 0, errors.Wrapf(err, "cannot create jwt transport")
 	}
@@ -104,6 +106,9 @@ func (zsc *ZSearchClient) SignaturesClear(prefix string) (int64, error) {
 		return 0, errors.Wrapf(err, "cannot query DELETE:%s", qurl)
 	}
 	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		return 0, errors.New(fmt.Sprintf("invalid result status %v - %s", response.StatusCode, response.Status))
+	}
 
 	bodyBytes, err := ioutil.ReadAll(response.Body)
 	if err != nil {
@@ -125,7 +130,7 @@ func (zsc *ZSearchClient) SignaturesClear(prefix string) (int64, error) {
 }
 
 func (zsc *ZSearchClient) ClearCache() error {
-	tr, err := JWTInterceptor.NewJWTTransport(zsc.service, "ClearCache", JWTInterceptor.Secure, nil, sha512.New(), zsc.jwtKey, zsc.jwtAlg, 30*time.Second)
+	tr, err := JWTInterceptor.NewJWTTransport(zsc.service, "ClearCache", zsc.jwtLevel, nil, sha512.New(), zsc.jwtKey, zsc.jwtAlg, 30*time.Second)
 	if err != nil {
 		return errors.Wrapf(err, "cannot create jwt transport")
 	}
@@ -143,8 +148,11 @@ func (zsc *ZSearchClient) ClearCache() error {
 		return errors.Wrapf(err, "cannot query POST:%s", qurl)
 	}
 	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		return errors.New(fmt.Sprintf("invalid result status %v - %s", response.StatusCode, response.Status))
+	}
 
-	bodyBytes, err := ioutil.ReadAll(response.Body)
+	bodyBytes, err := io.ReadAll(response.Body)
 	if err != nil {
 		return errors.Wrap(err, "cannot read response body")
 	}
@@ -161,7 +169,7 @@ func (zsc *ZSearchClient) ClearCache() error {
 }
 
 func (zsc *ZSearchClient) LastUpdate(prefix string) (time.Time, error) {
-	tr, err := JWTInterceptor.NewJWTTransport(zsc.service, "LastUpdate", JWTInterceptor.Secure, nil, sha512.New(), zsc.jwtKey, zsc.jwtAlg, 30*time.Second)
+	tr, err := JWTInterceptor.NewJWTTransport(zsc.service, "LastUpdate", zsc.jwtLevel, nil, sha512.New(), zsc.jwtKey, zsc.jwtAlg, 30*time.Second)
 	if err != nil {
 		return time.Time{}, errors.Wrapf(err, "cannot create jwt transport")
 	}
@@ -204,7 +212,7 @@ func (zsc *ZSearchClient) LastUpdate(prefix string) (time.Time, error) {
 }
 
 func (zsc *ZSearchClient) BuildSitemap() error {
-	tr, err := JWTInterceptor.NewJWTTransport(zsc.service, "BuildSitemap", JWTInterceptor.Secure, nil, sha512.New(), zsc.jwtKey, zsc.jwtAlg, 30*time.Second)
+	tr, err := JWTInterceptor.NewJWTTransport(zsc.service, "BuildSitemap", zsc.jwtLevel, nil, sha512.New(), zsc.jwtKey, zsc.jwtAlg, 30*time.Second)
 	if err != nil {
 		return errors.Wrapf(err, "cannot create jwt transport")
 	}
