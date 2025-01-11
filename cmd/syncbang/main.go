@@ -141,6 +141,7 @@ func main() {
 			config.ZSearchService.Address,
 			config.ZSearchService.JwtKey,
 			config.ZSearchService.JwtAlg,
+			false,
 			config.ZSearchService.CertSkipVerify,
 			30*time.Second,
 			logger)

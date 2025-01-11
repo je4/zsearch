@@ -178,11 +178,11 @@ func CheckJWTValid(tokenstring string, secret string, alg []string, secure bool)
 	}
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		if !ok {
-			return map[string]interface{}{}, fmt.Errorf("Cannot get claims from token %s", tokenstring)
+			return map[string]interface{}{}, fmt.Errorf("cannot get claims from token %s", tokenstring)
 		}
 		return claims, nil
 	}
-	return map[string]interface{}{}, fmt.Errorf("Token %s not valid", tokenstring)
+	return map[string]interface{}{}, fmt.Errorf("token %s not valid", tokenstring)
 }
 
 func CheckJWT(tokenstring string, secret string, alg []string, subject string) error {

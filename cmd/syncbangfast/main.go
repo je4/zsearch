@@ -222,6 +222,7 @@ func main() {
 		config.ZSearchService.Address,
 		config.ZSearchService.JwtKey,
 		config.ZSearchService.JwtAlg,
+		config.ZSearchService.JWTSecure,
 		config.ZSearchService.CertSkipVerify,
 		30*time.Second,
 		logger)

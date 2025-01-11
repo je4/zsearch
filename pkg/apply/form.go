@@ -392,11 +392,32 @@ func (form *Form) GetLicense() string {
 
 func (form *Form) GetReferences() []search.Reference {
 	var references = []search.Reference{
-		search.Reference{
-			Type:      "url",
-			Title:     "BANG BANG Page",
-			Signature: fmt.Sprintf("https://mediathek.hgk.fhnw.ch/bangbang/detail/%s", form.GetSignature()),
-		},
+		/*
+			search.Reference{
+				Type:      "url",
+				Title:     "BANG BANG Page",
+				Signature: fmt.Sprintf("https://mediathek.hgk.fhnw.ch/bangbang/detail/%s", form.GetSignature()),
+			},
+		*/
+	}
+	refString := form.Data["references"]
+	if refString != "" {
+		refs := strings.Split(refString, ";")
+		for _, ref := range refs {
+			ref = strings.TrimSpace(ref)
+			parts := strings.Split(ref, ":")
+			if len(parts) != 2 {
+				continue
+			}
+			switch strings.ToLower(parts[0]) {
+			case "url":
+				references = append(references, search.Reference{Type: "url", Title: parts[1], Signature: parts[1]})
+			case "doi":
+				references = append(references, search.Reference{Type: "doi", Title: parts[1], Signature: parts[1]})
+			case "signature":
+				references = append(references, search.Reference{Type: "signature", Title: parts[1], Signature: parts[1]})
+			}
+		}
 	}
 	return references
 }
