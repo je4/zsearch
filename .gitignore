@@ -1,6 +1,7 @@
 go.work
 go.work.sum
 .idea
+cache/
 configs/search.toml
 configs/synczotero2.toml
 configs/synciid.toml
