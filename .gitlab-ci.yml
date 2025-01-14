@@ -7,15 +7,9 @@ include:
   - component: $CI_SERVER_FQDN/fhnw/fhnw-ink-app/fhnw-go-docker-deploy/deploy@main
     inputs:
       service_name: zsearch
+      deployment_host: v001340.fhnw.ch
 
 stages:
   - build
   - publish
   - deploy
-
-staging:
-  extends: .deploy
-  rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-  variables:
-    DEPLOY_HOST: v001340.fhnw.ch
