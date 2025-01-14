@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/op/go-logging"
+	"github.com/je4/utils/v2/pkg/zLogger"
 	"github.com/pkg/errors"
 	"io"
 	"net/http"
@@ -42,7 +42,7 @@ type Metadata struct {
 type MediaserverMySQL struct {
 	db                *sql.DB
 	dbSchema          string
-	logger            *logging.Logger
+	logger            zLogger.ZLogger
 	base              *url.URL
 	mediaserverRegexp *regexp.Regexp
 	collections       []*Collection
@@ -59,7 +59,7 @@ func NewJWT(secret string, subject string, valid int64) (tokenString string, err
 	return tokenString, err
 }
 
-func NewMediaserverMySQL(mediaserverbase string, db *sql.DB, dbSchema string, logger *logging.Logger) (*MediaserverMySQL, error) {
+func NewMediaserverMySQL(mediaserverbase string, db *sql.DB, dbSchema string, logger zLogger.ZLogger) (*MediaserverMySQL, error) {
 	url, err := url.Parse(mediaserverbase)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot parse url %s", mediaserverbase)
@@ -170,15 +170,15 @@ func (ms *MediaserverMySQL) CreateMasterUrl(collection, signature, url string, p
 		params = []interface{}{coll.CollectionId, signature, url, public}
 		_, err = ms.db.Exec(sqlstr, params...)
 		if err != nil {
-			ms.logger.Errorf("master #%s/%s error on creation", collection, signature)
+			ms.logger.Error().Msgf("master #%s/%s error on creation", collection, signature)
 			return errors.Wrapf(err, "cannot create master: %s - %v", sqlstr, params)
 		} else {
-			ms.logger.Infof("master #%s/%s created", collection, signature)
+			ms.logger.Info().Msgf("master #%s/%s created", collection, signature)
 		}
 	} else {
-		ms.logger.Infof("master #%s/%s already in database", collection, signature)
+		ms.logger.Info().Msgf("master #%s/%s already in database", collection, signature)
 		if public != pub {
-			ms.logger.Infof("update master access %v - #%s/%s", public, collection, signature)
+			ms.logger.Info().Msgf("update master access %v - #%s/%s", public, collection, signature)
 			sqlstr = fmt.Sprintf("UPDATE %s.master SET public=? WHERE masterid=? OR parentid=?", ms.dbSchema)
 			params = []interface{}{public, masterid, masterid}
 			_, err = ms.db.Exec(sqlstr, params...)

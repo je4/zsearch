@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"github.com/andybalholm/brotli"
 	"github.com/dgraph-io/badger/v4"
-	"github.com/op/go-logging"
+	"github.com/je4/utils/v2/pkg/zLogger"
 	"github.com/pkg/errors"
 	"golang.org/x/text/language"
 	"io"
@@ -16,7 +16,7 @@ import (
 	"strings"
 )
 
-func NewDeeplTranslator(deeplApiKey, deeplUrl string, badger *badger.DB, logger *logging.Logger) Translator {
+func NewDeeplTranslator(deeplApiKey, deeplUrl string, badger *badger.DB, logger zLogger.ZLogger) Translator {
 	return &DeeplTranslator{deeplUrl: deeplUrl, deeplApiKey: deeplApiKey, badger: badger, logger: logger}
 }
 
@@ -28,7 +28,7 @@ type DeeplTranslator struct {
 	deeplApiKey string
 	deeplUrl    string
 	badger      *badger.DB
-	logger      *logging.Logger
+	logger      zLogger.ZLogger
 }
 
 var languageHierarchy = []language.Tag{language.English, language.German, language.French, language.Italian, language.Und}
@@ -109,7 +109,7 @@ func (t *DeeplTranslator) Translate(text *MultiLangString, targetLang []language
 	t.badger.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(key)
 		if err != nil {
-			t.logger.Infof("cache miss value for key %s", string(key))
+			t.logger.Info().Msgf("cache miss value for key %s", string(key))
 			return nil
 		}
 		if err := item.Value(func(val []byte) error {
@@ -121,7 +121,7 @@ func (t *DeeplTranslator) Translate(text *MultiLangString, targetLang []language
 			if err := json.Unmarshal(jsonBytes, &text); err != nil {
 				return errors.Wrapf(err, "cannot unmarshal json for key %s", string(key))
 			}
-			t.logger.Infof("cache hit value for key %s", string(key))
+			t.logger.Info().Msgf("cache hit value for key %s", string(key))
 			return nil
 		}); err != nil {
 			return errors.Wrapf(err, "cannot get value from item for key %s", string(key))
@@ -142,7 +142,7 @@ func (t *DeeplTranslator) Translate(text *MultiLangString, targetLang []language
 
 		translation, detectedLanguage, err := t.Deepl(sourcetext, lang)
 		if err != nil {
-			t.logger.Errorf("cannot translate %s: %v", sourcetext, err)
+			t.logger.Error().Err(err).Msgf("cannot translate %s", sourcetext)
 			continue
 		}
 		// set source language if undefined
@@ -151,7 +151,7 @@ func (t *DeeplTranslator) Translate(text *MultiLangString, targetLang []language
 			text.SetLang(sourcetext, sourcelang, false)
 		}
 		text.Set(translation, lang, true)
-		t.logger.Infof("translated from %s to %s", sourcelang.String(), lang.String())
+		t.logger.Info().Msgf("translated from %s to %s", sourcelang.String(), lang.String())
 		modified = true
 	}
 	if modified {

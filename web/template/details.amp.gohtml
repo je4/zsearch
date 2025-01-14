@@ -197,7 +197,6 @@ limitations under the License.
                     <ul>
                     {{$user := .BaseStatus.User}}
                     {{range $type, $ref := .Doc.References}}
-
                         <li><a href="{{if eq $ref.Type "url"}}{{$ref.Signature}}{{else}}{{$user.LinkSignature $ref.Signature}}{{end}}">{{$ref.Title}}</a></li>
                     {{end}}
                     </ul>
@@ -209,8 +208,27 @@ limitations under the License.
                     <div class="mt2">
                         <dl class="flex flex-wrap">
                             {{range $name,$val := .Doc.Extra}}
+                                {{- $url := "" }}
+                                {{- if eq $name "ark" }}
+                                    {{- $name = "ARK" }}
+                                    {{- $url = printf "https://n2t.net/%s" $val }}
+                                {{- end }}
+                                {{- if eq $name "doi" }}
+                                    {{- $name = "DOI" }}
+                                    {{- $url = printf "https://doi.org/%s" $val }}
+                                {{- end }}
+                                {{- if eq $name "handle" }}
+                                    {{- $name = "Handle" }}
+                                    {{- $url = printf "https://hdl.handle.net/%s" $val }}
+                                {{- end }}
+                                {{- if eq $name "isbn" }}
+                                    {{- $url = printf "https://www.worldcat.org/isbn/%s" $val }}
+                                {{- end }}
+                                {{- if eq $name "issn" }}
+                                    {{- $url = printf "https://www.worldcat.org/issn/%s" $val }}
+                                {{- end }}
                             <dt class="h7 col-4 sm-col-3 md-col-5 lg-col-4 pb1">{{$name}}</dt>
-                            <dd class="m0 col-8 sm-col-9 md-col-7 lg-col-8 pb1">{{$val}}</dd>
+                            <dd class="m0 col-8 sm-col-9 md-col-7 lg-col-8 pb1">{{if (ne $url "") }}<a href="{{ $url }}">{{$val}}</a>{{else}}{{$val}}{{end}}</dd>
                             {{end}}
                         </dl>
                     </div>

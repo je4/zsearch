@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	badger "github.com/dgraph-io/badger/v4"
-	"github.com/op/go-logging"
+	"github.com/je4/utils/v2/pkg/zLogger"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"sync"
@@ -14,7 +14,7 @@ import (
 type Search struct {
 	db *badger.DB
 	sync.Mutex
-	log *logging.Logger
+	log zLogger.ZLogger
 	se  SearchEngine
 	sync.WaitGroup
 	cacheexpiry time.Duration
@@ -27,7 +27,7 @@ type cacheStruct struct {
 	Timestamp time.Time
 }
 
-func NewSearch(se SearchEngine, cachesize int, duration time.Duration, db *badger.DB, log *logging.Logger) (*Search, error) {
+func NewSearch(se SearchEngine, cachesize int, duration time.Duration, db *badger.DB, log zLogger.ZLogger) (*Search, error) {
 	s := &Search{
 		db:          db,
 		Mutex:       sync.Mutex{},
@@ -95,10 +95,10 @@ func (s *Search) getFromCache(id string) (*SourceData, error) {
 
 			// check cache expiration
 			if time.Now().After(doc.Timestamp.Add(s.cacheexpiry)) {
-				s.log.Infof("timestamp %v", doc.Timestamp.String())
+				s.log.Info().Msgf("timestamp %v", doc.Timestamp.String())
 				return fmt.Errorf("timestamp %v", doc.Timestamp.String())
 			} else {
-				s.log.Infof("document %s found in cache", id)
+				s.log.Info().Msgf("document %s found in cache", id)
 			}
 			result = &doc.Src
 			return nil

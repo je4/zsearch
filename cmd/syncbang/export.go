@@ -4,10 +4,10 @@ import (
 	"encoding/csv"
 	"fmt"
 	"github.com/Masterminds/sprig"
+	"github.com/je4/utils/v2/pkg/zLogger"
 	"github.com/je4/zsearch/v2/pkg/apply"
 	"github.com/je4/zsearch/v2/pkg/mediaserver"
 	"github.com/je4/zsearch/v2/pkg/search"
-	"github.com/op/go-logging"
 	"github.com/pkg/errors"
 	"html/template"
 	"io"
@@ -21,11 +21,11 @@ import (
 
 var mediaserverRegexp = regexp.MustCompile("^mediaserver:([^/]+)/([^/]+)/(.+)$")
 
-func mediaUrl(logger *logging.Logger, exportPath string, ms mediaserver.Mediaserver, folder, extension, mediaserverUrl string) (string, error) {
-	logger.Infof("creating path for %s", mediaserverUrl)
+func mediaUrl(logger zLogger.ZLogger, exportPath string, ms mediaserver.Mediaserver, folder, extension, mediaserverUrl string) (string, error) {
+	logger.Info().Msgf("creating path for %s", mediaserverUrl)
 	matches := mediaserverRegexp.FindStringSubmatch(mediaserverUrl)
 	if matches == nil {
-		logger.Errorf("invalid url format: %s", mediaserverUrl)
+		logger.Error().Msgf("invalid url format: %s", mediaserverUrl)
 		return "", errors.New(fmt.Sprintf("invalid url: %s", mediaserverUrl))
 	}
 	collection := matches[1]
@@ -48,17 +48,17 @@ func mediaUrl(logger *logging.Logger, exportPath string, ms mediaserver.Mediaser
 	fullpath := filepath.Join(exportPath, folder, filename)
 	if stat, err := os.Stat(fullpath); err == nil {
 		if stat.Size() >= 2*1024 {
-			logger.Infof("file already exists: %s", fullpath)
+			logger.Info().Msgf("file already exists: %s", fullpath)
 			return filename, nil
 		}
-		logger.Infof("removing small file: %s", fullpath)
+		logger.Info().Msgf("removing small file: %s", fullpath)
 		os.Remove(fullpath)
 	}
 	msUrl, err := ms.GetUrl(collection, signature, function)
 	if err != nil {
 		return "", err
 	}
-	logger.Infof("loading media: %s", msUrl)
+	logger.Info().Msgf("loading media: %s", msUrl)
 	client := http.Client{
 		Timeout: 3600 * time.Second,
 	}
@@ -68,7 +68,7 @@ func mediaUrl(logger *logging.Logger, exportPath string, ms mediaserver.Mediaser
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 300 {
-		logger.Errorf("cannot get image: %v - %s", resp.StatusCode, resp.Status)
+		logger.Error().Msgf("cannot get image: %v - %s", resp.StatusCode, resp.Status)
 		return "", errors.New(fmt.Sprintf("cannot get image: %v - %s", resp.StatusCode, resp.Status))
 	}
 	file, err := os.OpenFile(fullpath, os.O_WRONLY|os.O_CREATE, 0755)
@@ -77,13 +77,13 @@ func mediaUrl(logger *logging.Logger, exportPath string, ms mediaserver.Mediaser
 	}
 	defer file.Close()
 	if _, err := io.Copy(file, resp.Body); err != nil {
-		logger.Errorf("cannot read result data from url %s: %v", msUrl, err)
+		logger.Error().Msgf("cannot read result data from url %s: %v", msUrl, err)
 		return "", errors.Wrapf(err, "cannot read result data from url %s", msUrl)
 	}
 	return filename, nil
 }
 
-func writeData(logger *logging.Logger, full bool, listTemplatePath, detailTemplatePath, tableTemplatePath, exportPath string, ms mediaserver.Mediaserver, data []*search.SourceData, indexOnly bool) error {
+func writeData(logger zLogger.ZLogger, full bool, listTemplatePath, detailTemplatePath, tableTemplatePath, exportPath string, ms mediaserver.Mediaserver, data []*search.SourceData, indexOnly bool) error {
 	funcMap := sprig.FuncMap()
 	funcMap["mediaUrl"] = func(mediaserverUrl, folder, extension string) (url string, err error) {
 		return mediaUrl(logger, exportPath, ms, folder, extension, mediaserverUrl)

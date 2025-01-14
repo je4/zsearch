@@ -145,7 +145,7 @@ func (u User) LinkCollections() string {
 func (u User) LinkSubject(area, sub, subject string, params ...string) string {
 	prefix, ok := u.Server.prefixes[area]
 	if !ok {
-		u.Server.log.Errorf("invalid area %s in link", area)
+		u.Server.log.Error().Msgf("invalid area %s in link", area)
 		return fmt.Sprintf("#invalid area %s in link", area)
 	}
 	var urlstr string

@@ -52,9 +52,9 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		}
 
 		for _, furl := range pushfonts {
-			s.log.Infof("pushing font %s", furl)
+			s.log.Info().Msgf("pushing font %s", furl)
 			if err := pusher.Push(furl, nil); err != nil {
-				s.log.Errorf("Failed to push %s: %v", furl, err)
+				s.log.Error().Msgf("Failed to push %s: %v", furl, err)
 			}
 		}
 	}
@@ -306,7 +306,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 			}
 			if facetstring, ok := (*doc.Meta)["Extra"]; ok {
 				if fl := facetDefRegexp.FindStringSubmatch(facetstring); fl != nil {
-					s.log.Infof("%v", fl)
+					s.log.Info().Msgf("%v", fl)
 					facetField := fl[1]
 					facetPrefix := fl[2]
 					facetLimit, err := strconv.ParseInt(fl[3], 10, 64)
@@ -347,8 +347,8 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot get statistics: %v", false, err)
 			return
 		}
-		s.log.Infof("total records: %v", total)
-		s.log.Infof("statistics by ACL: %v", facets)
+		s.log.Info().Msgf("total records: %v", total)
+		s.log.Info().Msgf("statistics by ACL: %v", facets)
 		status.EmptySearch = true
 		status.Stats = facets
 		status.SearchResultTotal = int(total)
@@ -359,7 +359,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		if err != gcache.KeyNotFoundError {
-			s.log.Info("serving from cache")
+			s.log.Info().Msg("serving from cache")
 			dt, err := Decompress(result.([]byte))
 			if err != nil {
 				s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot decompress cache: %v", false, err)
@@ -377,7 +377,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 				return
 			}
 		} else {
-			s.log.Infof("search.amp.gohtml - empty")
+			s.log.Info().Msgf("search.amp.gohtml - empty")
 			w.Header().Set("Cache-Control", "max-age=14400, s-maxage=12200, stale-while-revalidate=9000, public")
 			if tpl, ok := s.templates["search.amp.gohtml"]; ok {
 				var cacheBuffer bytes.Buffer
@@ -424,7 +424,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	if err != gcache.KeyNotFoundError {
-		s.log.Info("serving from cache")
+		s.log.Info().Msg("serving from cache")
 		dt, err := Decompress(result.([]byte))
 		if err != nil {
 			s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot decompress cache: %v", false, err)
@@ -529,7 +529,7 @@ func (s *Server) searchHandler(w http.ResponseWriter, req *http.Request) {
 		}
 	} else {
 		w.Header().Set("Cache-Control", "max-age=14400, s-maxage=12200, stale-while-revalidate=9000, public")
-		s.log.Infof("search.amp.gohtml")
+		s.log.Info().Msgf("search.amp.gohtml")
 		if tpl, ok := s.templates["search.amp.gohtml"]; ok {
 			var cacheBuffer bytes.Buffer
 			writer := io.MultiWriter(&cacheBuffer, w)

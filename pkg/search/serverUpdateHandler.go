@@ -51,7 +51,7 @@ func (s *Server) updateHandler(w http.ResponseWriter, req *http.Request) {
 		tokenstring := jwt[0]
 		if tokenstring != "" {
 			// jwt valid?
-			claims, err := CheckJWTValid(tokenstring, s.jwtKey, s.jwtAlg)
+			claims, err := CheckJWTValid(tokenstring, s.jwtKey, s.jwtAlg, false)
 			if err != nil {
 				s.DoPanicf(nil, req, w, http.StatusForbidden, "invalid access token: %v", false, err)
 				return
@@ -92,7 +92,7 @@ func (s *Server) updateHandler(w http.ResponseWriter, req *http.Request) {
 		s.DoPanicf(nil, req, w, http.StatusInternalServerError, "cannot build update url: %v", false, err)
 		return
 	}
-	s.log.Infof("update url: %v", updateUrl)
+	s.log.Info().Msgf("update url: %v", updateUrl)
 	w.Write([]byte(updateUrl))
 
 	refresRSA, err := s.ampCache.BuildRefreshRSA(s.addrExt.Host)

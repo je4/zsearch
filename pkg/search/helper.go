@@ -157,7 +157,7 @@ func CheckRequestJWT(req *http.Request, secret string, alg []string, subject str
 	return nil
 }
 
-func CheckJWTValid(tokenstring string, secret string, alg []string) (map[string]interface{}, error) {
+func CheckJWTValid(tokenstring string, secret string, alg []string, secure bool) (map[string]interface{}, error) {
 	token, err := jwt.Parse(tokenstring, func(token *jwt.Token) (interface{}, error) {
 		talg := token.Method.Alg()
 		algOK := false
@@ -187,7 +187,7 @@ func CheckJWTValid(tokenstring string, secret string, alg []string) (map[string]
 
 func CheckJWT(tokenstring string, secret string, alg []string, subject string) error {
 	subject = strings.TrimRight(strings.ToLower(subject), "/")
-	claims, err := CheckJWTValid(tokenstring, secret, alg)
+	claims, err := CheckJWTValid(tokenstring, secret, alg, false)
 	if err != nil {
 		return errors.Wrap(err, "invalid token")
 	}

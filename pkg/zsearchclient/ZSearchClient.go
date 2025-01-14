@@ -7,13 +7,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/je4/utils/v2/pkg/JWTInterceptor"
+	"github.com/je4/utils/v2/pkg/zLogger"
 	"github.com/je4/zsearch/v2/pkg/search"
-	"github.com/op/go-logging"
 	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"math"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -22,18 +23,26 @@ type ZSearchClient struct {
 	baseUrl        string
 	jwtKey         string
 	jwtAlg         string
+	jwtSecure      bool
 	certSkipVerify bool
-	log            *logging.Logger
+	log            zLogger.ZLogger
+	jwtLevel       JWTInterceptor.JWTInterceptorLevel
 }
 
-func NewZSearchClient(service, baseUrl, jwtKey, jwtAlg string, certSkipVerify bool, jwtTimeout time.Duration, log *logging.Logger) (*ZSearchClient, error) {
+func NewZSearchClient(service, baseUrl, jwtKey, jwtAlg string, jwtSecure bool, certSkipVerify bool, jwtTimeout time.Duration, log zLogger.ZLogger) (*ZSearchClient, error) {
 	zsc := &ZSearchClient{
 		service:        service,
 		baseUrl:        baseUrl,
 		jwtKey:         jwtKey,
 		jwtAlg:         jwtAlg,
+		jwtSecure:      jwtSecure,
 		certSkipVerify: certSkipVerify,
 		log:            log,
+	}
+	if jwtSecure {
+		zsc.jwtLevel = JWTInterceptor.Secure
+	} else {
+		zsc.jwtLevel = JWTInterceptor.Simple
 	}
 	// create transport with authorization bearer
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: zsc.certSkipVerify}
@@ -41,7 +50,7 @@ func NewZSearchClient(service, baseUrl, jwtKey, jwtAlg string, certSkipVerify bo
 	return zsc, nil
 }
 func (zsc *ZSearchClient) SignatureCreate(data *search.SourceData) error {
-	tr, err := JWTInterceptor.NewJWTTransport(zsc.service, "SignatureCreate", JWTInterceptor.Secure, nil, sha512.New(), zsc.jwtKey, zsc.jwtAlg, 30*time.Second)
+	tr, err := JWTInterceptor.NewJWTTransport(zsc.service, "SignatureCreate", zsc.jwtLevel, nil, sha512.New(), zsc.jwtKey, zsc.jwtAlg, 30*time.Second)
 	if err != nil {
 		return errors.Wrapf(err, "cannot create jwt transport")
 	}
@@ -72,14 +81,14 @@ func (zsc *ZSearchClient) SignatureCreate(data *search.SourceData) error {
 	if err := json.Unmarshal(resultData, result); err != nil {
 		return errors.Wrap(err, "cannot decode result")
 	}
-	if result.Status != "ok" {
+	if strings.ToLower(result.Status) != "ok" {
 		return errors.Errorf("error creating signature: %s", result.Message)
 	}
 	return nil
 }
 
 func (zsc *ZSearchClient) SignaturesClear(prefix string) (int64, error) {
-	tr, err := JWTInterceptor.NewJWTTransport(zsc.service, "SignaturesDelete", JWTInterceptor.Secure, nil, sha512.New(), zsc.jwtKey, zsc.jwtAlg, 30*time.Second)
+	tr, err := JWTInterceptor.NewJWTTransport(zsc.service, "SignaturesDelete", zsc.jwtLevel, nil, sha512.New(), zsc.jwtKey, zsc.jwtAlg, 30*time.Second)
 	if err != nil {
 		return 0, errors.Wrapf(err, "cannot create jwt transport")
 	}
@@ -91,12 +100,15 @@ func (zsc *ZSearchClient) SignaturesClear(prefix string) (int64, error) {
 		return 0, errors.Wrapf(err, "cannot create delete request %s", qurl)
 	}
 
-	zsc.log.Infof("calling %s:%s", req.Method, req.URL.String())
+	zsc.log.Info().Msgf("calling %s:%s", req.Method, req.URL.String())
 	response, err := client.Do(req)
 	if err != nil {
 		return 0, errors.Wrapf(err, "cannot query DELETE:%s", qurl)
 	}
 	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		return 0, errors.New(fmt.Sprintf("invalid result status %v - %s", response.StatusCode, response.Status))
+	}
 
 	bodyBytes, err := ioutil.ReadAll(response.Body)
 	if err != nil {
@@ -118,7 +130,7 @@ func (zsc *ZSearchClient) SignaturesClear(prefix string) (int64, error) {
 }
 
 func (zsc *ZSearchClient) ClearCache() error {
-	tr, err := JWTInterceptor.NewJWTTransport(zsc.service, "ClearCache", JWTInterceptor.Secure, nil, sha512.New(), zsc.jwtKey, zsc.jwtAlg, 30*time.Second)
+	tr, err := JWTInterceptor.NewJWTTransport(zsc.service, "ClearCache", zsc.jwtLevel, nil, sha512.New(), zsc.jwtKey, zsc.jwtAlg, 30*time.Second)
 	if err != nil {
 		return errors.Wrapf(err, "cannot create jwt transport")
 	}
@@ -130,14 +142,17 @@ func (zsc *ZSearchClient) ClearCache() error {
 		return errors.Wrapf(err, "cannot create post request %s", qurl)
 	}
 
-	zsc.log.Infof("calling %s:%s", req.Method, req.URL.String())
+	zsc.log.Info().Msgf("calling %s:%s", req.Method, req.URL.String())
 	response, err := client.Do(req)
 	if err != nil {
 		return errors.Wrapf(err, "cannot query POST:%s", qurl)
 	}
 	defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		return errors.New(fmt.Sprintf("invalid result status %v - %s", response.StatusCode, response.Status))
+	}
 
-	bodyBytes, err := ioutil.ReadAll(response.Body)
+	bodyBytes, err := io.ReadAll(response.Body)
 	if err != nil {
 		return errors.Wrap(err, "cannot read response body")
 	}
@@ -147,14 +162,14 @@ func (zsc *ZSearchClient) ClearCache() error {
 	if err := json.Unmarshal(bodyBytes, result); err != nil {
 		return errors.Wrapf(err, "cannot unmarshal result %s", string(bodyBytes))
 	}
-	if result.Status != "ok" {
+	if strings.ToLower(result.Status) != "ok" {
 		return errors.Errorf("cannot clear cache: %v", result.Message)
 	}
 	return nil
 }
 
 func (zsc *ZSearchClient) LastUpdate(prefix string) (time.Time, error) {
-	tr, err := JWTInterceptor.NewJWTTransport(zsc.service, "LastUpdate", JWTInterceptor.Secure, nil, sha512.New(), zsc.jwtKey, zsc.jwtAlg, 30*time.Second)
+	tr, err := JWTInterceptor.NewJWTTransport(zsc.service, "LastUpdate", zsc.jwtLevel, nil, sha512.New(), zsc.jwtKey, zsc.jwtAlg, 30*time.Second)
 	if err != nil {
 		return time.Time{}, errors.Wrapf(err, "cannot create jwt transport")
 	}
@@ -166,7 +181,7 @@ func (zsc *ZSearchClient) LastUpdate(prefix string) (time.Time, error) {
 		return time.Time{}, errors.Wrapf(err, "cannot create delete request %s", qurl)
 	}
 
-	zsc.log.Infof("calling %s:%s", req.Method, req.URL.String())
+	zsc.log.Info().Msgf("calling %s:%s", req.Method, req.URL.String())
 	response, err := client.Do(req)
 	if err != nil {
 		return time.Time{}, errors.Wrapf(err, "cannot query DELETE:%s", qurl)
@@ -197,7 +212,7 @@ func (zsc *ZSearchClient) LastUpdate(prefix string) (time.Time, error) {
 }
 
 func (zsc *ZSearchClient) BuildSitemap() error {
-	tr, err := JWTInterceptor.NewJWTTransport(zsc.service, "BuildSitemap", JWTInterceptor.Secure, nil, sha512.New(), zsc.jwtKey, zsc.jwtAlg, 30*time.Second)
+	tr, err := JWTInterceptor.NewJWTTransport(zsc.service, "BuildSitemap", zsc.jwtLevel, nil, sha512.New(), zsc.jwtKey, zsc.jwtAlg, 30*time.Second)
 	if err != nil {
 		return errors.Wrapf(err, "cannot create jwt transport")
 	}
@@ -209,7 +224,7 @@ func (zsc *ZSearchClient) BuildSitemap() error {
 		return errors.Wrapf(err, "cannot create post request %s", qurl)
 	}
 
-	zsc.log.Infof("calling %s:%s", req.Method, req.URL.String())
+	zsc.log.Info().Msgf("calling %s:%s", req.Method, req.URL.String())
 	response, err := client.Do(req)
 	if err != nil {
 		return errors.Wrapf(err, "cannot query POST:%s", qurl)
@@ -227,7 +242,7 @@ func (zsc *ZSearchClient) BuildSitemap() error {
 		return errors.Wrapf(err, "cannot unmarshal result %s", string(bodyBytes))
 	}
 
-	if result.Status != "ok" {
+	if strings.ToLower(result.Status) != "ok" {
 		return errors.New(fmt.Sprintf("error building sitemap: %s", result.Message))
 	}
 
@@ -236,7 +251,7 @@ func (zsc *ZSearchClient) BuildSitemap() error {
 
 func (zsc *ZSearchClient) Ping() error {
 	qurl := fmt.Sprintf("%s/ping", zsc.baseUrl)
-	zsc.log.Infof("calling %s:%s", "GET", qurl)
+	zsc.log.Info().Msgf("calling %s:%s", "GET", qurl)
 	response, err := http.Get(qurl)
 	if err != nil {
 		return errors.Wrapf(err, "cannot query GET:%s", qurl)
@@ -256,7 +271,7 @@ func (zsc *ZSearchClient) Ping() error {
 		return errors.Wrapf(err, "cannot unmarshal result %s", string(bodyBytes))
 	}
 
-	if result.Status != "ok" {
+	if strings.ToLower(result.Status) != "ok" {
 		return errors.New(fmt.Sprintf("cannot ping: %v", result.Message))
 	}
 	return nil

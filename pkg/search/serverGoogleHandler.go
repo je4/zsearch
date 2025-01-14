@@ -45,9 +45,9 @@ func (s *Server) googleHandler(w http.ResponseWriter, req *http.Request) {
 		}
 
 		for _, furl := range pushfonts {
-			s.log.Infof("pushing font %s", furl)
+			s.log.Info().Msgf("pushing font %s", furl)
 			if err := pusher.Push(furl, nil); err != nil {
-				s.log.Errorf("Failed to push %s: %v", furl, err)
+				s.log.Error().Msgf("Failed to push %s: %v", furl, err)
 			}
 		}
 	}
