@@ -63,7 +63,7 @@ func (apply *Apply) PrepareStmt() error {
 		"SELECT f.formid, f.link, p.name, p.title \n"+
 			" FROM form f, project p\n"+
 			" WHERE f.projectid=p.projectid\n"+
-			" AND f.projectid=? AND f.status=?")); err != nil {
+			" AND f.projectid=? AND f.status=? AND f.formid>?")); err != nil {
 		return errors.Wrap(err, "cannot prepare statement")
 	}
 
@@ -88,9 +88,9 @@ func (apply *Apply) Close() error {
 	return nil
 }
 
-func (apply *Apply) IterateFormsAll(f func(form *Form) error) error {
+func (apply *Apply) IterateFormsAll(startID int, f func(form *Form) error) error {
 	var forms = []*Form{}
-	rows, err := apply.FormStmt.Query(1, "upload")
+	rows, err := apply.FormStmt.Query(1, "upload", startID)
 	if err != nil {
 		return errors.Wrapf(err, "cannot query forms")
 	}

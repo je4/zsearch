@@ -3,11 +3,11 @@ package mediaserver
 import (
 	"bytes"
 	"database/sql"
+	"emperror.dev/errors"
 	"encoding/json"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/je4/utils/v2/pkg/zLogger"
-	"github.com/pkg/errors"
 	"io"
 	"net/http"
 	"net/url"

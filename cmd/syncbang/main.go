@@ -382,7 +382,7 @@ func main() {
 		}
 	}
 
-	if err := app.IterateFormsAll(func(form *apply.Form) error {
+	if err := app.IterateFormsAll(0, func(form *apply.Form) error {
 		formItems = append(formItems, form)
 
 		// todo: use fair service
@@ -440,8 +440,7 @@ func main() {
 		counter++
 		items = append(items, src)
 		return nil
-	},
-	); err != nil {
+	}); err != nil {
 		logger.Panic().Msgf("error iterating works: %v", err)
 	}
 	if doFair {

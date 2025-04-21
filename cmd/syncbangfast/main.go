@@ -59,6 +59,7 @@ var doFair = false
 
 var cfgfile = flag.String("cfg", "./syncbang.toml", "locations of config file")
 var clear = flag.Bool("clear", false, "clear all data")
+var startID = flag.Int("startid", 0, "start ID for processing")
 
 var languageNamer = map[string]display.Namer{
 	"de": display.German.Tags(),
@@ -298,7 +299,7 @@ func main() {
 		}
 	}
 
-	if err := app.IterateFormsAll(func(form *apply.Form) error {
+	if err := app.IterateFormsAll(*startID, func(form *apply.Form) error {
 		formItems = append(formItems, form)
 
 		// todo: use fair service

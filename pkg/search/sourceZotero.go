@@ -409,7 +409,8 @@ func (item *ZoteroItem) GetMedia() map[string]MediaList {
 			if name == "" {
 				name = fmt.Sprintf("#%v.%v", item.Group.Id, child.Key)
 			}
-
+			//			t := metadata.Type
+			//if metadata.Type == "audio" && metadata.
 			media := Media{
 				Name:        name,
 				Mimetype:    metadata.Mimetype,
