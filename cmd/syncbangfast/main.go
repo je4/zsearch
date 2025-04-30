@@ -151,6 +151,8 @@ func main() {
 	_logger.Level(zLogger.LogLevel(config.Loglevel))
 	var logger zLogger.ZLogger = &_logger
 
+	logger.Info().Msgf("Starting syncbang")
+
 	mediadb, err := sql.Open(config.Mediaserver.DB.ServerType, config.Mediaserver.DB.DSN)
 	if err != nil {
 		logger.Panic().Err(err)
@@ -162,6 +164,7 @@ func main() {
 		logger.Panic().Err(err)
 		return
 	}
+	logger.Info().Msg("Connected to Mediadb")
 
 	ms, err := mediaserver.NewMediaserverMySQL(config.Mediaserver.Url, mediadb, config.Mediaserver.DB.Schema, logger)
 	if err != nil {
@@ -180,6 +183,7 @@ func main() {
 		logger.Panic().Err(err)
 		return
 	}
+	logger.Info().Msg("Connected to ApplicationDB")
 
 	badgerDB, err := badger.Open(badger.DefaultOptions(config.TanslateDBPath))
 	if err != nil {
@@ -187,9 +191,11 @@ func main() {
 		return
 	}
 	defer badgerDB.Close()
+	logger.Info().Msg("Connected to TranslateDB")
 	translator := translate.NewDeeplTranslator(string(config.DeeplApiKey), config.DeeplApiUrl, badgerDB, logger)
 	kvBadger := openai.NewKVBadger(badgerDB)
 	embeddings := openai.NewClientV2(string(config.OpenaiApiKey), kvBadger, logger)
+	logger.Info().Msg("Connected to OpenAI")
 
 	glang, err := language.Parse(config.Locale.Default)
 	if err != nil {
@@ -211,11 +217,13 @@ func main() {
 		}
 
 	}
+	logger.Info().Msgf("Loaded %d locale files", len(config.Locale.Available))
 	tpl, err := template.New("embedding.gotmpl").Funcs(funcMap(bundle)).Parse(embeddingTemplate)
 	if err != nil {
 		logger.Panic().Err(err)
 		return
 	}
+	logger.Info().Msgf("Loaded template for embedding")
 
 	var zsClient *zsearchclient.ZSearchClient
 	zsClient, err = zsearchclient.NewZSearchClient(
@@ -235,6 +243,7 @@ func main() {
 		logger.Panic().Msgf("cannot ping zsearch zsearchclient: %v", err)
 		return
 	}
+	logger.Info().Msgf("Connected to ZSearchService")
 	/*
 		sPrefix := "bangbang-"
 		num, err := zsClient.SignaturesClear(sPrefix)
@@ -261,6 +270,7 @@ func main() {
 		if err := fservice.Ping(); err != nil {
 			logger.Panic().Msgf("cannot ping fair service: %v", err)
 		}
+		logger.Info().Msgf("Connected to FairService")
 	}
 
 	app, err := apply.NewApply(logger, applicationDB, config.ApplicationDB.Schema, config.FilePath, ms, "bangbang")
@@ -269,6 +279,7 @@ func main() {
 		return
 	}
 	defer app.Close()
+	logger.Info().Msgf("Connected to Apply Forms")
 
 	var counter int64 = 0
 
