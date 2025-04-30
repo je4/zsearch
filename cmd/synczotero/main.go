@@ -99,7 +99,7 @@ func main() {
 	// get database connection handle
 	zoteroDB, err := sql.Open(config.Zotero.DB.ServerType, config.Zotero.DB.DSN)
 	if err != nil {
-		logger.Fatal().Err(err)
+		logger.Fatal().Err(err).Msgf("cannot open zotero database")
 		return
 	}
 	defer zoteroDB.Close()
@@ -107,25 +107,25 @@ func main() {
 	// Open doesn't open a connection. Validate DSN data:
 	err = zoteroDB.Ping()
 	if err != nil {
-		logger.Fatal().Err(err)
+		logger.Fatal().Err(err).Msgf("cannot ping zotero database")
 		return
 	}
 
 	mediadb, err := sql.Open(config.Mediaserver.DB.ServerType, config.Mediaserver.DB.DSN)
 	if err != nil {
-		logger.Fatal().Err(err)
+		logger.Fatal().Err(err).Msgf("cannot open mediaserver database")
 		return
 	}
 	defer mediadb.Close()
 	err = mediadb.Ping()
 	if err != nil {
-		logger.Fatal().Err(err)
+		logger.Fatal().Err(err).Msgf("cannot ping mediaserver database")
 		return
 	}
 
 	ms, err := mediaserver.NewMediaserverMySQL(config.Mediaserver.Url, mediadb, config.Mediaserver.DB.Schema, logger)
 	if err != nil {
-		logger.Fatal().Err(err)
+		logger.Fatal().Err(err).Msgf("cannot create mediaserver instance")
 		return
 	}
 
