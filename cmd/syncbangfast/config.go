@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"fmt"
 	"github.com/BurntSushi/toml"
 	"github.com/je4/utils/v2/pkg/config"
 	"github.com/je4/zsearch/v2/configdata"
@@ -55,6 +56,7 @@ type Config struct {
 }
 
 func LoadConfig(filepath string) Config {
+	fmt.Println("Loading config from ", filepath)
 	var conf Config
 	_, err := toml.DecodeFile(filepath, &conf)
 	if err != nil {

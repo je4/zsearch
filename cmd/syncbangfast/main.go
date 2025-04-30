@@ -130,7 +130,7 @@ func main() {
 	var err error
 	flag.Parse()
 	config := LoadConfig(*cfgfile)
-
+	fmt.Printf("config file: %s loaded\n", *cfgfile)
 	// create logger instance
 	//	logger, lf := search.CreateLogger("synczotero", config.Logfile, config.Loglevel)
 	//	defer lf.Close()
