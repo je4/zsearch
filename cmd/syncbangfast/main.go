@@ -155,39 +155,39 @@ func main() {
 
 	mediadb, err := sql.Open(config.Mediaserver.DB.ServerType, config.Mediaserver.DB.DSN)
 	if err != nil {
-		logger.Panic().Err(err)
+		logger.Panic().Err(err).Msgf("cannot open Mediadb %s", config.Mediaserver.DB.DSN)
 		return
 	}
 	defer mediadb.Close()
 	err = mediadb.Ping()
 	if err != nil {
-		logger.Panic().Err(err)
+		logger.Panic().Err(err).Msgf("cannot ping Mediadb %s", config.Mediaserver.DB.DSN)
 		return
 	}
 	logger.Info().Msg("Connected to Mediadb")
 
 	ms, err := mediaserver.NewMediaserverMySQL(config.Mediaserver.Url, mediadb, config.Mediaserver.DB.Schema, logger)
 	if err != nil {
-		logger.Panic().Err(err)
+		logger.Panic().Err(err).Msgf("cannot create Mediaserver %s", config.Mediaserver.Url)
 		return
 	}
 
 	applicationDB, err := sql.Open(config.ApplicationDB.ServerType, config.ApplicationDB.DSN)
 	if err != nil {
-		logger.Panic().Err(err)
+		logger.Panic().Err(err).Msgf("cannot open ApplicationDB %s", config.ApplicationDB.DSN)
 		return
 	}
 	defer applicationDB.Close()
 	err = applicationDB.Ping()
 	if err != nil {
-		logger.Panic().Err(err)
+		logger.Panic().Err(err).Msgf("cannot ping ApplicationDB %s", config.ApplicationDB.DSN)
 		return
 	}
 	logger.Info().Msg("Connected to ApplicationDB")
 
 	badgerDB, err := badger.Open(badger.DefaultOptions(config.TanslateDBPath))
 	if err != nil {
-		logger.Panic().Err(err)
+		logger.Panic().Err(err).Msgf("cannot open TranslateDB %s", config.TanslateDBPath)
 		return
 	}
 	defer badgerDB.Close()
@@ -199,7 +199,7 @@ func main() {
 
 	glang, err := language.Parse(config.Locale.Default)
 	if err != nil {
-		logger.Panic().Err(err)
+		logger.Panic().Err(err).Msgf("cannot parse default language %s", config.Locale.Default)
 		return
 	}
 
@@ -220,7 +220,7 @@ func main() {
 	logger.Info().Msgf("Loaded %d locale files", len(config.Locale.Available))
 	tpl, err := template.New("embedding.gotmpl").Funcs(funcMap(bundle)).Parse(embeddingTemplate)
 	if err != nil {
-		logger.Panic().Err(err)
+		logger.Panic().Err(err).Msgf("cannot parse template %s", embeddingTemplate)
 		return
 	}
 	logger.Info().Msgf("Loaded template for embedding")
@@ -275,7 +275,7 @@ func main() {
 
 	app, err := apply.NewApply(logger, applicationDB, config.ApplicationDB.Schema, config.FilePath, ms, "bangbang")
 	if err != nil {
-		logger.Panic().Err(err)
+		logger.Panic().Err(err).Msgf("cannot create apply forms client")
 		return
 	}
 	defer app.Close()
