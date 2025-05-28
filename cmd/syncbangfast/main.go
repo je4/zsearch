@@ -155,39 +155,39 @@ func main() {
 
 	mediadb, err := sql.Open(config.Mediaserver.DB.ServerType, config.Mediaserver.DB.DSN)
 	if err != nil {
-		logger.Panic().Err(err).Msgf("cannot open Mediadb %s", config.Mediaserver.DB.DSN)
+		logger.Fatal().Err(err).Msgf("cannot open Mediadb %s", config.Mediaserver.DB.DSN)
 		return
 	}
 	defer mediadb.Close()
 	err = mediadb.Ping()
 	if err != nil {
-		logger.Panic().Err(err).Msgf("cannot ping Mediadb %s", config.Mediaserver.DB.DSN)
+		logger.Fatal().Err(err).Msgf("cannot ping Mediadb %s", config.Mediaserver.DB.DSN)
 		return
 	}
 	logger.Info().Msg("Connected to Mediadb")
 
 	ms, err := mediaserver.NewMediaserverMySQL(config.Mediaserver.Url, mediadb, config.Mediaserver.DB.Schema, logger)
 	if err != nil {
-		logger.Panic().Err(err).Msgf("cannot create Mediaserver %s", config.Mediaserver.Url)
+		logger.Fatal().Err(err).Msgf("cannot create Mediaserver %s", config.Mediaserver.Url)
 		return
 	}
 
 	applicationDB, err := sql.Open(config.ApplicationDB.ServerType, config.ApplicationDB.DSN)
 	if err != nil {
-		logger.Panic().Err(err).Msgf("cannot open ApplicationDB %s", config.ApplicationDB.DSN)
+		logger.Fatal().Err(err).Msgf("cannot open ApplicationDB %s", config.ApplicationDB.DSN)
 		return
 	}
 	defer applicationDB.Close()
 	err = applicationDB.Ping()
 	if err != nil {
-		logger.Panic().Err(err).Msgf("cannot ping ApplicationDB %s", config.ApplicationDB.DSN)
+		logger.Fatal().Err(err).Msgf("cannot ping ApplicationDB %s", config.ApplicationDB.DSN)
 		return
 	}
 	logger.Info().Msg("Connected to ApplicationDB")
 
 	badgerDB, err := badger.Open(badger.DefaultOptions(config.TanslateDBPath))
 	if err != nil {
-		logger.Panic().Err(err).Msgf("cannot open TranslateDB %s", config.TanslateDBPath)
+		logger.Fatal().Err(err).Msgf("cannot open TranslateDB %s", config.TanslateDBPath)
 		return
 	}
 	defer badgerDB.Close()
@@ -199,7 +199,7 @@ func main() {
 
 	glang, err := language.Parse(config.Locale.Default)
 	if err != nil {
-		logger.Panic().Err(err).Msgf("cannot parse default language %s", config.Locale.Default)
+		logger.Fatal().Err(err).Msgf("cannot parse default language %s", config.Locale.Default)
 		return
 	}
 
@@ -209,18 +209,18 @@ func main() {
 	for _, lang := range config.Locale.Available {
 		localeFile := fmt.Sprintf("active.%s.toml", lang)
 		if _, err := fs.Stat(locales.LocaleFS, localeFile); err != nil {
-			logger.Panic().Msgf("cannot find locale file [%v] %s", locales.LocaleFS, localeFile)
+			logger.Fatal().Msgf("cannot find locale file [%v] %s", locales.LocaleFS, localeFile)
 		}
 
 		if _, err := bundle.LoadMessageFileFS(locales.LocaleFS, localeFile); err != nil {
-			logger.Panic().Msgf("cannot load locale file [%v] %s: %v", locales.LocaleFS, localeFile, err)
+			logger.Fatal().Msgf("cannot load locale file [%v] %s: %v", locales.LocaleFS, localeFile, err)
 		}
 
 	}
 	logger.Info().Msgf("Loaded %d locale files", len(config.Locale.Available))
 	tpl, err := template.New("embedding.gotmpl").Funcs(funcMap(bundle)).Parse(embeddingTemplate)
 	if err != nil {
-		logger.Panic().Err(err).Msgf("cannot parse template %s", embeddingTemplate)
+		logger.Fatal().Err(err).Msgf("cannot parse template %s", embeddingTemplate)
 		return
 	}
 	logger.Info().Msgf("Loaded template for embedding")
@@ -236,11 +236,11 @@ func main() {
 		30*time.Second,
 		logger)
 	if err != nil {
-		logger.Panic().Msgf("cannot create zsearch zsearchclient: %v", err)
+		logger.Fatal().Msgf("cannot create zsearch zsearchclient: %v", err)
 		return
 	}
 	if err := zsClient.Ping(); err != nil {
-		logger.Panic().Msgf("cannot ping zsearch zsearchclient: %v", err)
+		logger.Fatal().Msgf("cannot ping zsearch zsearchclient: %v", err)
 		return
 	}
 	logger.Info().Msgf("Connected to ZSearchService")
@@ -250,7 +250,7 @@ func main() {
 		logger.Info().Msgf("%v items deleted from INK", num)
 		//					num, err := mte.Delete(cfg)
 		if err != nil {
-			logger.Panic().Msgf("cannot delete items with signature prefix %s: %v", sPrefix, err)
+			logger.Fatal().Msgf("cannot delete items with signature prefix %s: %v", sPrefix, err)
 		}
 	*/
 
@@ -265,17 +265,17 @@ func main() {
 			30*time.Second,
 		)
 		if err != nil {
-			logger.Panic().Msgf("cannot instantiate fair service: %v", err)
+			logger.Fatal().Msgf("cannot instantiate fair service: %v", err)
 		}
 		if err := fservice.Ping(); err != nil {
-			logger.Panic().Msgf("cannot ping fair service: %v", err)
+			logger.Fatal().Msgf("cannot ping fair service: %v", err)
 		}
 		logger.Info().Msgf("Connected to FairService")
 	}
 
 	app, err := apply.NewApply(logger, applicationDB, config.ApplicationDB.Schema, config.FilePath, ms, "bangbang")
 	if err != nil {
-		logger.Panic().Err(err).Msgf("cannot create apply forms client")
+		logger.Fatal().Err(err).Msgf("cannot create apply forms client")
 		return
 	}
 	defer app.Close()
@@ -297,16 +297,16 @@ func main() {
 			Partition:   "mediathek",
 		}
 		if err := fservice.SetSource(src); err != nil {
-			logger.Panic().Msgf("cannot set source %#v: %v", src, err)
+			logger.Fatal().Msgf("cannot set source %#v: %v", src, err)
 		}
 		if err := fservice.StartUpdate(srcPrefix); err != nil {
-			logger.Panic().Msgf("cannot start fairservice update: %v", err)
+			logger.Fatal().Msgf("cannot start fairservice update: %v", err)
 		}
 	}
 
 	if clear != nil && *clear {
 		if _, err := zsClient.SignaturesClear("bangbang"); err != nil {
-			logger.Panic().Msgf("cannot clear signatures with prefix 'bangbang': %v", err)
+			logger.Fatal().Msgf("cannot clear signatures with prefix 'bangbang': %v", err)
 		}
 	}
 
@@ -369,14 +369,14 @@ func main() {
 	}
 	if doFair {
 		if err := fservice.EndUpdate(srcPrefix); err != nil {
-			logger.Panic().Msgf("cannot end fairservice update: %v", err)
+			logger.Fatal().Msgf("cannot end fairservice update: %v", err)
 		}
 	}
 
 	if counter > 0 {
 		zsClient.ClearCache()
 		if err := zsClient.BuildSitemap(); err != nil {
-			logger.Panic().Err(err)
+			logger.Fatal().Err(err)
 		}
 	}
 
