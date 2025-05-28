@@ -31,7 +31,7 @@ require (
 	github.com/je4/salon-digital/v2 v2.0.5
 	github.com/je4/sitemap/v2 v2.0.2
 	github.com/je4/utils/v2 v2.0.56
-	github.com/je4/zsync/v2 v2.0.2
+	github.com/je4/zsync/v2 v2.0.3
 	github.com/juliangruber/go-intersect v1.1.0
 	github.com/nicksnyder/go-i18n/v2 v2.4.1
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
