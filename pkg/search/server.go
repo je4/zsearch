@@ -26,7 +26,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"github.com/Masterminds/sprig"
+	"github.com/Masterminds/sprig/v3"
 	"github.com/bluele/gcache"
 	"github.com/drgrib/maps"
 	"github.com/gorilla/handlers"

@@ -23,7 +23,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/BurntSushi/toml"
-	"github.com/Masterminds/sprig"
+	"github.com/Masterminds/sprig/v3"
 	"github.com/dgraph-io/badger/v4"
 	"github.com/gosimple/slug"
 	"github.com/je4/FairService/v2/pkg/fair"

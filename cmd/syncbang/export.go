@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
-	"github.com/Masterminds/sprig"
+	"github.com/Masterminds/sprig/v3"
 	"github.com/je4/utils/v2/pkg/zLogger"
 	"github.com/je4/zsearch/v2/pkg/apply"
 	"github.com/je4/zsearch/v2/pkg/mediaserver"
