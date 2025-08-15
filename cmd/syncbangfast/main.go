@@ -22,6 +22,11 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
+	"io/fs"
+	"log"
+	"os"
+
 	"github.com/BurntSushi/toml"
 	"github.com/Masterminds/sprig/v3"
 	"github.com/dgraph-io/badger/v4"
@@ -37,19 +42,16 @@ import (
 	"github.com/je4/zsearch/v2/pkg/search"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/rs/zerolog"
-	"io"
-	"io/fs"
-	"log"
-	"os"
+
+	"strings"
+	"text/template"
+	"time"
 
 	"github.com/je4/zsearch/v2/pkg/translate"
 	"github.com/je4/zsearch/v2/pkg/zsearchclient"
 	"github.com/pkg/errors"
 	"golang.org/x/text/language"
 	"golang.org/x/text/language/display"
-	"strings"
-	"text/template"
-	"time"
 )
 
 //go:embed embedding.gotmpl
