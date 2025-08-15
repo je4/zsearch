@@ -3,16 +3,17 @@ package search
 import (
 	"bytes"
 	"fmt"
+	"slices"
+	"strings"
+	"text/template"
+	"time"
+
 	isoduration "github.com/channelmeter/iso8601duration"
 	"github.com/je4/utils/v2/pkg/openai"
 	"github.com/je4/zsearch/v2/pkg/translate"
 	oai "github.com/sashabaranov/go-openai"
 	"github.com/vanng822/go-solr/solr"
 	"golang.org/x/text/language"
-	"slices"
-	"strings"
-	"text/template"
-	"time"
 )
 
 type SourceStatistic struct {

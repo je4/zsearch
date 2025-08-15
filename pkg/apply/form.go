@@ -1,18 +1,20 @@
 package apply
 
 import (
+	"database/sql"
 	"fmt"
+	"html/template"
+	"path"
+	"regexp"
+	"strings"
+	"time"
+
 	"github.com/gosimple/slug"
 	"github.com/je4/zsearch/v2/pkg/search"
 	"github.com/je4/zsearch/v2/pkg/translate"
 	"github.com/vanng822/go-solr/solr"
 	"golang.org/x/exp/slices"
 	"golang.org/x/text/language"
-	"html/template"
-	"path"
-	"regexp"
-	"strings"
-	"time"
 )
 
 type FormFile struct {
@@ -29,6 +31,7 @@ type FormData struct {
 }
 
 type Form struct {
+	db           *sql.DB
 	Id           int64
 	Link         string
 	Changed      time.Time
@@ -102,7 +105,28 @@ func (form *Form) GetPublisher() string {
 var pRoleRegex = regexp.MustCompile("([^(]+)\\(([^)]+)\\)")
 var bracketRegexp = regexp.MustCompile("\\(([^\\)]+)\\)")
 
-func extractPerson(pString, defaultRole string) []search.Person {
+var getPersonSQL = "SELECT personid, `name`, `birth`, `gnd`, `orcid`, `viaf`, `matrikel`, `evento`, `irf`, `wikidata`, `wikipedia` FROM persons.persons WHERE alias = ?"
+
+func buildPerson(dbclient *sql.DB, name, role string) search.Person {
+	person := search.Person{Name: name, Role: role}
+	var personId int64
+	var personName string
+	var birth string
+	var gnd string
+	var orcid string
+	var viaf string
+	var matrikel string
+	var evento string
+	var irf string
+	var wikidata string
+	var wikipedia string
+	if err := dbclient.QueryRow(getPersonSQL, name).Scan(personId, &personName, birth, gnd, orcid, viaf, matrikel, evento, irf, wikidata, wikipedia); err != nil {
+
+	}
+	return person
+}
+
+func extractPerson(db *sql.DB, pString, defaultRole string) []search.Person {
 	ret := []search.Person{}
 	if strings.TrimSpace(pString) == "" {
 		return ret
@@ -117,26 +141,20 @@ func extractPerson(pString, defaultRole string) []search.Person {
 			name := strings.TrimSpace(elems[1])
 			es := strings.Split(elems[2], ";")
 			for _, e := range es {
-				ret = append(ret, search.Person{Name: name, Role: fmt.Sprintf("%s:%s", defaultRole, strings.TrimSpace(e))})
+				ret = append(ret, buildPerson(db, name, fmt.Sprintf("%s:%s", defaultRole, strings.TrimSpace(e))))
 			}
 		} else {
-			ret = append(ret, search.Person{Name: strings.TrimSpace(p), Role: strings.TrimSpace(defaultRole)})
+			ret = append(ret, buildPerson(db, strings.TrimSpace(p), strings.TrimSpace(defaultRole)))
 		}
 	}
 	return ret
 }
 func (form *Form) GetPersons() []search.Person {
 	var persons = []search.Person{}
-	persons = append(persons, extractPerson(form.Data["artists"], "artist")...)
-	persons = append(persons, extractPerson(form.Data["performers"], "performer")...)
-	persons = append(persons, extractPerson(form.Data["eventcurator"], "eventcurator")...)
-	persons = append(persons, extractPerson(form.Data["camera"], "camera")...)
-	/*
-		persons = append(persons, search.Person{
-			Name: fmt.Sprintf("%s, %s", form.Data["nachname"], form.Data["vorname"]),
-			Role: "contact",
-		})
-	*/
+	persons = append(persons, extractPerson(form.db, form.Data["artists"], "artist")...)
+	persons = append(persons, extractPerson(form.db, form.Data["performers"], "performer")...)
+	persons = append(persons, extractPerson(form.db, form.Data["eventcurator"], "eventcurator")...)
+	persons = append(persons, extractPerson(form.db, form.Data["camera"], "camera")...)
 	return persons
 }
 

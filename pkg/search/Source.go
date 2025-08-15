@@ -21,12 +21,13 @@ import (
 	"compress/gzip"
 	"encoding/base64"
 	"encoding/json"
-	"github.com/je4/zsearch/v2/pkg/translate"
-	"github.com/pkg/errors"
-	"github.com/vanng822/go-solr/solr"
 	"html/template"
 	"io"
 	"time"
+
+	"github.com/je4/zsearch/v2/pkg/translate"
+	"github.com/pkg/errors"
+	"github.com/vanng822/go-solr/solr"
 )
 
 func GUnzip(data string) (string, error) {
@@ -46,9 +47,18 @@ func GUnzip(data string) (string, error) {
 	return dest.String(), nil
 }
 
+type PersonIdentifier struct {
+	Id         string `json:"id"`
+	Url        string `json:"url,omitempty"`
+	Additional string `json:"additional,omitempty"`
+}
+
 type Person struct {
-	Name string `json:"name"`
-	Role string `json:"role"`
+	Name             string                      `json:"name"`
+	Role             string                      `json:"role"`
+	AlternativeNames []string                    `json:"alternative_names,omitempty"`
+	Year             int                         `json:"year,omitempty"`
+	Identifier       map[string]PersonIdentifier `json:"identifier,omitempty"`
 }
 
 type Media struct {
