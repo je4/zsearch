@@ -155,15 +155,15 @@ func main() {
 
 	logger.Info().Msgf("Starting syncbang")
 
-	mediadb, err := sql.Open(config.Mediaserver.DB.ServerType, config.Mediaserver.DB.DSN)
+	mediadb, err := sql.Open(config.Mediaserver.DB.ServerType, config.Mediaserver.DB.DSN.String())
 	if err != nil {
-		logger.Fatal().Err(err).Msgf("cannot open Mediadb %s", config.Mediaserver.DB.DSN)
+		logger.Fatal().Err(err).Msgf("cannot open Mediadb %s", config.Mediaserver.DB.DSN.String())
 		return
 	}
 	defer mediadb.Close()
 	err = mediadb.Ping()
 	if err != nil {
-		logger.Fatal().Err(err).Msgf("cannot ping Mediadb %s", config.Mediaserver.DB.DSN)
+		logger.Fatal().Err(err).Msgf("cannot ping Mediadb %s", config.Mediaserver.DB.DSN.String())
 		return
 	}
 	logger.Info().Msg("Connected to Mediadb")
@@ -174,15 +174,15 @@ func main() {
 		return
 	}
 
-	applicationDB, err := sql.Open(config.ApplicationDB.ServerType, config.ApplicationDB.DSN)
+	applicationDB, err := sql.Open(config.ApplicationDB.ServerType, config.ApplicationDB.DSN.String())
 	if err != nil {
-		logger.Fatal().Err(err).Msgf("cannot open ApplicationDB %s", config.ApplicationDB.DSN)
+		logger.Fatal().Err(err).Msgf("cannot open ApplicationDB %s", config.ApplicationDB.DSN.String())
 		return
 	}
 	defer applicationDB.Close()
 	err = applicationDB.Ping()
 	if err != nil {
-		logger.Fatal().Err(err).Msgf("cannot ping ApplicationDB %s", config.ApplicationDB.DSN)
+		logger.Fatal().Err(err).Msgf("cannot ping ApplicationDB %s", config.ApplicationDB.DSN.String())
 		return
 	}
 	logger.Info().Msg("Connected to ApplicationDB")
@@ -227,16 +227,18 @@ func main() {
 	}
 	logger.Info().Msgf("Loaded template for embedding")
 
-	db, err := sql.Open("mysql", config.MyDSN.String())
+	personsDB, err := sql.Open(config.PersonsDB.ServerType, config.PersonsDB.DSN.String())
 	if err != nil {
-		logger.Fatal().Err(err).Msg("cannot connect to database")
+		logger.Fatal().Err(err).Msgf("cannot open PersonsDB %s", config.PersonsDB.DSN.String())
+		return
 	}
-	defer db.Close()
-
-	// Ping the database to verify the connection.
-	if err := db.Ping(); err != nil {
-		logger.Fatal().Err(err).Msg("cannot ping database")
+	defer personsDB.Close()
+	err = personsDB.Ping()
+	if err != nil {
+		logger.Fatal().Err(err).Msgf("cannot ping PersonsDB %s", config.PersonsDB.DSN.String())
+		return
 	}
+	logger.Info().Msg("Connected to PersonsDB")
 
 	var zsClient *zsearchclient.ZSearchClient
 	zsClient, err = zsearchclient.NewZSearchClient(
@@ -323,11 +325,11 @@ func main() {
 		}
 	}
 
-	if err := app.IterateFormsAll(*startID, db, func(form *apply.Form) error {
+	if err := app.IterateFormsAll(*startID, func(form *apply.Form) error {
 		formItems = append(formItems, form)
 
 		// todo: use fair service
-		src, err := search.NewSourceData(form)
+		src, err := search.NewSourceData(personsDB, form)
 		if err != nil {
 			return errors.Wrap(err, "cannot create sourcedata from iid item")
 		}

@@ -17,11 +17,12 @@ limitations under the License.
 package main
 
 import (
+	"log"
+	"strings"
+
 	"github.com/BurntSushi/toml"
 	"github.com/je4/utils/v2/pkg/config"
 	"github.com/je4/zsearch/v2/configdata"
-	"log"
-	"strings"
 )
 
 type Config struct {
@@ -32,6 +33,7 @@ type Config struct {
 	Mediaserver    configdata.MediaserverMySQL     `toml:"mediaserver"`
 	Zotero         configdata.CfgZotero            `toml:"zotero"`
 	ApplicationDB  configdata.CfgDatabase          `toml:"applicationdb"`
+	PersonsDB      configdata.CfgDatabase          `toml:"personsdb"`
 	DataPrefix     string                          `toml:"dataprefix"`
 	S3             configdata.CfgS3                `toml:"s3"`
 	Tunnel         map[string]configdata.SSHTunnel `toml:"tunnel"`

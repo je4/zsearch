@@ -89,7 +89,7 @@ func (apply *Apply) Close() error {
 	return nil
 }
 
-func (apply *Apply) IterateFormsAll(startID int, db *sql.DB, f func(form *Form) error) error {
+func (apply *Apply) IterateFormsAll(startID int, f func(form *Form) error) error {
 	var forms = []*Form{}
 	rows, err := apply.FormStmt.Query(1, "upload", startID)
 	if err != nil {
@@ -97,7 +97,6 @@ func (apply *Apply) IterateFormsAll(startID int, db *sql.DB, f func(form *Form) 
 	}
 	for rows.Next() {
 		var form = &Form{
-			db:     db,
 			Files:  []*FormFile{},
 			Data:   map[string]string{},
 			apply:  apply,

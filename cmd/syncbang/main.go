@@ -116,6 +116,20 @@ func main() {
 		logger.Panic().Err(err)
 		return
 	}
+
+	personsDB, err := sql.Open(config.PersonsDB.ServerType, config.PersonsDB.DSN.String())
+	if err != nil {
+		logger.Fatal().Err(err).Msgf("cannot open PersonsDB %s", config.PersonsDB.DSN.String())
+		return
+	}
+	defer personsDB.Close()
+	err = personsDB.Ping()
+	if err != nil {
+		logger.Fatal().Err(err).Msgf("cannot ping PersonsDB %s", config.PersonsDB.DSN.String())
+		return
+	}
+	logger.Info().Msg("Connected to PersonsDB")
+
 	if doDataUpdateOnly != "" {
 		if err := correction(applicationDB, doDataUpdateOnly); err != nil {
 			fmt.Sprintf("%v", err)
@@ -382,11 +396,11 @@ func main() {
 		}
 	}
 
-	if err := app.IterateFormsAll(0, nil, func(form *apply.Form) error {
+	if err := app.IterateFormsAll(0, func(form *apply.Form) error {
 		formItems = append(formItems, form)
 
 		// todo: use fair service
-		src, err := search.NewSourceData(form)
+		src, err := search.NewSourceData(personsDB, form)
 		if err != nil {
 			return errors.Wrap(err, "cannot create sourcedata from iid item")
 		}

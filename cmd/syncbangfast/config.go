@@ -41,7 +41,7 @@ type Config struct {
 	ApplicationDB  configdata.CfgDatabase          `toml:"applicationdb"`
 	DataPrefix     string                          `toml:"dataprefix"`
 	S3             configdata.CfgS3                `toml:"s3"`
-	MyDSN          config.EnvString                `toml:"mydsn"`
+	PersonsDB      configdata.CfgDatabase          `toml:"personsdb"`
 	Tunnel         map[string]configdata.SSHTunnel `toml:"tunnel"`
 	FilePath       string                          `toml:"filepath"`
 	ExportPath     string                          `toml:"exportpath"`

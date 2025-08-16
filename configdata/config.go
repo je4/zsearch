@@ -1,8 +1,9 @@
 package configdata
 
 import (
-	utilconfig "github.com/je4/utils/v2/pkg/config"
 	"time"
+
+	utilconfig "github.com/je4/utils/v2/pkg/config"
 )
 
 type Duration struct {
@@ -17,7 +18,7 @@ func (d *Duration) UnmarshalText(text []byte) error {
 
 type CfgDatabase struct {
 	ServerType string
-	DSN        string
+	DSN        utilconfig.EnvString
 	ConnMax    int `toml:"connection_max"`
 	Schema     string
 }

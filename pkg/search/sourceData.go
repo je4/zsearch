@@ -2,15 +2,20 @@ package search
 
 import (
 	"bytes"
+	"database/sql"
 	"fmt"
+	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
 
+	"emperror.dev/errors"
 	isoduration "github.com/channelmeter/iso8601duration"
 	"github.com/je4/utils/v2/pkg/openai"
 	"github.com/je4/zsearch/v2/pkg/translate"
+	"github.com/rs/zerolog/log"
 	oai "github.com/sashabaranov/go-openai"
 	"github.com/vanng822/go-solr/solr"
 	"golang.org/x/text/language"
@@ -67,7 +72,135 @@ type SourceData struct {
 	ContentVector     []float32                  `json:"content_vector,omitempty"`
 }
 
-func NewSourceData(src Source) (*SourceData, error) {
+var getPersonSQL = "SELECT personid, `name`, `birth`, `gnd`, `orcid`, `viaf`, `matrikel`, `evento`, `irf`, `wikidata`, `wikipedia` FROM persons WHERE alias IN "
+
+var gndRegexp = regexp.MustCompile(`https://d-nb.info/gnd/([0-9]+)`)
+var viafRegexp = regexp.MustCompile(`http://viaf.org/viaf/([0-9]+)`)
+var orcidRegexp = regexp.MustCompile(`https://orcid.org/([-0-9]+)`)
+var wikidataRegexp = regexp.MustCompile(`https://wikidata.org/[^/]+/([QLP][0-9]+)`)
+var wikipediaRegexp = regexp.MustCompile(`https://([^.]+\.)?wikipedia\.org/wiki/(.+)`)
+
+func buildPerson(dbclient *sql.DB, person Person) Person {
+	var personId int64
+	var personName sql.Null[string]
+	var birth sql.Null[string]
+	var gnd sql.Null[string]
+	var orcid sql.Null[string]
+	var viaf sql.Null[string]
+	var matrikel sql.Null[string]
+	var evento sql.Null[string]
+	var irf sql.Null[string]
+	var wikidata sql.Null[string]
+	var wikipedia sql.Null[string]
+	var names = []any{person.Name}
+	parts := strings.Split(person.Name, " ")
+	if len(parts) == 2 {
+		names = append(names, fmt.Sprintf("%s, %s", strings.TrimSpace(parts[1]), strings.TrimSpace(parts[0])))
+	}
+	parts = strings.Split(parts[0], ",")
+	if len(parts) == 2 {
+		names = append(names, fmt.Sprintf("%s %s", strings.TrimSpace(parts[1]), strings.TrimSpace(parts[0])))
+	}
+	cond := " ("
+	for range names {
+		cond = cond + " ?,"
+	}
+	cond = strings.TrimRight(cond, ",") + ")"
+
+	if err := dbclient.QueryRow(getPersonSQL+cond, names...).Scan(&personId, &personName, &birth, &gnd, &orcid, &viaf, &matrikel, &evento, &irf, &wikidata, &wikipedia); err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error().Err(err).Msgf("Error querying person: %s", person.Name)
+		}
+		return person
+	}
+	if personName.Valid {
+		person.Name = personName.V
+	}
+	if birth.Valid {
+		person.Year, _ = strconv.Atoi(birth.V)
+	}
+	person.Identifier = map[string]PersonIdentifier{
+		"mediathek": {
+			Id: fmt.Sprintf("%07d", personId),
+		},
+	}
+	if gnd.Valid {
+		matches := gndRegexp.FindStringSubmatch(gnd.V)
+		if len(matches) != 2 {
+			log.Error().Msgf("Error parsing gnd value: %s", gnd.V)
+		} else {
+			person.Identifier["gnd"] = PersonIdentifier{
+				Id:  matches[1],
+				Url: gnd.V,
+			}
+		}
+	}
+	if viaf.Valid {
+		matches := viafRegexp.FindStringSubmatch(viaf.V)
+		if len(matches) != 2 {
+			log.Error().Msgf("Error parsing viaf value: %s", viaf.V)
+		} else {
+			person.Identifier["viaf"] = PersonIdentifier{
+				Id:  matches[1],
+				Url: viaf.V,
+			}
+		}
+	}
+	if orcid.Valid {
+		matches := orcidRegexp.FindStringSubmatch(orcid.V)
+		if len(matches) != 2 {
+			log.Error().Msgf("Error parsing orcid value: %s", orcid.V)
+		} else {
+			person.Identifier["orcid"] = PersonIdentifier{
+				Id:  matches[1],
+				Url: orcid.V,
+			}
+		}
+	}
+	if wikidata.Valid {
+		matches := wikidataRegexp.FindStringSubmatch(wikidata.V)
+		if len(matches) != 2 {
+			log.Error().Msgf("Error parsing wikidata value: %s", wikidata.V)
+		} else {
+			person.Identifier["wikipedia"] = PersonIdentifier{
+				Id:  matches[1],
+				Url: wikidata.V,
+			}
+		}
+	}
+	if wikipedia.Valid {
+		matches := wikipediaRegexp.FindStringSubmatch(wikipedia.V)
+		if len(matches) != 3 {
+			log.Error().Msgf("Error parsing wikipedia value: %s", wikipedia.V)
+		} else {
+			person.Identifier["wikipedia"] = PersonIdentifier{
+				Id:  matches[2],
+				Url: wikipedia.V,
+			}
+		}
+	}
+	if irf.Valid {
+		person.Identifier["irf"] = PersonIdentifier{
+			Id: irf.V,
+		}
+	}
+	/*
+		if matrikel.Valid {
+			person.Identifier["matrikel"] = search.PersonIdentifier{
+				Id: matrikel.V,
+			}
+		}
+		if evento.Valid {
+			person.Identifier["evento"] = search.PersonIdentifier{
+				Id: evento.V,
+			}
+		}
+	*/
+
+	return person
+}
+
+func NewSourceData(db *sql.DB, src Source) (*SourceData, error) {
 	sd := &SourceData{
 		Signature:         src.GetSignature(),
 		SignatureOriginal: src.GetSignatureOriginal(),
@@ -115,6 +248,14 @@ func NewSourceData(src Source) (*SourceData, error) {
 	}
 	slices.Sort(categories)
 	sd.Category = slices.Compact(categories)
+
+	if db != nil {
+		for key, p := range sd.Persons {
+			p = buildPerson(db, p)
+			sd.Persons[key] = p
+		}
+	}
+
 	return sd, nil
 }
 
