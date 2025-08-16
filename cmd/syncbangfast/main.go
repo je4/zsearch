@@ -227,6 +227,17 @@ func main() {
 	}
 	logger.Info().Msgf("Loaded template for embedding")
 
+	db, err := sql.Open("mysql", config.MyDSN.String())
+	if err != nil {
+		logger.Fatal().Err(err).Msg("cannot connect to database")
+	}
+	defer db.Close()
+
+	// Ping the database to verify the connection.
+	if err := db.Ping(); err != nil {
+		logger.Fatal().Err(err).Msg("cannot ping database")
+	}
+
 	var zsClient *zsearchclient.ZSearchClient
 	zsClient, err = zsearchclient.NewZSearchClient(
 		config.ZSearchService.ServiceName,
@@ -312,7 +323,7 @@ func main() {
 		}
 	}
 
-	if err := app.IterateFormsAll(*startID, func(form *apply.Form) error {
+	if err := app.IterateFormsAll(*startID, db, func(form *apply.Form) error {
 		formItems = append(formItems, form)
 
 		// todo: use fair service

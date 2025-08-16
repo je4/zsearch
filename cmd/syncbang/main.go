@@ -382,7 +382,7 @@ func main() {
 		}
 	}
 
-	if err := app.IterateFormsAll(0, func(form *apply.Form) error {
+	if err := app.IterateFormsAll(0, nil, func(form *apply.Form) error {
 		formItems = append(formItems, form)
 
 		// todo: use fair service

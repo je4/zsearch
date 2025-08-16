@@ -3,12 +3,13 @@ package apply
 import (
 	"database/sql"
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/je4/utils/v2/pkg/MySQLReprepareStmt"
 	"github.com/je4/utils/v2/pkg/zLogger"
 	"github.com/je4/zsearch/v2/pkg/mediaserver"
 	"github.com/pkg/errors"
-	"strconv"
-	"strings"
 )
 
 type Apply struct {
@@ -88,7 +89,7 @@ func (apply *Apply) Close() error {
 	return nil
 }
 
-func (apply *Apply) IterateFormsAll(startID int, f func(form *Form) error) error {
+func (apply *Apply) IterateFormsAll(startID int, db *sql.DB, f func(form *Form) error) error {
 	var forms = []*Form{}
 	rows, err := apply.FormStmt.Query(1, "upload", startID)
 	if err != nil {
@@ -96,6 +97,7 @@ func (apply *Apply) IterateFormsAll(startID int, f func(form *Form) error) error
 	}
 	for rows.Next() {
 		var form = &Form{
+			db:     db,
 			Files:  []*FormFile{},
 			Data:   map[string]string{},
 			apply:  apply,

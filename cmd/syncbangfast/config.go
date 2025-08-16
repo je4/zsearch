@@ -18,11 +18,12 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"strings"
+
 	"github.com/BurntSushi/toml"
 	"github.com/je4/utils/v2/pkg/config"
 	"github.com/je4/zsearch/v2/configdata"
-	"log"
-	"strings"
 )
 
 type LocaleConfig struct {
@@ -40,6 +41,7 @@ type Config struct {
 	ApplicationDB  configdata.CfgDatabase          `toml:"applicationdb"`
 	DataPrefix     string                          `toml:"dataprefix"`
 	S3             configdata.CfgS3                `toml:"s3"`
+	MyDSN          config.EnvString                `toml:"mydsn"`
 	Tunnel         map[string]configdata.SSHTunnel `toml:"tunnel"`
 	FilePath       string                          `toml:"filepath"`
 	ExportPath     string                          `toml:"exportpath"`
