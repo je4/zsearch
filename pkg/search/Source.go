@@ -58,6 +58,7 @@ type Person struct {
 	Role             string                      `json:"role"`
 	AlternativeNames []string                    `json:"alternative_names,omitempty"`
 	Year             int                         `json:"year,omitempty"`
+	Web              []string                    `json:"web,omitempty"`
 	Identifier       map[string]PersonIdentifier `json:"identifier,omitempty"`
 }
 

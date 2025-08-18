@@ -72,13 +72,20 @@ type SourceData struct {
 	ContentVector     []float32                  `json:"content_vector,omitempty"`
 }
 
-var getPersonSQL = "SELECT personid, `name`, `birth`, `gnd`, `orcid`, `viaf`, `matrikel`, `evento`, `irf`, `wikidata`, `wikipedia` FROM persons WHERE alias IN "
+var getPersonSQL = "SELECT personid, `name`, `birth`, `gnd`, `orcid`, `viaf`, `matrikel`, `evento`, `irf`, `wikidata`, `web01`, web02, web03, web04 FROM persons WHERE alias IN "
 
-var gndRegexp = regexp.MustCompile(`https://d-nb.info/gnd/([0-9]+)`)
+/*
+var gndRegexp = regexp.MustCompile(`https://(d-nb.info|reconcile.gnd.network)/gnd/([0-9]+)`)
 var viafRegexp = regexp.MustCompile(`http://viaf.org/viaf/([0-9]+)`)
 var orcidRegexp = regexp.MustCompile(`https://orcid.org/([-0-9]+)`)
 var wikidataRegexp = regexp.MustCompile(`https://wikidata.org/[^/]+/([QLP][0-9]+)`)
-var wikipediaRegexp = regexp.MustCompile(`https://([^.]+\.)?wikipedia\.org/wiki/(.+)`)
+*/
+var gndRegexp = regexp.MustCompile(`https?://(d-nb.info|reconcile.gnd.network)/gnd/([0-9X]+)`)
+var viafRegexp = regexp.MustCompile(`https?://viaf.org/viaf/([0-9]+)`)
+var orcidRegexp = regexp.MustCompile(`https?://orcid.org/([-0-9]+)`)
+var wikidataRegexp = regexp.MustCompile(`https?://(www.)?wikidata.org/[^/]+/([QLP][0-9]+)`)
+
+//var wikipediaRegexp = regexp.MustCompile(`https://([^.]+\.)?wikipedia\.org/wiki/(.+)`)
 
 func buildPerson(dbclient *sql.DB, person Person) Person {
 	var personId int64
@@ -91,7 +98,14 @@ func buildPerson(dbclient *sql.DB, person Person) Person {
 	var evento sql.Null[string]
 	var irf sql.Null[string]
 	var wikidata sql.Null[string]
-	var wikipedia sql.Null[string]
+	var web01 sql.Null[string]
+	var web02 sql.Null[string]
+	var web03 sql.Null[string]
+	var web04 sql.Null[string]
+	//var wikipedia sql.Null[string]
+	if person.Web == nil {
+		person.Web = []string{}
+	}
 	var names = []any{person.Name}
 	parts := strings.Split(person.Name, " ")
 	if len(parts) == 2 {
@@ -107,7 +121,7 @@ func buildPerson(dbclient *sql.DB, person Person) Person {
 	}
 	cond = strings.TrimRight(cond, ",") + ")"
 
-	if err := dbclient.QueryRow(getPersonSQL+cond, names...).Scan(&personId, &personName, &birth, &gnd, &orcid, &viaf, &matrikel, &evento, &irf, &wikidata, &wikipedia); err != nil {
+	if err := dbclient.QueryRow(getPersonSQL+cond, names...).Scan(&personId, &personName, &birth, &gnd, &orcid, &viaf, &matrikel, &evento, &irf, &wikidata, &web01, &web02, &web03, &web04); err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
 			log.Error().Err(err).Msgf("Error querying person: %s", person.Name)
 		}
@@ -126,11 +140,11 @@ func buildPerson(dbclient *sql.DB, person Person) Person {
 	}
 	if gnd.Valid {
 		matches := gndRegexp.FindStringSubmatch(gnd.V)
-		if len(matches) != 2 {
+		if len(matches) != 3 {
 			log.Error().Msgf("Error parsing gnd value: %s", gnd.V)
 		} else {
 			person.Identifier["gnd"] = PersonIdentifier{
-				Id:  matches[1],
+				Id:  matches[2],
 				Url: gnd.V,
 			}
 		}
@@ -159,23 +173,12 @@ func buildPerson(dbclient *sql.DB, person Person) Person {
 	}
 	if wikidata.Valid {
 		matches := wikidataRegexp.FindStringSubmatch(wikidata.V)
-		if len(matches) != 2 {
+		if len(matches) != 4 {
 			log.Error().Msgf("Error parsing wikidata value: %s", wikidata.V)
 		} else {
 			person.Identifier["wikipedia"] = PersonIdentifier{
-				Id:  matches[1],
+				Id:  matches[3],
 				Url: wikidata.V,
-			}
-		}
-	}
-	if wikipedia.Valid {
-		matches := wikipediaRegexp.FindStringSubmatch(wikipedia.V)
-		if len(matches) != 3 {
-			log.Error().Msgf("Error parsing wikipedia value: %s", wikipedia.V)
-		} else {
-			person.Identifier["wikipedia"] = PersonIdentifier{
-				Id:  matches[2],
-				Url: wikipedia.V,
 			}
 		}
 	}
@@ -183,6 +186,18 @@ func buildPerson(dbclient *sql.DB, person Person) Person {
 		person.Identifier["irf"] = PersonIdentifier{
 			Id: irf.V,
 		}
+	}
+	if web01.Valid {
+		person.Web = append(person.Web, web01.V)
+	}
+	if web02.Valid {
+		person.Web = append(person.Web, web02.V)
+	}
+	if web03.Valid {
+		person.Web = append(person.Web, web03.V)
+	}
+	if web04.Valid {
+		person.Web = append(person.Web, web04.V)
 	}
 	/*
 		if matrikel.Valid {
