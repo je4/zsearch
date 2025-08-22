@@ -40,6 +40,7 @@ require (
 	github.com/rs/zerolog v1.34.0
 	github.com/sashabaranov/go-openai v1.41.1
 	github.com/vanng822/go-solr v0.10.0
+	gitlab.switch.ch/ub-unibas/rdv2/ubcat/v2 v2.0.28
 	go.mongodb.org/mongo-driver v1.17.4
 	golang.org/x/exp v0.0.0-20250813145105-42675adae3e6
 	golang.org/x/image v0.30.0

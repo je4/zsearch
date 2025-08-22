@@ -405,6 +405,8 @@ github.com/xyproto/randomstring v1.0.5 h1:YtlWPoRdgMu3NZtP45drfy1GKoojuR7hmRcnhZ
 github.com/xyproto/randomstring v1.0.5/go.mod h1:rgmS5DeNXLivK7YprL0pY+lTuhNQW3iGxZ18UQApw/E=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
+gitlab.switch.ch/ub-unibas/rdv2/ubcat/v2 v2.0.28 h1:CD/zpQtiFbWm71FJRohRfA862miMCbZCdNkb0GC/SLc=
+gitlab.switch.ch/ub-unibas/rdv2/ubcat/v2 v2.0.28/go.mod h1:Exm0Cgps86xlIpdx8pi/oXpE6gw8uTTnFJK4hPCakq4=
 go.elastic.co/apm v1.15.0 h1:uPk2g/whK7c7XiZyz/YCUnAUBNPiyNeE3ARX3G6Gx7Q=
 go.elastic.co/apm v1.15.0/go.mod h1:dylGv2HKR0tiCV+wliJz1KHtDyuD8SPe69oV7VyK6WY=
 go.elastic.co/apm/module/apmelasticsearch v1.15.0 h1:c5/qg+9AYe1QCGhu7FGqoydY9NNkNzc+iRpJJXRK/WE=
