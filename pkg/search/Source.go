@@ -28,6 +28,7 @@ import (
 	"github.com/je4/zsearch/v2/pkg/translate"
 	"github.com/pkg/errors"
 	"github.com/vanng822/go-solr/solr"
+	"gitlab.switch.ch/ub-unibas/rdv2/ubcat/v2/pkg/metaString"
 )
 
 func GUnzip(data string) (string, error) {
@@ -63,15 +64,16 @@ type Person struct {
 }
 
 type Media struct {
-	Name        string `json:"name"`
-	Mimetype    string `json:"mimetype"`
-	Type        string `json:"type"`
-	Uri         string `json:"uri"`
-	Width       int64  `json:"width,omitempty"`
-	Height      int64  `json:"height,omitempty"`
-	Orientation int64  `json:"orientation,omitempty"`
-	Duration    int64  `json:"duration,omitempty"`
-	Fulltext    string `json:"fulltext,omitempty"`
+	Name        string                            `json:"name"`
+	Mimetype    string                            `json:"mimetype"`
+	Type        string                            `json:"type"`
+	Uri         string                            `json:"uri"`
+	Width       int64                             `json:"width,omitempty"`
+	Height      int64                             `json:"height,omitempty"`
+	Orientation int64                             `json:"orientation,omitempty"`
+	Duration    int64                             `json:"duration,omitempty"`
+	Fulltext    string                            `json:"fulltext,omitempty"`
+	Metadata    map[string]*metaString.MetaString `json:"additional,omitempty"`
 }
 
 type Query struct {
