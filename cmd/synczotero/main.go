@@ -21,6 +21,13 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
+	"log"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/araddon/dateparse"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/je4/FairService/v2/pkg/fair"
@@ -34,12 +41,6 @@ import (
 	"github.com/je4/zsync/v2/pkg/zotero"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
-	"io"
-	"log"
-	"os"
-	"strconv"
-	"strings"
-	"time"
 )
 
 func main() {
@@ -97,7 +98,7 @@ func main() {
 	}
 
 	// get database connection handle
-	zoteroDB, err := sql.Open(config.Zotero.DB.ServerType, config.Zotero.DB.DSN)
+	zoteroDB, err := sql.Open(config.Zotero.DB.ServerType, config.Zotero.DB.DSN.String())
 	if err != nil {
 		logger.Fatal().Err(err).Msgf("cannot open zotero database")
 		return
@@ -111,7 +112,7 @@ func main() {
 		return
 	}
 
-	mediadb, err := sql.Open(config.Mediaserver.DB.ServerType, config.Mediaserver.DB.DSN)
+	mediadb, err := sql.Open(config.Mediaserver.DB.ServerType, config.Mediaserver.DB.DSN.String())
 	if err != nil {
 		logger.Fatal().Err(err).Msgf("cannot open mediaserver database")
 		return
@@ -338,7 +339,7 @@ func main() {
 				if _type == "attachment" {
 					return nil
 				}
-				i, err := search.NewSourceData(search.NewZoteroItem(*item, ms))
+				i, err := search.NewSourceData(nil, search.NewZoteroItem(*item, ms))
 				if err != nil {
 					return errors.Wrap(err, "cannot create source item")
 				}

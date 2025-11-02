@@ -2,17 +2,18 @@ package search
 
 import (
 	"fmt"
-	"github.com/je4/zsearch/v2/pkg/mediaserver"
-	"github.com/je4/zsearch/v2/pkg/translate"
-	"github.com/je4/zsync/v2/pkg/zotero"
-	"github.com/vanng822/go-solr/solr"
-	"golang.org/x/text/language"
 	"html/template"
 	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/je4/zsearch/v2/pkg/mediaserver"
+	"github.com/je4/zsearch/v2/pkg/translate"
+	"github.com/je4/zsync/v2/pkg/zotero"
+	"github.com/vanng822/go-solr/solr"
+	"golang.org/x/text/language"
 )
 
 /* *******************************
@@ -267,7 +268,8 @@ func (item *ZoteroItem) GetTags() []string {
 
 	for _, t := range item.Data.Tags {
 		// ignore variables (i.e. <Name>:<value>
-		if !zoteroTagACLVariable.MatchString(t.Tag) {
+		if !zoteroTagACLVariable.MatchString(t.Tag) &&
+			!strings.HasPrefix(strings.ToLower(t.Tag), "reference:") {
 			tagStr := t.Tag
 			/*
 				if !strings.HasPrefix(tagStr, "voc:voc_") {
@@ -570,6 +572,18 @@ var zoterolinkregexp = regexp.MustCompile("^https?://zotero.org/groups/([^/]+)/i
 
 func (item *ZoteroItem) GetReferences() []Reference {
 	var references []Reference
+	for _, tag := range item.Data.ItemDataBase.Tags {
+		if strings.HasPrefix(strings.ToLower(tag.Tag), "reference:") {
+			parts := strings.SplitN(tag.Tag, ":", 3)
+			if len(parts) != 3 {
+				continue
+			}
+			references = append(references, Reference{
+				Type:      parts[1],
+				Signature: parts[2],
+			})
+		}
+	}
 	for key, values := range item.Data.ItemDataBase.Relations {
 		for _, value := range values {
 			if matches := zoterolinkregexp.FindStringSubmatch(value); matches != nil {
