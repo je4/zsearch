@@ -88,7 +88,7 @@ func main() {
 	_logger.Level(zLogger.LogLevel(config.Loglevel))
 	var logger zLogger.ZLogger = &_logger
 
-	mediadb, err := sql.Open(config.Mediaserver.DB.ServerType, config.Mediaserver.DB.DSN)
+	mediadb, err := sql.Open(config.Mediaserver.DB.ServerType, config.Mediaserver.DB.DSN.String())
 	if err != nil {
 		logger.Panic().Err(err)
 		return
@@ -106,7 +106,7 @@ func main() {
 		return
 	}
 
-	applicationDB, err := sql.Open(config.ApplicationDB.ServerType, config.ApplicationDB.DSN)
+	applicationDB, err := sql.Open(config.ApplicationDB.ServerType, config.ApplicationDB.DSN.String())
 	if err != nil {
 		logger.Panic().Err(err)
 		return
@@ -179,7 +179,7 @@ func main() {
 	}
 
 	// get database connection handle
-	zoteroDB, err := sql.Open(config.Zotero.DB.ServerType, config.Zotero.DB.DSN)
+	zoteroDB, err := sql.Open(config.Zotero.DB.ServerType, config.Zotero.DB.DSN.String())
 	if err != nil {
 		logger.Panic().Err(err)
 		return
