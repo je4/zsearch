@@ -18,6 +18,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/csv"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -51,6 +52,7 @@ func main() {
 	clear := flag.Bool("clear", false, "clear data")
 	syncfair := flag.Bool("fair", false, "sync to fair service")
 	synczotero := flag.Bool("zotero", false, "sync zotero cloud")
+	rolemapping := flag.String("rolemapping", "", "csv file containing role mapping")
 	flag.Parse()
 	config := LoadConfig(*cfgfile)
 
@@ -77,6 +79,47 @@ func main() {
 			return
 		}
 		archiveStrategy[intKey] = val
+	}
+
+	if *rolemapping != "" {
+		config.RoleMapping = *rolemapping
+	}
+	var roleMapping = map[string]map[string]string{}
+	if config.RoleMapping != "" {
+		func() {
+			fp, err := os.Open(config.RoleMapping)
+			if err != nil {
+				logger.Fatal().Msgf("cannot open role mapping file %s", config.RoleMapping)
+			}
+			defer fp.Close()
+			reader := csv.NewReader(fp)
+			reader.Comma = ';'
+			reader.FieldsPerRecord = -1
+			reader.TrimLeadingSpace = true
+			reader.LazyQuotes = true
+			for {
+				record, err := reader.Read()
+				if err != nil {
+					if err == io.EOF {
+						break
+					}
+					logger.Fatal().Err(err).Msgf("cannot parse role mapping file %s", config.RoleMapping)
+				}
+				if len(record) < 3 {
+					logger.Fatal().Msgf("invalid number of fields in role mapping file %s line %v", config.RoleMapping, record)
+				}
+				group := strings.ToLower(record[0])
+				if group == "" {
+					group = "default"
+				}
+				source := strings.ToLower(record[1])
+				target := strings.ToLower(record[2])
+				if _, ok := roleMapping[group]; !ok {
+					roleMapping[group] = map[string]string{}
+				}
+				roleMapping[group][source] = target
+			}
+		}()
 	}
 
 	if *syncgroupid > 0 {
@@ -271,9 +314,10 @@ func main() {
 			//					num, err := mte.Delete(cfg)
 			if err != nil {
 				logger.Error().Msgf("cannot delete items of group %d with signature prefix %s: %v", groupId, sPrefix, err)
-				break
+				since = time.Date(1970, 01, 01, 0, 0, 0, 0, time.Local)
+			} else {
+				logger.Info().Msgf("%v items with signature prefix %s deleted", num, sPrefix)
 			}
-			logger.Info().Msgf("%v items with signature prefix %s deleted", num, sPrefix)
 		} else {
 			if *updateAll {
 				since = time.Date(1970, 01, 01, 0, 0, 0, 0, time.Local)
@@ -339,7 +383,7 @@ func main() {
 				if _type == "attachment" {
 					return nil
 				}
-				i, err := search.NewSourceData(nil, search.NewZoteroItem(*item, ms))
+				i, err := search.NewSourceData(nil, search.NewZoteroItem(*item, ms, roleMapping))
 				if err != nil {
 					return errors.Wrap(err, "cannot create source item")
 				}

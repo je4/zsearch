@@ -43,13 +43,18 @@ var zoteroIgnoreMetaFields = []string{
 
 type ZoteroItem struct {
 	zotero.Item
-	ms mediaserver.Mediaserver
+	ms          mediaserver.Mediaserver
+	roleMapping map[string]map[string]string
 }
 
-func NewZoteroItem(zItem zotero.Item, ms mediaserver.Mediaserver) *ZoteroItem {
+func NewZoteroItem(zItem zotero.Item, ms mediaserver.Mediaserver, roleMapping map[string]map[string]string) *ZoteroItem {
+	if roleMapping == nil {
+		roleMapping = make(map[string]map[string]string)
+	}
 	item := &ZoteroItem{
-		Item: zItem,
-		ms:   ms,
+		Item:        zItem,
+		ms:          ms,
+		roleMapping: roleMapping,
 	}
 	return item
 }
@@ -62,7 +67,7 @@ func (item *ZoteroItem) GetChildrenLocal() (*[]ZoteroItem, error) {
 	}
 	returns := []ZoteroItem{}
 	for _, i := range *result {
-		returns = append(returns, *NewZoteroItem(i, item.ms))
+		returns = append(returns, *NewZoteroItem(i, item.ms, item.roleMapping))
 	}
 	return &returns, nil
 }
@@ -163,9 +168,22 @@ func (item *ZoteroItem) GetPersons() []Person {
 	for _, c := range item.Data.Creators {
 		name := strings.Trim(fmt.Sprintf("%s, %s", c.LastName, c.FirstName), " ,")
 		if name != "" {
+			newRole := c.CreatorType
+			if roleMapping, ok := item.roleMapping[strconv.Itoa(int(item.Group.Data.Id))]; ok {
+				if role, ok := roleMapping[c.CreatorType]; ok {
+					newRole = role
+				}
+			}
+			if newRole == c.CreatorType {
+				if roleMapping, ok := item.roleMapping["default"]; ok {
+					if role, ok := roleMapping[c.CreatorType]; ok {
+						newRole = role
+					}
+				}
+			}
 			persons = append(persons, Person{
 				Name: name,
-				Role: c.CreatorType,
+				Role: newRole,
 			})
 		}
 	}

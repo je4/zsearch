@@ -17,10 +17,11 @@ limitations under the License.
 package main
 
 import (
-	"github.com/BurntSushi/toml"
-	"github.com/je4/zsearch/v2/configdata"
 	"log"
 	"strings"
+
+	"github.com/BurntSushi/toml"
+	"github.com/je4/zsearch/v2/configdata"
 )
 
 type Config struct {
@@ -29,6 +30,7 @@ type Config struct {
 	StaticDir       string                          `toml:"staticdir"`
 	AddrExt         string                          `toml:"addrext"`
 	SitemapPrefix   string                          `toml:"sitemapprefix"`
+	RoleMapping     string                          `toml:"rolemapping"`
 	Sleep           configdata.Duration             `toml:"sleep"`
 	Mediaserver     configdata.MediaserverMySQL     `toml:"mediaserver"`
 	Zotero          configdata.CfgZotero            `toml:"zotero"`
