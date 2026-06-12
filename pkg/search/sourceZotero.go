@@ -120,28 +120,29 @@ func (item *ZoteroItem) GetDateAdded() time.Time {
 	return d
 }
 
+func (item *ZoteroItem) getCollectionRecursive(coll *zotero.Collection, prefix string) string {
+	if strings.HasPrefix(coll.Data.Name, prefix) {
+		return strings.TrimPrefix(coll.Data.Name, prefix)
+	}
+	if coll.Data.ParentCollection != "" {
+		parentColl, err := item.Group.GetCollectionByKeyLocal(string(coll.Data.ParentCollection))
+		if err != nil {
+			return ""
+		}
+		return item.getCollectionRecursive(parentColl, prefix)
+	}
+	return ""
+}
+
 func (item *ZoteroItem) GetCollectionTitle() string {
-	for _, c := range item.Data.Collections {
-		for _, collKey := range item.Data.Collections {
-			coll, err := item.Group.GetCollectionByKeyLocal(collKey)
-			if err != nil {
-				item.Group.Zot.Logger.Error().Msgf("could not load collection #%v.%v", item.Group.Data.Id, collKey)
-				continue
-			}
-			if strings.HasPrefix(coll.Data.Name, collPrefix) {
-				return strings.TrimPrefix(coll.Data.Name, collPrefix)
-			}
-			if coll.Key == c {
-				if coll.Data.ParentCollection != "" {
-					coll2, err := item.Group.GetCollectionByKeyLocal(string(coll.Data.ParentCollection))
-					if err != nil {
-						break
-					}
-					if strings.HasPrefix(coll2.Data.Name, collPrefix) {
-						return strings.TrimPrefix(coll2.Data.Name, collPrefix)
-					}
-				}
-			}
+	for _, collKey := range item.Data.Collections {
+		coll, err := item.Group.GetCollectionByKeyLocal(collKey)
+		if err != nil {
+			item.Group.Zot.Logger.Error().Msgf("could not load collection #%v.%v", item.Group.Data.Id, collKey)
+			continue
+		}
+		if title := item.getCollectionRecursive(coll, collPrefix); title != "" {
+			return title
 		}
 	}
 
@@ -269,7 +270,7 @@ func (item *ZoteroItem) GetCategories() []string {
 			if err != nil {
 				break
 			}
-			categories = append(categories, fmt.Sprintf("%v!!%v!!%v!!%v", item.Name(), strings.TrimPrefix(item.Group.Data.Name, collPrefix), strings.TrimPrefix(coll2.Data.Name, collPrefix), strings.TrimPrefix(parentColl.Data.Name, "coll:")))
+			categories = append(categories, fmt.Sprintf("%v!!%v!!%v!!%v", item.Name(), strings.TrimPrefix(item.Group.Data.Name, collPrefix), strings.TrimPrefix(coll2.Data.Name, collPrefix), strings.TrimPrefix(parentColl.Data.Name, collPrefix)))
 		} else {
 			categories = append(categories, fmt.Sprintf("%v!!%v!!%v", item.Name(), strings.TrimPrefix(item.Group.Data.Name, collPrefix), strings.TrimPrefix(parentColl.Data.Name, collPrefix)))
 		}
@@ -279,6 +280,18 @@ func (item *ZoteroItem) GetCategories() []string {
 		categories = append(categories, fmt.Sprintf("%v!!%v", item.Name(), strings.TrimPrefix(item.Group.Data.Name, collPrefix)))
 	}
 	return categories
+}
+
+func (item *ZoteroItem) getTagsRecursive(tags []string, coll *zotero.Collection) []string {
+	tags = AppendIfMissing(tags, strings.TrimPrefix(strings.ToLower(strings.TrimSpace(coll.Data.Name)), collPrefix))
+	if coll.Data.ParentCollection != "" {
+		parentColl, err := item.Group.GetCollectionByKeyLocal(string(coll.Data.ParentCollection))
+		if err != nil {
+			return tags
+		}
+		return item.getTagsRecursive(tags, parentColl)
+	}
+	return tags
 }
 
 func (item *ZoteroItem) GetTags() []string {
@@ -299,24 +312,13 @@ func (item *ZoteroItem) GetTags() []string {
 	}
 	tags = AppendIfMissing(tags, strings.ToLower(item.Group.Data.Name))
 
-	for _, c := range item.Data.Collections {
-		for _, collKey := range item.Data.Collections {
-			coll, err := item.Group.GetCollectionByKeyLocal(collKey)
-			if err != nil {
-				item.Group.Zot.Logger.Error().Msgf("could not load collection #%v.%v", item.Group.Data.Id, collKey)
-				continue
-			}
-			if coll.Key == c {
-				tags = AppendIfMissing(tags, strings.TrimPrefix(strings.ToLower(strings.TrimSpace(coll.Data.Name)), collPrefix))
-				if coll.Data.ParentCollection != "" {
-					coll2, err := item.Group.GetCollectionByKeyLocal(string(coll.Data.ParentCollection))
-					if err != nil {
-						break
-					}
-					tags = AppendIfMissing(tags, strings.TrimPrefix(strings.ToLower(strings.TrimSpace(coll2.Data.Name)), collPrefix))
-				}
-			}
+	for _, collKey := range item.Data.Collections {
+		coll, err := item.Group.GetCollectionByKeyLocal(collKey)
+		if err != nil {
+			item.Group.Zot.Logger.Error().Msgf("could not load collection #%v.%v", item.Group.Data.Id, collKey)
+			continue
 		}
+		tags = item.getTagsRecursive(tags, coll)
 	}
 	return tags
 }

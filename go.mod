@@ -1,6 +1,6 @@
 module github.com/je4/zsearch/v2
 
-go 1.25.6
+go 1.26
 
 //replace dario.cat/mergo v1.0.0 => github.com/imdario/mergo v1.0.0
 
